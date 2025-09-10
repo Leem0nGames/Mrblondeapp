@@ -42,3 +42,5 @@ La aplicación necesita un usuario administrador para funcionar.
 4.  Haz clic en **"Create user"**.
 
 Con esto, tu aplicación estará lista para usarse. Puedes acceder al panel de administrador con el PIN por defecto: `1234`.
+
+    
