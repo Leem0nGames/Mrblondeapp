@@ -123,6 +123,7 @@ export async function upsertAgreement(payload: UpsertAgreementPayload) {
   const { id, ...agreementData } = payload;
   
   let finalData: any = agreementData;
+  // Generate a permanent link token only when creating a new agreement
   if (!id) {
     finalData.link_token = crypto.randomUUID();
   }

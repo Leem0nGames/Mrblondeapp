@@ -51,11 +51,3 @@ export type Agreement = {
   agreement_products: AgreementProduct[]; // Joined data
   agreement_promotions: AgreementPromotion[]; // Joined data
 };
-
-export type OrderLog = {
-  id: string;
-  access_token_id: string;
-  order_details: any; // JSON object
-  total_price: number;
-  created_at: string;
-};
