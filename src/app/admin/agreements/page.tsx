@@ -1,4 +1,5 @@
-import { PlusCircle, FileWarning } from "lucide-react";
+import { PlusCircle, FileWarning, FileText } from "lucide-react";
+import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,6 +11,7 @@ import {
 import { getAgreements } from "@/app/actions/admin.actions";
 import { AgreementDialog } from "./_components/agreement-dialog";
 import { AgreementCard } from "./_components/agreement-card";
+import { Separator } from "@/components/ui/separator";
 
 export default async function AgreementsPage() {
   const { data: agreements, error } = await getAgreements();
@@ -17,6 +19,8 @@ export default async function AgreementsPage() {
   if (error) {
     return <p className="text-destructive">{error.message}</p>;
   }
+
+  const quickAccessAgreements = agreements?.slice(0, 3) ?? [];
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
@@ -35,11 +39,45 @@ export default async function AgreementsPage() {
       </div>
 
       {agreements && agreements.length > 0 ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {agreements.map((agreement) => (
-            <AgreementCard key={agreement.id} agreement={agreement} />
-          ))}
-        </div>
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Acceso Rápido</CardTitle>
+              <CardDescription>
+                Gestiona tus convenios más recientes con un solo clic.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {quickAccessAgreements.map((agreement) => (
+                  <Button
+                    key={agreement.id}
+                    variant="outline"
+                    className="h-20 text-base"
+                    asChild
+                  >
+                    <Link href={`/admin/agreements/${agreement.id}`}>
+                      <FileText className="mr-4 h-6 w-6" />
+                      <div className="text-left flex-1">
+                        <p className="font-bold truncate">{agreement.agreement_name}</p>
+                        <p className="font-normal text-sm capitalize text-muted-foreground">{agreement.client_type}</p>
+                      </div>
+                    </Link>
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Separator />
+          
+          <h2 className="text-xl font-bold text-muted-foreground">Todos los Convenios</h2>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {agreements.map((agreement) => (
+              <AgreementCard key={agreement.id} agreement={agreement} />
+            ))}
+          </div>
+        </>
       ) : (
         <Card className="flex flex-col items-center justify-center py-12">
            <CardHeader className="text-center">
