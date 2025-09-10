@@ -9,7 +9,7 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { useCartStore } from "@/hooks/use-cart-store";
+import { useCartStore, type CartItem } from "@/hooks/use-cart-store";
 import { AgreementPromotion } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
@@ -20,35 +20,55 @@ import { getImageUrl } from "@/lib/placeholder-images";
 
 function formatWhatsAppMessage(
   clientName: string,
-  cartItems: any[],
-  totalPrice: number
+  cartItems: CartItem[],
+  totalPrice: number,
+  promotions: AgreementPromotion[],
+  totalUnits: number,
 ) {
+  // 1. Format product list
   const itemsText = cartItems
-    .map(
-      (item) =>
-        `- ${item.product.name} (x${item.quantity}) = $${(
-          item.product.price * item.quantity
-        ).toLocaleString()}`
-    )
+    .map((item) => `- ${item.quantity}x ${item.product.name}`)
     .join("\n");
 
-  const message = `
-¡Hola! 👋 Quisiera realizar el siguiente pedido:
+  // 2. Calculate bonuses
+  let bonusText = "";
+  const buyXgetYFreePromos = promotions.filter(
+    (p) => p.promotions.rules?.type === "buy_x_get_y_free"
+  );
+  
+  if (buyXgetYFreePromos.length > 0) {
+      // Find the most advantageous promotion (the one that requires more items, assuming it gives more)
+      buyXgetYFreePromos.sort((a, b) => (b.promotions.rules.buy || 0) - (a.promotions.rules.buy || 0));
+      const bestPromo = buyXgetYFreePromos[0];
+      const { buy, get } = bestPromo.promotions.rules;
 
-*Cliente:* ${clientName}
+      if (totalUnits >= buy) {
+          const numberOfBonuses = Math.floor(totalUnits / buy) * get;
+          // For simplicity, we state the bonus generically.
+          // A more complex implementation could specify which products.
+          bonusText = `Bonificaciones de Regalo:\n- ${numberOfBonuses}x Unidades de regalo (promo ${buy}+${get})`;
+      }
+  }
 
-*Productos:*
-${itemsText}
 
-*Total (con precios de convenio):* $${totalPrice.toLocaleString()}
+  // 3. Build message
+  const messageParts = [
+    "NUEVO PEDIDO\n",
+    `Cliente:\n${clientName}\n`,
+    `Productos:\n${itemsText}\n`,
+  ];
 
-_(Por favor, aplicar promociones correspondientes al facturar)_
+  if (bonusText) {
+    messageParts.push(`${bonusText}\n`);
+  }
 
-¡Gracias!
-    `.trim();
+  messageParts.push(`Total a Pagar:\n$${totalPrice.toLocaleString('es-AR')}`);
 
+  const message = messageParts.join("\n").trim();
+  
   return encodeURIComponent(message);
 }
+
 
 export function OrderSummarySheet({
   isOpen,
@@ -61,7 +81,7 @@ export function OrderSummarySheet({
   clientName: string;
   availablePromotions: AgreementPromotion[];
 }) {
-  const { items, totalPrice } = useCartStore();
+  const { items, totalItems, totalPrice } = useCartStore();
   const { toast } = useToast();
   const whatsAppNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '5491123456789';
 
@@ -75,7 +95,7 @@ export function OrderSummarySheet({
       });
       return;
     }
-    const message = formatWhatsAppMessage(clientName, items, totalPrice);
+    const message = formatWhatsAppMessage(clientName, items, totalPrice, availablePromotions, totalItems);
     const whatsappUrl = `https://wa.me/${whatsAppNumber}?text=${message}`;
     window.open(whatsappUrl, "_blank");
   };
