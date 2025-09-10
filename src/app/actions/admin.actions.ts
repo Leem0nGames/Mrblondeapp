@@ -88,7 +88,10 @@ export async function getAgreements() {
       )
     `)
     .order("agreement_name", { ascending: true });
-  if (error) console.error("getAgreements error:", error.message);
+  if (error) {
+    console.error("getAgreements error:", error.message);
+    throw error;
+  };
   return { data, error };
 }
 
