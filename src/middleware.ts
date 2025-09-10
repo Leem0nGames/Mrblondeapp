@@ -61,8 +61,9 @@ export async function middleware(request: NextRequest) {
   const usersExist = await hasUsers();
   const isAuthRoute = pathname === '/login' || pathname === '/signup';
   const isAdminRoute = pathname.startsWith('/admin');
+  const isOrderRoute = pathname.startsWith('/pedido');
 
-  // --- Primary Logic: Handle First-Time Setup ---
+  // --- 1. Handle First-Time Setup ---
   if (!usersExist) {
     // If no users exist, the only allowed page is the signup page.
     if (pathname !== '/signup') {
@@ -72,30 +73,35 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // --- Secondary Logic: Handle App After Setup ---
+  // --- 2. Handle App After Setup ---
 
   // If users exist, the signup page is no longer accessible.
   if (pathname === '/signup') {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
+  // Allow public access to order pages
+  if (isOrderRoute) {
+    return response;
+  }
+  
   // If the user is NOT authenticated
   if (!session) {
     // If they try to access a protected admin route, redirect to login.
-    if (isAdminRoute) {
+    if (isAdminRoute || pathname === '/') {
       return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 
   // If the user IS authenticated
   if (session) {
-    // If they try to access the login or signup page, redirect to the admin dashboard.
-    if (isAuthRoute) {
+    // If they try to access an auth page (login), redirect to the admin dashboard.
+    if (isAuthRoute || pathname === '/') {
       return NextResponse.redirect(new URL('/admin', request.url));
     }
   }
   
-  // For all other cases (e.g., public pages, already correct navigation), allow the request.
+  // For all other cases, allow the request.
   return response;
 }
 

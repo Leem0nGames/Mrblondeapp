@@ -1,6 +1,8 @@
+
 'use server';
 
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
@@ -60,9 +62,7 @@ export async function signupSuperAdmin(
     return { error: { message: 'No se pudo crear la cuenta. Inténtelo de nuevo.' } };
   }
 
-  // No redirigimos inmediatamente, el middleware lo hará en la siguiente petición
-  // después de que la sesión se establezca. Forzamos una revalidación para asegurar
-  // que la UI se actualice.
+  revalidatePath('/');
   redirect('/admin');
 }
 
@@ -94,8 +94,7 @@ export async function login(
     return { error: { message: 'Error de autenticación. Verifique que el usuario admin esté configurado.' } };
   }
   
-  // 3. Si el login es exitoso, Next.js gestionará la redirección.
-  // La cookie de sesión se establece y el middleware redirigirá a /admin.
+  revalidatePath('/');
   redirect('/admin');
 }
 
