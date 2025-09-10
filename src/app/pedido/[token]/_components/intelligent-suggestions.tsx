@@ -14,15 +14,17 @@ type IntelligentSuggestionsProps = {
 }
 
 export function IntelligentSuggestions({ clientName, availablePromotions }: IntelligentSuggestionsProps) {
-  const { items, totalItems, isHydrated } = useCartStore();
+  const { items, totalItems } = useCartStore();
   const [suggestions, setSuggestions] = useState<SuggestPromotionsOutput | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // Only run suggestions logic on the client-side after hydration
-    if (!isHydrated) {
-      return;
-    }
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
 
     if (totalItems === 0) {
       setSuggestions(null); // Clear previous suggestions
@@ -53,11 +55,16 @@ export function IntelligentSuggestions({ clientName, availablePromotions }: Inte
       setSuggestions(result);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalItems, isHydrated, clientName, availablePromotions]); // Rerun when totalItems or hydration status changes
+  }, [totalItems, isClient, clientName]);
 
-  // Don't render anything until the cart is hydrated to avoid mismatch
-  if (!isHydrated) {
-    return null;
+  if (!isClient) {
+    return (
+      <div className="space-y-2 rounded-lg border bg-background p-4">
+        <Skeleton className="h-5 w-1/3" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-4/5" />
+      </div>
+    );
   }
 
   if (isPending) {

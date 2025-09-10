@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCartStore, type CartItem } from "@/hooks/use-cart-store";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +22,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { OrderSummarySheet } from "./order-summary-sheet";
 import type { AgreementPromotion } from "@/types";
+import { getImageUrl } from "@/lib/placeholder-images";
 
 export function CartWidget({ 
   clientName, 
@@ -30,11 +31,17 @@ export function CartWidget({
   clientName: string, 
   availablePromotions: AgreementPromotion[] 
 }) {
-  const { items, totalItems, isHydrated } = useCartStore();
+  const { items, totalItems } = useCartStore();
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
-  // Render nothing until the cart has been hydrated from localStorage
-  if (!isHydrated) {
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Render nothing until the component has mounted on the client
+  // This prevents hydration mismatches with the cart state from localStorage
+  if (!isClient) {
     return null;
   }
 
@@ -67,7 +74,7 @@ export function CartWidget({
               <ScrollArea className="flex-1 -mx-6">
                 <div className="px-6 divide-y">
                   {items.map((item) => (
-                    <CartItem key={item.product.id} item={item} />
+                    <CartItemComponent key={item.product.id} item={item} />
                   ))}
                 </div>
               </ScrollArea>
@@ -92,14 +99,14 @@ export function CartWidget({
   );
 }
 
-function CartItem({ item }: { item: CartItem }) {
+function CartItemComponent({ item }: { item: CartItem }) {
   const { updateQuantity } = useCartStore();
 
   return (
     <div className="flex items-center justify-between gap-4 py-4">
       <div className="flex items-center gap-4">
         <Image
-          src={`https://picsum.photos/seed/${item.product.id}/64/64`}
+          src={getImageUrl("cart_item", { id: item.product.id, width: 64, height: 64 })}
           alt={item.product.name}
           width={64}
           height={64}

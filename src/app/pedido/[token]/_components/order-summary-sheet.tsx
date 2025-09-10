@@ -16,6 +16,7 @@ import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { IntelligentSuggestions } from "./intelligent-suggestions";
+import { getImageUrl } from "@/lib/placeholder-images";
 
 function formatWhatsAppMessage(
   clientName: string,
@@ -98,7 +99,7 @@ export function OrderSummarySheet({
                         {items.map((item) => (
                             <div key={item.product.id} className="flex items-center gap-4">
                             <Image
-                                src={`https://picsum.photos/seed/${item.product.id}/48/48`}
+                                src={getImageUrl("summary_item", {id: item.product.id, width: 48, height: 48})}
                                 alt={item.product.name}
                                 width={48}
                                 height={48}

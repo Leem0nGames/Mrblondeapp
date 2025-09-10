@@ -44,7 +44,8 @@ import { Product } from "@/types";
 import { ProductDialog } from "./product-dialog";
 import { deleteProduct } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
-import { ClientDate } from "./client-date";
+import { formatDate } from "@/lib/utils";
+import { getImageUrl } from "@/lib/placeholder-images";
 
 export default function ProductsTable({ products }: { products: Product[] }) {
   const [isPending, startTransition] = useTransition();
@@ -98,7 +99,7 @@ export default function ProductsTable({ products }: { products: Product[] }) {
               <TableRow key={product.id}>
                 <TableCell className="hidden sm:table-cell">
                   <Image
-                    src={`https://picsum.photos/seed/${product.id}/100/100`}
+                    src={getImageUrl("product", { id: product.id, width: 100, height: 100 })}
                     alt={product.name}
                     width={64}
                     height={64}
@@ -121,7 +122,7 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                   {product.stock}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  <ClientDate date={product.created_at} />
+                  {formatDate(product.created_at)}
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>

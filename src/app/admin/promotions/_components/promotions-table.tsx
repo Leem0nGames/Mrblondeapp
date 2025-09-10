@@ -13,7 +13,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -43,7 +42,7 @@ import { Promotion } from "@/types";
 import { PromotionDialog } from "./promotion-dialog";
 import { deletePromotion } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
-import { ClientDate } from "@/app/admin/products/_components/client-date";
+import { formatDate } from "@/lib/utils";
 
 export default function PromotionsTable({ promotions }: { promotions: Promotion[] }) {
   const [isPending, startTransition] = useTransition();
@@ -101,7 +100,7 @@ export default function PromotionsTable({ promotions }: { promotions: Promotion[
                   </pre>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  <ClientDate date={promotion.created_at} />
+                  {formatDate(promotion.created_at)}
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>

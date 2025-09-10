@@ -37,6 +37,7 @@ import { Badge } from "@/components/ui/badge";
 import { unassignProductFromAgreement } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { PriceEditDialog } from "./price-edit-dialog";
+import { getImageUrl } from "@/lib/placeholder-images";
 
 export default function AgreementProductsTable({ products, agreementId }: { products: AgreementProduct[], agreementId: string }) {
   const [isPending, startTransition] = useTransition();
@@ -83,7 +84,7 @@ export default function AgreementProductsTable({ products, agreementId }: { prod
             <TableRow key={item.products.id}>
               <TableCell className="hidden sm:table-cell">
                  <Image
-                    src={`https://picsum.photos/seed/${item.products.id}/64/64`}
+                    src={getImageUrl("product", { id: item.products.id, width: 64, height: 64 })}
                     alt={item.products.name}
                     width={48}
                     height={48}

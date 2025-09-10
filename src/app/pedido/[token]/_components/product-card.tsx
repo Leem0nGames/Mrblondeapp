@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import type { ProductWithPrice } from "@/types";
 import Image from "next/image";
 import { AddToCartButton } from "./add-to-cart-button";
+import { getImageUrl } from "@/lib/placeholder-images";
 
 export function ProductCard({ product }: { product: ProductWithPrice }) {
   const stockStatus =
@@ -30,7 +31,7 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
       <CardHeader>
         <div className="relative aspect-[4/3] w-full mb-4">
             <Image
-                src={`https://picsum.photos/seed/${product.id}/600/400`}
+                src={getImageUrl("product_card", { id: product.id, width: 600, height: 400 })}
                 alt={product.name}
                 fill
                 className="rounded-t-lg object-cover"

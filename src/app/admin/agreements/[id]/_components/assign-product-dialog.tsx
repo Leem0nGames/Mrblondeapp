@@ -38,6 +38,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { getUnassignedProducts, assignProductToAgreement } from "@/app/actions/admin.actions";
 import type { Product } from "@/types";
+import { getImageUrl } from "@/lib/placeholder-images";
 
 const assignSchema = z.object({
   product_id: z.string().min(1, "Debes seleccionar un producto."),
@@ -140,7 +141,7 @@ export function AssignProductDialog({
                             <SelectItem key={product.id} value={product.id}>
                                 <div className="flex items-center gap-2">
                                      <Image
-                                        src={`https://picsum.photos/seed/${product.id}/40/40`}
+                                        src={getImageUrl("product_sm", {id: product.id, width: 40, height: 40})}
                                         alt={product.name}
                                         width={24}
                                         height={24}
