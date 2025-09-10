@@ -60,7 +60,11 @@ export default function AgreementsTable({ agreements }: { agreements: Agreement[
     });
   };
 
-  const copyToClipboard = useCallback((token: string) => {
+  const copyToClipboard = useCallback((token: string | null) => {
+    if (!token) {
+        toast({ title: "Error", description: "Este convenio no tiene un link generado.", variant: "destructive"});
+        return;
+    }
     const host = window.location.host;
     const protocol = window.location.protocol;
     const link = `${protocol}//${host}/pedido/${token}`;
@@ -91,7 +95,7 @@ export default function AgreementsTable({ agreements }: { agreements: Agreement[
               <TableCell className="hidden sm:table-cell">{agreement.agreement_promotions.length}</TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
-                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(agreement.link_token)}>
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(agreement.link_token)} disabled={!agreement.link_token}>
                         <Copy className="mr-2 h-4 w-4" />
                         Copiar Link
                     </Button>

@@ -134,57 +134,25 @@ export async function upsertAgreement(payload: UpsertAgreementPayload) {
   const supabase = createClient();
   const { id, ...agreementData } = payload;
 
-  // --- ROBUST UPSERT LOGIC ---
-  if (id) {
-    // This is an UPDATE operation. It's simple.
-    const { data, error } = await supabase
-      .from("agreements")
-      .update(agreementData)
-      .eq("id", id)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error("upsertAgreement (update) error:", error.message);
-      return { data: null, error };
+  const query = supabase.from("agreements");
+
+  const { data, error } = id
+    ? await query.update(agreementData).eq("id", id).select().single()
+    : await query.insert({ ...agreementData, link_token: crypto.randomUUID() }).select().single();
+
+  if (error) {
+    console.error("upsertAgreement error:", error.message);
+    // Let's provide a more helpful error message for the unique constraint violation
+    if (error.code === '23505') { // Postgres unique violation code
+        return { data: null, error: { ...error, message: `Error: El nombre del convenio '${agreementData.agreement_name}' ya existe.` } };
     }
-    revalidatePath("/admin/agreements");
-    return { data, error: null };
-  } else {
-    // This is an INSERT operation. We do it in two steps to avoid schema cache issues.
-    
-    // Step 1: Insert the base data WITHOUT the link_token.
-    const { data: newAgreement, error: insertError } = await supabase
-      .from("agreements")
-      .insert(agreementData)
-      .select()
-      .single();
-
-    if (insertError) {
-      console.error("upsertAgreement (insert) error:", insertError.message);
-      return { data: null, error: insertError };
-    }
-
-    // Step 2: Update the newly created record with the link_token.
-    const link_token = crypto.randomUUID();
-    const { data, error: updateError } = await supabase
-      .from("agreements")
-      .update({ link_token })
-      .eq("id", newAgreement.id)
-      .select()
-      .single();
-
-    if (updateError) {
-      console.error("upsertAgreement (token update) error:", updateError.message);
-      // Optional: Attempt to delete the record we just created to leave a clean state
-      await supabase.from("agreements").delete().eq("id", newAgreement.id);
-      return { data: null, error: updateError };
-    }
-
-    revalidatePath("/admin/agreements");
-    return { data, error: null };
+    return { data: null, error };
   }
+
+  revalidatePath("/admin/agreements");
+  return { data, error: null };
 }
+
 
 export async function deleteAgreement(id: string) {
     await checkAuth();
