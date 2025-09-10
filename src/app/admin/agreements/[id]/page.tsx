@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Edit, FileWarning, Package, Percent } from "lucide-react";
+import { ArrowLeft, Edit, FileWarning, Package, Percent, PlusCircle } from "lucide-react";
 import { getAgreementById } from "@/app/actions/admin.actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,8 @@ import {
 import { AgreementDialog } from "../_components/agreement-dialog";
 import AgreementProductsTable from "./_components/agreement-products-table";
 import AgreementPromotionsList from "./_components/agreement-promotions-list";
+import { AssignProductDialog } from "./_components/assign-product-dialog";
+import { AssignPromotionDialog } from "./_components/assign-promotion-dialog";
 
 export default async function AgreementDetailPage({
   params,
@@ -81,27 +83,43 @@ export default async function AgreementDetailPage({
         </TabsList>
         <TabsContent value="products">
           <Card>
-            <CardHeader>
-              <CardTitle>Productos del Convenio</CardTitle>
-              <CardDescription>
-                Gestiona los productos y sus precios específicos para este convenio.
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center">
+              <div className="flex-grow">
+                <CardTitle>Productos del Convenio</CardTitle>
+                <CardDescription>
+                  Gestiona los productos y sus precios específicos para este convenio.
+                </CardDescription>
+              </div>
+               <AssignProductDialog agreementId={agreement.id}>
+                  <Button size="sm" className="h-8 gap-1">
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span>Asignar Producto</span>
+                  </Button>
+                </AssignProductDialog>
             </CardHeader>
             <CardContent>
-              <AgreementProductsTable products={agreement.agreement_products} />
+              <AgreementProductsTable products={agreement.agreement_products} agreementId={agreement.id} />
             </CardContent>
           </Card>
         </TabsContent>
         <TabsContent value="promotions">
             <Card>
-                <CardHeader>
-                    <CardTitle>Promociones del Convenio</CardTitle>
-                    <CardDescription>
-                        Gestiona las promociones aplicables para este convenio.
-                    </CardDescription>
+                <CardHeader className="flex flex-row items-center">
+                    <div className="flex-grow">
+                        <CardTitle>Promociones del Convenio</CardTitle>
+                        <CardDescription>
+                            Gestiona las promociones aplicables para este convenio.
+                        </CardDescription>
+                    </div>
+                     <AssignPromotionDialog agreementId={agreement.id}>
+                        <Button size="sm" className="h-8 gap-1">
+                            <PlusCircle className="h-3.5 w-3.5" />
+                            <span>Asignar Promoción</span>
+                        </Button>
+                     </AssignPromotionDialog>
                 </CardHeader>
                 <CardContent>
-                    <AgreementPromotionsList promotions={agreement.agreement_promotions} />
+                    <AgreementPromotionsList promotions={agreement.agreement_promotions} agreementId={agreement.id} />
                 </CardContent>
             </Card>
         </TabsContent>

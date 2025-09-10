@@ -94,9 +94,11 @@ export async function getAgreementById(id: string) {
             *,
             agreement_products (
                 price,
+                product_id,
                 products ( * )
             ),
             agreement_promotions (
+                promotion_id,
                 promotions ( * )
             )
         `)
@@ -220,4 +222,100 @@ export async function generateOrderLink(agreementId: string, clientName: string)
   const link = `${protocol}://${host}/pedido/${token}`;
 
   return { link, error: null };
+}
+
+// --- Agreement Product & Promotion Management ---
+
+export async function getUnassignedProducts(agreementId: string) {
+    const supabase = await getAuthenticatedClient();
+    const { data: assignedProductIds, error: assignedIdsError } = await supabase
+        .from('agreement_products')
+        .select('product_id')
+        .eq('agreement_id', agreementId);
+
+    if (assignedIdsError) return { data: [], error: assignedIdsError };
+
+    const assignedIds = assignedProductIds.map(p => p.product_id);
+
+    const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .not('id', 'in', `(${assignedIds.join(',')})`)
+        .order('name');
+    
+    return { data, error };
+}
+
+export async function getUnassignedPromotions(agreementId: string) {
+    const supabase = await getAuthenticatedClient();
+    const { data: assignedPromotionIds, error: assignedIdsError } = await supabase
+        .from('agreement_promotions')
+        .select('promotion_id')
+        .eq('agreement_id', agreementId);
+
+    if (assignedIdsError) return { data: [], error: assignedIdsError };
+
+    const assignedIds = assignedPromotionIds.map(p => p.promotion_id);
+
+    const { data, error } = await supabase
+        .from('promotions')
+        .select('*')
+        .not('id', 'in', `(${assignedIds.join(',')})`)
+        .order('name');
+    
+    return { data, error };
+}
+
+
+export async function assignProductToAgreement(payload: { agreement_id: string; product_id: string; price: number; }) {
+    const supabase = await getAuthenticatedClient();
+    const { error } = await supabase.from('agreement_products').insert(payload);
+    if (error) return { error };
+    revalidatePath(`/admin/agreements/${payload.agreement_id}`);
+    return { error: null };
+}
+
+export async function unassignProductFromAgreement(payload: { agreement_id: string; product_id: string; }) {
+    const supabase = await getAuthenticatedClient();
+    const { error } = await supabase.from('agreement_products')
+        .delete()
+        .eq('agreement_id', payload.agreement_id)
+        .eq('product_id', payload.product_id);
+
+    if (error) return { error };
+    revalidatePath(`/admin/agreements/${payload.agreement_id}`);
+    return { error: null };
+}
+
+export async function updateAgreementProductPrice(payload: { agreement_id: string; product_id: string; price: number; }) {
+    const supabase = await getAuthenticatedClient();
+    const { error } = await supabase.from('agreement_products')
+        .update({ price: payload.price })
+        .eq('agreement_id', payload.agreement_id)
+        .eq('product_id', payload.product_id);
+
+    if (error) return { error };
+    revalidatePath(`/admin/agreements/${payload.agreement_id}`);
+    return { error: null };
+}
+
+
+export async function assignPromotionToAgreement(payload: { agreement_id: string; promotion_id: string; }) {
+    const supabase = await getAuthenticatedClient();
+    const { error } = await supabase.from('agreement_promotions').insert(payload);
+    if (error) return { error };
+    revalidatePath(`/admin/agreements/${payload.agreement_id}`);
+    return { error: null };
+}
+
+export async function unassignPromotionFromAgreement(payload: { agreement_id: string; promotion_id: string; }) {
+    const supabase = await getAuthenticatedClient();
+    const { error } = await supabase.from('agreement_promotions')
+        .delete()
+        .eq('agreement_id', payload.agreement_id)
+        .eq('promotion_id', payload.promotion_id);
+
+    if (error) return { error };
+    revalidatePath(`/admin/agreements/${payload.agreement_id}`);
+    return { error: null };
 }
