@@ -1,6 +1,25 @@
 import type { Metadata } from 'next';
 import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
+import { cn } from '@/lib/utils';
+import { Alegreya, Belleza, Source_Code_Pro } from 'next/font/google';
+
+const belleza = Belleza({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-headline',
+});
+
+const alegreya = Alegreya({
+  subsets: ['latin'],
+  variable: '--font-body',
+});
+
+const sourceCodePro = Source_Code_Pro({
+  subsets: ['latin'],
+  variable: '--font-code',
+});
+
 
 export const metadata: Metadata = {
   title: 'Blonde Orders',
@@ -14,12 +33,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400..900;1,400..900&family=Belleza&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet" />
-      </head>
-      <body className="font-body antialiased min-h-screen bg-background">
+      <body className={cn(
+        "font-body antialiased min-h-screen bg-background",
+        belleza.variable,
+        alegreya.variable,
+        sourceCodePro.variable
+      )}>
         {children}
         <Toaster />
       </body>

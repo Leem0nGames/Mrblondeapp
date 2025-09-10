@@ -5,6 +5,7 @@ import {
   Percent,
   LogOut,
   Home,
+  Link2
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,14 +24,14 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
+    <div className="flex min-h-screen w-full flex-col bg-background">
+      <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-muted/40 sm:flex">
         <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
           <Link
             href="/"
             className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
           >
-            <Package className="h-4 w-4 transition-all group-hover:scale-110" />
+            <Logo />
             <span className="sr-only">Blonde Orders</span>
           </Link>
           <TooltipProvider>
@@ -40,7 +41,7 @@ export default function AdminLayout({
                   href="/admin/products"
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
-                  <Home className="h-5 w-5" />
+                  <Package className="h-5 w-5" />
                   <span className="sr-only">Products</span>
                 </Link>
               </TooltipTrigger>
@@ -69,6 +70,18 @@ export default function AdminLayout({
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">Promotions</TooltipContent>
+            </Tooltip>
+             <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/admin/links"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                >
+                  <Link2 className="h-5 w-5" />
+                  <span className="sr-only">Links</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Links</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </nav>
