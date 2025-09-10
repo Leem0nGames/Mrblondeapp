@@ -64,7 +64,7 @@ export async function getOrderPageData(agreementId: string) {
 
     if (agreementError || !agreement) {
         console.error("getOrderPageData (agreement) error:", agreementError?.message);
-        return { error: { message: "El convenio no es válido o no existe." } };
+        return { data: null, error: { message: "El convenio no es válido o ha expirado." } };
     }
     
     const products = agreement.agreement_products.map(ap => ({
