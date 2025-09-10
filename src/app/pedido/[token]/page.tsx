@@ -22,7 +22,7 @@ export default async function OrderPage({
             <CardTitle className="flex items-center justify-center gap-2 text-destructive">
               <AlertTriangle />
               Error
-            </Title>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-lg text-muted-foreground">{error?.message || "Algo salió mal."}</p>
