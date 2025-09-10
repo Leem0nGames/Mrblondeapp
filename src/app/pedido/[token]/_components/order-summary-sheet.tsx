@@ -1,9 +1,5 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Sheet,
   SheetContent,
@@ -13,8 +9,6 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { useCartStore } from "@/hooks/use-cart-store";
 import { Agreement, ClientDetails } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,15 +17,8 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { IntelligentSuggestions } from "./intelligent-suggestions";
 
-const clientDetailsSchema = z.object({
-  name: z.string().min(3, "El nombre es requerido"),
-  phone: z.string().min(8, "El teléfono es requerido"),
-  address: z.string().min(5, "La dirección es requerida"),
-  city: z.string().min(3, "La ciudad es requerida"),
-});
-
 function formatWhatsAppMessage(
-  clientDetails: ClientDetails,
+  clientName: string,
   cartItems: any[],
   totalPrice: number
 ) {
@@ -47,9 +34,7 @@ function formatWhatsAppMessage(
   const message = `
 ¡Hola! 👋 Quisiera realizar el siguiente pedido:
 
-*Cliente:* ${clientDetails.name}
-*Teléfono:* ${clientDetails.phone}
-*Dirección:* ${clientDetails.address}, ${clientDetails.city}
+*Cliente:* ${clientName}
 
 *Productos:*
 ${itemsText}
@@ -75,17 +60,8 @@ export function OrderSummarySheet({
   const { toast } = useToast();
   const whatsAppNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '5491123456789';
 
-  const form = useForm<ClientDetails>({
-    resolver: zodResolver(clientDetailsSchema),
-    defaultValues: {
-      name: agreement.client_name,
-      phone: "",
-      address: "",
-      city: "",
-    },
-  });
 
-  const handleSubmit = (values: ClientDetails) => {
+  const handleSend = () => {
     if (items.length === 0) {
       toast({
         title: "Carrito vacío",
@@ -94,7 +70,7 @@ export function OrderSummarySheet({
       });
       return;
     }
-    const message = formatWhatsAppMessage(values, items, totalPrice);
+    const message = formatWhatsAppMessage(agreement.client_name, items, totalPrice);
     const whatsappUrl = `https://wa.me/${whatsAppNumber}?text=${message}`;
     window.open(whatsappUrl, "_blank");
   };
@@ -105,7 +81,7 @@ export function OrderSummarySheet({
         <SheetHeader>
           <SheetTitle>Resumen del Pedido</SheetTitle>
           <SheetDescription>
-            Confirma tus datos y envía el pedido por WhatsApp.
+            Confirma tu pedido y envíalo por WhatsApp.
           </SheetDescription>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto pr-6 -mr-6">
@@ -145,35 +121,6 @@ export function OrderSummarySheet({
                     </div>
                     
                     <Separator />
-                    
-                    {/* Client Form */}
-                    <div>
-                        <h3 className="text-lg font-medium mb-4">Tus Datos</h3>
-                        <form id="client-details-form" onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                            <div>
-                                <Label htmlFor="name">Nombre</Label>
-                                <Input id="name" {...form.register("name")} />
-                                {form.formState.errors.name && <p className="text-destructive text-sm mt-1">{form.formState.errors.name.message}</p>}
-                            </div>
-                            <div>
-                                <Label htmlFor="phone">Teléfono (WhatsApp)</Label>
-                                <Input id="phone" {...form.register("phone")} />
-                                {form.formState.errors.phone && <p className="text-destructive text-sm mt-1">{form.formState.errors.phone.message}</p>}
-                            </div>
-                            <div>
-                                <Label htmlFor="address">Dirección</Label>
-                                <Input id="address" {...form.register("address")} />
-                                {form.formState.errors.address && <p className="text-destructive text-sm mt-1">{form.formState.errors.address.message}</p>}
-                            </div>
-                            <div>
-                                <Label htmlFor="city">Ciudad</Label>
-                                <Input id="city" {...form.register("city")} />
-                                {form.formState.errors.city && <p className="text-destructive text-sm mt-1">{form.formState.errors.city.message}</p>}
-                            </div>
-                        </form>
-                    </div>
-
-                    <Separator />
 
                     {/* AI Suggestions */}
                     <IntelligentSuggestions agreement={{
@@ -181,9 +128,6 @@ export function OrderSummarySheet({
                         agreement_id: agreement.id,
                         total_unidades: totalItems,
                         nombre: agreement.client_name,
-                        // These will be updated from the form
-                        ciudad: form.watch('city'),
-                        direccion: form.watch('address'),
                         items: items.map(i => ({id: i.product.id, name: i.product.name, quantity: i.quantity}))
                     }}/>
 
@@ -192,11 +136,10 @@ export function OrderSummarySheet({
         </div>
         <SheetFooter className="mt-auto pt-4 border-t">
           <Button
-            type="submit"
-            form="client-details-form"
+            onClick={handleSend}
             size="lg"
             className="w-full"
-            disabled={!form.formState.isValid || items.length === 0}
+            disabled={items.length === 0}
           >
             Enviar Pedido por WhatsApp
           </Button>
