@@ -69,10 +69,3 @@ export type OrderLog = {
   order_data: object | null;
   sent_at: string;
 };
-
-export type ClientDetails = {
-    name: string;
-    phone: string;
-    address: string;
-    city: string;
-}

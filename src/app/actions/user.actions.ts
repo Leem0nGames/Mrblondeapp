@@ -65,6 +65,7 @@ export async function getOrderPageData(token: string) {
         .single();
 
     if (tokenError || !accessToken || !accessToken.agreement) {
+        console.error("getOrderPageData (token) error:", tokenError?.message);
         return { error: { message: "El enlace no es válido o ha expirado." } };
     }
     

@@ -36,6 +36,7 @@ async function getAuthenticatedClient() {
 export async function getProducts() {
   const supabase = await getAuthenticatedClient();
   const { data, error } = await supabase.from("products").select("*").order("name", { ascending: true });
+  if (error) console.error("getProducts error:", error.message);
   return { data, error };
 }
 
@@ -49,7 +50,10 @@ export async function upsertProduct(payload: UpsertProductPayload) {
     ? await query.update(productData).eq("id", id).select().single()
     : await query.insert(productData).select().single();
 
-  if (error) { return { data: null, error }; }
+  if (error) { 
+    console.error("upsertProduct error:", error.message);
+    return { data: null, error }; 
+  }
 
   revalidatePath("/admin/products");
   return { data, error: null };
@@ -58,7 +62,10 @@ export async function upsertProduct(payload: UpsertProductPayload) {
 export async function deleteProduct(id: string) {
   const supabase = await getAuthenticatedClient();
   const { error } = await supabase.from("products").delete().eq("id", id);
-  if (error) { return { error }; }
+  if (error) { 
+    console.error("deleteProduct error:", error.message);
+    return { error }; 
+  }
   revalidatePath("/admin/products");
   return { error: null };
 }
@@ -80,6 +87,7 @@ export async function getAgreements() {
       )
     `)
     .order("agreement_name", { ascending: true });
+  if (error) console.error("getAgreements error:", error.message);
   return { data, error };
 }
 
@@ -101,6 +109,7 @@ export async function getAgreementById(id: string) {
         `)
         .eq("id", id)
         .single();
+    if (error) console.error("getAgreementById error:", error.message);
     return { data, error };
 }
 
@@ -114,7 +123,10 @@ export async function upsertAgreement(payload: UpsertAgreementPayload) {
     ? await query.update(agreementData).eq("id", id).select().single()
     : await query.insert(agreementData).select().single();
   
-  if (error) { return { data: null, error }; }
+  if (error) { 
+    console.error("upsertAgreement error:", error.message);
+    return { data: null, error }; 
+  }
 
   revalidatePath("/admin/agreements");
   return { data, error: null };
@@ -123,7 +135,10 @@ export async function upsertAgreement(payload: UpsertAgreementPayload) {
 export async function deleteAgreement(id: string) {
     const supabase = await getAuthenticatedClient();
     const { error } = await supabase.from("agreements").delete().eq("id", id);
-    if (error) { return { error }; }
+    if (error) {
+      console.error("deleteAgreement error:", error.message);
+      return { error }; 
+    }
     revalidatePath("/admin/agreements");
     return { error: null };
 }
@@ -133,6 +148,7 @@ export async function deleteAgreement(id: string) {
 export async function getPromotions() {
   const supabase = await getAuthenticatedClient();
   const { data, error } = await supabase.from("promotions").select("*").order("name", { ascending: true });
+  if (error) console.error("getPromotions error:", error.message);
   return { data, error };
 }
 
@@ -145,7 +161,10 @@ export async function upsertPromotion(payload: UpsertPromotionPayload) {
     ? await query.update(promoData).eq("id", id).select().single()
     : await query.insert(promoData).select().single();
     
-  if (error) { return { data: null, error }; }
+  if (error) {
+    console.error("upsertPromotion error:", error.message);
+    return { data: null, error }; 
+  }
 
   revalidatePath("/admin/promotions");
   return { data, error: null };
@@ -154,7 +173,10 @@ export async function upsertPromotion(payload: UpsertPromotionPayload) {
 export async function deletePromotion(id: string) {
   const supabase = await getAuthenticatedClient();
   const { error } = await supabase.from("promotions").delete().eq("id", id);
-  if (error) { return { error }; }
+  if (error) { 
+    console.error("deletePromotion error:", error.message);
+    return { error };
+  }
   revalidatePath("/admin/promotions");
   return { error: null };
 }
@@ -179,6 +201,7 @@ export async function generateOrderLink(agreementId: string, clientName: string)
     .single();
 
   if (error) {
+    console.error("generateOrderLink error:", error.message);
     return { link: null, error };
   }
   
@@ -198,13 +221,17 @@ export async function getUnassignedProducts(agreementId: string) {
         .select('product_id')
         .eq('agreement_id', agreementId);
 
-    if (assignedIdsError) return { data: [], error: assignedIdsError };
+    if (assignedIdsError) {
+      console.error("getUnassignedProducts (assigned) error:", assignedIdsError.message);
+      return { data: [], error: assignedIdsError };
+    }
 
     const assignedIds = assignedProductIds.map(p => p.product_id);
     
     // Handle case where assignedIds is empty to avoid Supabase error
     if (assignedIds.length === 0) {
       const { data, error } = await supabase.from('products').select('*').order('name');
+      if (error) console.error("getUnassignedProducts (all) error:", error.message);
       return { data, error };
     }
 
@@ -214,6 +241,7 @@ export async function getUnassignedProducts(agreementId: string) {
         .not('id', 'in', `(${assignedIds.join(',')})`)
         .order('name');
     
+    if (error) console.error("getUnassignedProducts (filtered) error:", error.message);
     return { data, error };
 }
 
@@ -224,13 +252,17 @@ export async function getUnassignedPromotions(agreementId: string) {
         .select('promotion_id')
         .eq('agreement_id', agreementId);
 
-    if (assignedIdsError) return { data: [], error: assignedIdsError };
+    if (assignedIdsError) {
+      console.error("getUnassignedPromotions (assigned) error:", assignedIdsError.message);
+      return { data: [], error: assignedIdsError };
+    }
 
     const assignedIds = assignedPromotionIds.map(p => p.promotion_id);
 
     // Handle case where assignedIds is empty to avoid Supabase error
     if (assignedIds.length === 0) {
         const { data, error } = await supabase.from('promotions').select('*').order('name');
+        if (error) console.error("getUnassignedPromotions (all) error:", error.message);
         return { data, error };
     }
 
@@ -240,6 +272,7 @@ export async function getUnassignedPromotions(agreementId: string) {
         .not('id', 'in', `(${assignedIds.join(',')})`)
         .order('name');
     
+    if (error) console.error("getUnassignedPromotions (filtered) error:", error.message);
     return { data, error };
 }
 
@@ -247,7 +280,10 @@ export async function getUnassignedPromotions(agreementId: string) {
 export async function assignProductToAgreement(payload: { agreement_id: string; product_id: string; price: number; }) {
     const supabase = await getAuthenticatedClient();
     const { error } = await supabase.from('agreement_products').insert(payload);
-    if (error) return { error };
+    if (error) {
+      console.error("assignProductToAgreement error:", error.message);
+      return { error };
+    }
     revalidatePath(`/admin/agreements/${payload.agreement_id}`);
     return { error: null };
 }
@@ -259,7 +295,10 @@ export async function unassignProductFromAgreement(payload: { agreement_id: stri
         .eq('agreement_id', payload.agreement_id)
         .eq('product_id', payload.product_id);
 
-    if (error) return { error };
+    if (error) {
+      console.error("unassignProductFromAgreement error:", error.message);
+      return { error };
+    }
     revalidatePath(`/admin/agreements/${payload.agreement_id}`);
     return { error: null };
 }
@@ -271,7 +310,10 @@ export async function updateAgreementProductPrice(payload: { agreement_id: strin
         .eq('agreement_id', payload.agreement_id)
         .eq('product_id', payload.product_id);
 
-    if (error) return { error };
+    if (error) {
+      console.error("updateAgreementProductPrice error:", error.message);
+      return { error };
+    }
     revalidatePath(`/admin/agreements/${payload.agreement_id}`);
     return { error: null };
 }
@@ -280,7 +322,10 @@ export async function updateAgreementProductPrice(payload: { agreement_id: strin
 export async function assignPromotionToAgreement(payload: { agreement_id: string; promotion_id: string; }) {
     const supabase = await getAuthenticatedClient();
     const { error } = await supabase.from('agreement_promotions').insert(payload);
-    if (error) return { error };
+    if (error) {
+      console.error("assignPromotionToAgreement error:", error.message);
+      return { error };
+    }
     revalidatePath(`/admin/agreements/${payload.agreement_id}`);
     return { error: null };
 }
@@ -292,7 +337,10 @@ export async function unassignPromotionFromAgreement(payload: { agreement_id: st
         .eq('agreement_id', payload.agreement_id)
         .eq('promotion_id', payload.promotion_id);
 
-    if (error) return { error };
+    if (error) {
+      console.error("unassignPromotionFromAgreement error:", error.message);
+      return { error };
+    }
     revalidatePath(`/admin/agreements/${payload.agreement_id}`);
     return { error: null };
 }
