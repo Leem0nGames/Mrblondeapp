@@ -29,6 +29,18 @@ export default function AdminLayout({
         <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
           <Logo className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base" />
           <TooltipProvider>
+             <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/admin"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                >
+                  <Home className="h-5 w-5" />
+                  <span className="sr-only">Dashboard</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Dashboard</TooltipContent>
+            </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
@@ -104,11 +116,73 @@ export default function AdminLayout({
             <div className="sm:hidden">
               <Logo />
             </div>
+             <div className="ml-auto sm:hidden">
+                 <form action={logout}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    <span className="sr-only">Logout</span>
+                  </Button>
+                </form>
+            </div>
         </header>
-        <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+        <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 pb-20 sm:pb-4">
             {children}
         </main>
       </div>
+       <footer className="sm:hidden fixed bottom-0 left-0 right-0 h-16 bg-background border-t z-10">
+        <nav className="h-full">
+          <ul className="h-full flex justify-around items-center">
+            <li>
+                <Link
+                  href="/admin"
+                  className="flex flex-col items-center text-muted-foreground hover:text-foreground"
+                >
+                  <Home className="h-6 w-6" />
+                  <span className="text-xs">Home</span>
+                </Link>
+            </li>
+            <li>
+                <Link
+                  href="/admin/products"
+                  className="flex flex-col items-center text-muted-foreground hover:text-foreground"
+                >
+                  <Package className="h-6 w-6" />
+                  <span className="text-xs">Products</span>
+                </Link>
+            </li>
+            <li>
+                <Link
+                  href="/admin/links"
+                  className="flex flex-col items-center text-muted-foreground hover:text-foreground"
+                >
+                  <Link2 className="h-6 w-6" />
+                  <span className="text-xs">Links</span>
+                </Link>
+            </li>
+             <li>
+                <Link
+                  href="#"
+                  className="flex flex-col items-center text-muted-foreground hover:text-foreground"
+                >
+                  <Users className="h-6 w-6" />
+                  <span className="text-xs">Agreements</span>
+                </Link>
+            </li>
+             <li>
+                <Link
+                  href="#"
+                  className="flex flex-col items-center text-muted-foreground hover:text-foreground"
+                >
+                  <Percent className="h-6 w-6" />
+                  <span className="text-xs">Promos</span>
+                </Link>
+            </li>
+          </ul>
+        </nav>
+      </footer>
     </div>
   );
 }
