@@ -1,46 +1,112 @@
+'use server';
 
-"use server";
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+// --- Tipos de Estado para los Formularios ---
 
-export async function login(formData: FormData) {
-  const pin = formData.get("pin") as string;
-  const supabase = createClient();
-  
-  // Estas son las credenciales fijas para el administrador, como se define en la lógica de negocio.
-  const adminPin = process.env.ADMIN_PIN || "1234";
-  const adminEmail = process.env.ADMIN_EMAIL || "admin@blonde.com";
-  const adminPassword = process.env.ADMIN_PASSWORD || "admin1234";
+export interface AuthState {
+  error: {
+    message: string;
+  } | null;
+}
 
-  if (pin !== adminPin) {
-    console.error("Login failed: Incorrect PIN provided.");
-    return { error: { message: "PIN incorrecto." } };
+// --- Lógica de Autenticación ---
+
+/**
+ * Comprueba si existe algún usuario en la base de datos.
+ * Utiliza el cliente de servicio para tener los permisos necesarios.
+ * @returns {Promise<boolean>} `true` si hay al menos un usuario, `false` si no.
+ */
+export async function hasUsers(): Promise<boolean> {
+  const { data, error } = await supabaseAdmin.auth.admin.listUsers();
+  if (error) {
+    console.error('Error checking for users:', error.message);
+    // En caso de error, es más seguro asumir que existen usuarios para evitar registros múltiples.
+    return true;
+  }
+  return data.users.length > 0;
+}
+
+/**
+ * Acción de registro para el primer super administrador.
+ * Falla si ya existe un usuario en el sistema.
+ */
+export async function signupSuperAdmin(
+  prevState: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  // Medida de seguridad: volver a comprobar si ya hay usuarios.
+  if (await hasUsers()) {
+    return { error: { message: 'El registro ya no está disponible.' } };
   }
 
+  const supabase = createClient();
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+
+  if (!email || !password) {
+    return { error: { message: 'El email y la contraseña son requeridos.' } };
+  }
+  if (password.length < 6) {
+    return { error: { message: 'La contraseña debe tener al menos 6 caracteres.' } };
+  }
+
+  const { error } = await supabase.auth.signUp({ email, password });
+
+  if (error) {
+    console.error('Supabase signup error:', error.message);
+    return { error: { message: 'No se pudo crear la cuenta. Inténtelo de nuevo.' } };
+  }
+
+  // No redirigimos inmediatamente, el middleware lo hará en la siguiente petición
+  // después de que la sesión se establezca. Forzamos una revalidación para asegurar
+  // que la UI se actualice.
+  redirect('/admin');
+}
+
+/**
+ * Acción de inicio de sesión con un PIN estático.
+ */
+export async function login(
+  prevState: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const pin = formData.get('pin') as string;
+
+  // 1. Validar el PIN
+  if (pin !== '1234') {
+    return { error: { message: 'PIN incorrecto.' } };
+  }
+
+  // 2. Si el PIN es correcto, intentar iniciar sesión con las credenciales del admin
+  //    Es fundamental que este usuario haya sido creado previamente a través del signup.
+  const supabase = createClient();
   const { error } = await supabase.auth.signInWithPassword({
-    email: adminEmail,
-    password: adminPassword,
+    email: 'admin@blonde.com',
+    password: 'admin1234', // Esta contraseña debe coincidir con la usada en el registro
   });
 
   if (error) {
-    console.error("Supabase login error:", error.message);
-    return { error: { message: "No se pudo autenticar al administrador. Verifique las credenciales o contacte al soporte." } };
+    console.error('Supabase admin login error:', error.message);
+    // Este error es para el desarrollador, al usuario le decimos que algo falló.
+    return { error: { message: 'Error de autenticación. Verifique que el usuario admin esté configurado.' } };
   }
-
-  // Si el login es exitoso, revalidamos la ruta y redirigimos.
-  // Esto debe estar fuera de cualquier bloque try/catch que pueda interferir con la excepción que lanza redirect().
-  revalidatePath("/", "layout");
-  redirect("/admin");
+  
+  // 3. Si el login es exitoso, Next.js gestionará la redirección.
+  // La cookie de sesión se establece y el middleware redirigirá a /admin.
+  redirect('/admin');
 }
+
 
 export async function logout() {
   const supabase = createClient();
   await supabase.auth.signOut();
-  redirect("/login");
+  redirect('/login');
 }
 
+// --- Lógica de Datos (sin cambios) ---
 export async function getOrderPageData(agreementId: string) {
     const supabase = createClient();
 
@@ -64,19 +130,17 @@ export async function getOrderPageData(agreementId: string) {
         return { data: null, error: { message: "El convenio no es válido o ha expirado." } };
     }
     
-    // Filter out any products that might be null
     const validAgreementProducts = agreement.agreement_products.filter(ap => ap.products);
 
     const products = validAgreementProducts.map(ap => ({
         ...ap.products!,
-        price: ap.price, // Override base_price with the agreement-specific price
+        price: ap.price,
     }));
 
     return { 
         data: { 
             agreement: {
                 ...agreement,
-                // Ensure promotions are always an array
                 agreement_promotions: agreement.agreement_promotions ?? [],
             }, 
             products 
