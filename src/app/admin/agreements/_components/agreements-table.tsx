@@ -3,7 +3,7 @@
 
 import { useTransition, useCallback } from "react";
 import Link from 'next/link';
-import { MoreHorizontal, Trash2, Edit, FileText, Copy } from "lucide-react";
+import { MoreHorizontal, Trash2, Edit, FileText, Copy, Link2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,7 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import type { Agreement } from "@/types";
-import { deleteAgreement } from "@/app/actions/admin.actions";
+import { deleteAgreement, generateLinkToken } from "@/app/actions/admin.actions";
 import { AgreementDialog } from "./agreement-dialog";
 
 export default function AgreementsTable({ agreements }: { agreements: Agreement[] }) {
@@ -60,9 +60,21 @@ export default function AgreementsTable({ agreements }: { agreements: Agreement[
     });
   };
 
+  const handleGenerateLink = (agreementId: string) => {
+    startTransition(async () => {
+        const result = await generateLinkToken(agreementId);
+        if (result.error) {
+            toast({ title: "Error", description: result.error.message, variant: "destructive" });
+        } else {
+            toast({ title: "Éxito", description: "Nuevo enlace generado y copiado." });
+            copyToClipboard(result.data?.link_token ?? null);
+        }
+    });
+  }
+
   const copyToClipboard = useCallback((token: string | null) => {
     if (!token) {
-        toast({ title: "Error", description: "Este convenio no tiene un link generado.", variant: "destructive"});
+        toast({ title: "Error", description: "Este convenio no tiene un link.", variant: "destructive"});
         return;
     }
     const host = window.location.host;
@@ -95,10 +107,17 @@ export default function AgreementsTable({ agreements }: { agreements: Agreement[
               <TableCell className="hidden sm:table-cell">{agreement.agreement_promotions.length}</TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
-                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(agreement.link_token)} disabled={!agreement.link_token}>
-                        <Copy className="mr-2 h-4 w-4" />
-                        Copiar Link
-                    </Button>
+                    {agreement.link_token ? (
+                        <Button variant="outline" size="sm" onClick={() => copyToClipboard(agreement.link_token)}>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Copiar Link
+                        </Button>
+                    ) : (
+                        <Button variant="secondary" size="sm" onClick={() => handleGenerateLink(agreement.id)} disabled={isPending}>
+                            <Link2 className="mr-2 h-4 w-4" />
+                            {isPending ? "Generando..." : "Generar Link"}
+                        </Button>
+                    )}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                         <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -120,6 +139,10 @@ export default function AgreementsTable({ agreements }: { agreements: Agreement[
                                 Editar Detalles
                             </DropdownMenuItem>
                         </AgreementDialog>
+                        <DropdownMenuItem onClick={() => handleGenerateLink(agreement.id)} disabled={isPending}>
+                           <Link2 className="mr-2 h-4 w-4" />
+                           {isPending ? "Generando..." : "Regenerar Link"}
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <AlertDialog>
                             <AlertDialogTrigger asChild>

@@ -136,9 +136,10 @@ export async function upsertAgreement(payload: UpsertAgreementPayload) {
 
   const query = supabase.from("agreements");
 
+  // On creation, we ONLY insert the base data. The link_token will be generated on demand.
   const { data, error } = id
     ? await query.update(agreementData).eq("id", id).select().single()
-    : await query.insert({ ...agreementData, link_token: crypto.randomUUID() }).select().single();
+    : await query.insert(agreementData).select().single();
 
   if (error) {
     console.error("upsertAgreement error:", error.message);
@@ -151,6 +152,26 @@ export async function upsertAgreement(payload: UpsertAgreementPayload) {
 
   revalidatePath("/admin/agreements");
   return { data, error: null };
+}
+
+export async function generateLinkToken(agreementId: string) {
+    await checkAuth();
+    const supabase = createClient();
+    const token = crypto.randomUUID();
+    const { data, error } = await supabase
+        .from('agreements')
+        .update({ link_token: token })
+        .eq('id', agreementId)
+        .select()
+        .single();
+    
+    if (error) {
+        console.error("generateLinkToken error:", error.message);
+        return { data: null, error };
+    }
+
+    revalidatePath("/admin/agreements");
+    return { data, error: null };
 }
 
 
