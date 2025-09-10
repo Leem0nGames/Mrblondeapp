@@ -25,18 +25,17 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { getUnassignedProducts, assignProductToAgreement } from "@/app/actions/admin.actions";
+import { getUnassignedProducts, assignMultipleProductsToAgreement } from "@/app/actions/admin.actions";
 import type { Product } from "@/types";
 import { getImageUrl } from "@/lib/placeholder-images";
 import { Badge } from "@/components/ui/badge";
 
 const assignSchema = z.object({
-  product_id: z.string().min(1, "Debes seleccionar un producto."),
-  price: z.coerce.number().min(0, "El precio debe ser un número positivo."),
+  product_ids: z.array(z.string()).nonempty("Debes seleccionar al menos un producto."),
 });
 
 type AssignFormValues = z.infer<typeof assignSchema>;
@@ -57,12 +56,11 @@ export function AssignProductDialog({
   const form = useForm<AssignFormValues>({
     resolver: zodResolver(assignSchema),
     defaultValues: {
-      product_id: "",
-      price: 0,
+      product_ids: [],
     },
   });
 
-  const selectedProductId = form.watch("product_id");
+  const selectedProductIds = form.watch("product_ids");
 
   useEffect(() => {
     if (isOpen) {
@@ -77,112 +75,129 @@ export function AssignProductDialog({
     }
   }, [isOpen, agreementId, toast]);
 
-  useEffect(() => {
-      const selectedProduct = products.find(p => p.id === selectedProductId);
-      if (selectedProduct) {
-        form.setValue("price", selectedProduct.base_price);
-      }
-  }, [selectedProductId, products, form]);
-
   const onSubmit = (values: AssignFormValues) => {
     startTransition(async () => {
-      const result = await assignProductToAgreement({ ...values, agreement_id: agreementId });
+      const selectedProducts = products.filter(p => values.product_ids.includes(p.id));
+      const productsToAssign = selectedProducts.map(p => ({
+        product_id: p.id,
+        price: p.base_price, // Assign with base price by default
+      }));
+
+      const result = await assignMultipleProductsToAgreement({
+        agreement_id: agreementId,
+        products: productsToAssign,
+      });
+
       if (result.error) {
         toast({ title: "Error", description: result.error.message, variant: "destructive" });
       } else {
-        toast({ title: "Éxito", description: `Producto asignado correctamente.` });
+        toast({ title: "Éxito", description: `${productsToAssign.length} producto(s) asignado(s) correctamente.` });
         setIsOpen(false);
         form.reset();
       }
     });
   };
-  
-  const handleSelectProduct = (product: Product) => {
-    form.setValue("product_id", product.id);
-    form.setValue("price", product.base_price);
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Asignar Producto al Convenio</DialogTitle>
+          <DialogTitle>Asignar Productos al Convenio</DialogTitle>
           <DialogDescription>
-            Selecciona un producto y define el precio especial para este convenio. El precio base se sugiere por defecto.
+            Selecciona uno o más productos para asignar. Se añadirán con su precio base, que puedes editar más tarde.
           </DialogDescription>
         </DialogHeader>
-        {isLoading ? <div className="space-y-4 py-4">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-10 w-full" />
+        {isLoading ? (
+          <div className="space-y-4 py-4">
+            <Skeleton className="h-40 w-full" />
             <div className="flex justify-end gap-2 pt-4">
-                <Skeleton className="h-10 w-24" />
-                <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-40" />
             </div>
-        </div> : (
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="product_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Productos Disponibles</FormLabel>
-                   <ScrollArea className="h-60 border rounded-md">
-                     <div className="p-2 space-y-1">
-                      {products.length > 0 ? products.map(product => (
-                          <button
-                            type="button"
-                            key={product.id}
-                            onClick={() => handleSelectProduct(product)}
-                            className={`w-full flex items-center gap-4 p-2 rounded-md text-left transition-colors ${field.value === product.id ? 'bg-secondary' : 'hover:bg-muted/50'}`}
-                          >
-                              <Image
-                                  src={getImageUrl("product_sm", {id: product.id, width: 40, height: 40})}
-                                  alt={product.name}
-                                  width={40}
-                                  height={40}
-                                  className="rounded-md aspect-square object-cover"
-                                  data-ai-hint="product image"
-                              />
-                              <div className="flex-grow">
-                                <p className="font-medium">{product.name}</p>
-                                <p className="text-sm text-muted-foreground">{product.category}</p>
-                              </div>
-                              <Badge variant="outline">${product.base_price.toLocaleString()}</Badge>
-                          </button>
-                      )) : <p className="p-4 text-center text-sm text-muted-foreground">No hay más productos para asignar.</p>}
+          </div>
+        ) : (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="product_ids"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Productos Disponibles</FormLabel>
+                    <ScrollArea className="h-72 border rounded-md">
+                      <div className="p-1">
+                        {products.length > 0 ? (
+                          products.map((product) => (
+                            <FormField
+                              key={product.id}
+                              control={form.control}
+                              name="product_ids"
+                              render={({ field }) => (
+                                <FormItem
+                                  key={product.id}
+                                  className="flex flex-row items-center space-x-3 space-y-0 p-2 rounded-md hover:bg-muted/50 data-[state=checked]:bg-secondary"
+                                  data-state={field.value?.includes(product.id) ? "checked" : "unchecked"}
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(product.id)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([...field.value, product.id])
+                                          : field.onChange(
+                                              field.value?.filter(
+                                                (value) => value !== product.id
+                                              )
+                                            );
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <label
+                                    htmlFor={`checkbox-${product.id}`}
+                                    className="w-full flex items-center gap-4 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                  >
+                                    <Image
+                                      src={getImageUrl("product_sm", { id: product.id, width: 40, height: 40 })}
+                                      alt={product.name}
+                                      width={40}
+                                      height={40}
+                                      className="rounded-md aspect-square object-cover"
+                                      data-ai-hint="product image"
+                                    />
+                                    <div className="flex-grow">
+                                      <p>{product.name}</p>
+                                      <p className="text-xs text-muted-foreground">{product.category}</p>
+                                    </div>
+                                    <Badge variant="outline">${product.base_price.toLocaleString()}</Badge>
+                                  </label>
+                                </FormItem>
+                              )}
+                            />
+                          ))
+                        ) : (
+                          <p className="p-4 text-center text-sm text-muted-foreground">
+                            No hay más productos para asignar.
+                          </p>
+                        )}
                       </div>
                     </ScrollArea>
-                  <FormMessage className="pt-2" />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="price"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Precio Especial para Convenio</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" {...field} disabled={!selectedProductId} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline" type="button" onClick={() => form.reset()}>
-                  Cancelar
+                    <FormMessage className="pt-2" />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline" type="button" onClick={() => form.reset()}>
+                    Cancelar
+                  </Button>
+                </DialogClose>
+                <Button type="submit" disabled={isPending || selectedProductIds.length === 0}>
+                  {isPending ? "Asignando..." : `Asignar ${selectedProductIds.length} Producto(s)`}
                 </Button>
-              </DialogClose>
-              <Button type="submit" disabled={isPending || !selectedProductId}>
-                {isPending ? "Asignando..." : "Asignar Producto"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              </DialogFooter>
+            </form>
+          </Form>
         )}
       </DialogContent>
     </Dialog>

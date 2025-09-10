@@ -296,6 +296,30 @@ export async function assignProductToAgreement(payload: { agreement_id: string; 
     return { error: null };
 }
 
+export async function assignMultipleProductsToAgreement(payload: {
+  agreement_id: string;
+  products: { product_id: string; price: number }[];
+}) {
+  await checkAuth();
+  const supabase = createClient();
+
+  const productsToInsert = payload.products.map(p => ({
+    agreement_id: payload.agreement_id,
+    product_id: p.product_id,
+    price: p.price,
+  }));
+
+  const { error } = await supabase.from('agreement_products').insert(productsToInsert);
+
+  if (error) {
+    console.error("assignMultipleProductsToAgreement error:", error.message);
+    return { error };
+  }
+
+  revalidatePath(`/admin/agreements/${payload.agreement_id}`);
+  return { error: null };
+}
+
 export async function unassignProductFromAgreement(payload: { agreement_id: string; product_id: string; }) {
     await checkAuth();
     const supabase = createClient();
