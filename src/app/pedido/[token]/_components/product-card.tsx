@@ -34,6 +34,7 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
                 src={getImageUrl("product_card", { id: product.id, width: 600, height: 400 })}
                 alt={product.name}
                 fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className="rounded-t-lg object-cover"
                 data-ai-hint="product image"
             />
