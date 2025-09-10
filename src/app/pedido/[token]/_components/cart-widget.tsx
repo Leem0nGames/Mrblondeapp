@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCartStore, type CartItem } from "@/hooks/use-cart-store";
 import { Button } from "@/components/ui/button";
 import {
@@ -75,8 +75,13 @@ function CartItem({ item }: { item: CartItem }) {
 }
 
 export function CartWidget({ accessToken }: { accessToken: AccessToken }) {
-  const { items, totalItems } = useCartStore();
+  const { items, totalItems, isHydrated } = useCartStore();
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+
+  // Render nothing until the cart has been hydrated from localStorage
+  if (!isHydrated) {
+    return null;
+  }
 
   return (
     <>

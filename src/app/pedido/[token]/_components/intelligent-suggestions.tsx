@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
@@ -7,19 +6,23 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useCartStore } from "@/hooks/use-cart-store";
 import { suggestPromotions, type SuggestPromotionsInput, type SuggestPromotionsOutput } from "@/ai/flows/intelligent-promo-suggestions";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { AgreementPromotion, AccessToken } from "@/types";
+import type { AccessToken } from "@/types";
 
 type IntelligentSuggestionsProps = {
     accessToken: AccessToken
 }
 
 export function IntelligentSuggestions({ accessToken }: IntelligentSuggestionsProps) {
-  const { items, totalItems } = useCartStore();
+  const { items, totalItems, isHydrated } = useCartStore();
   const [suggestions, setSuggestions] = useState<SuggestPromotionsOutput | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    // No need to run on initial mount if cart is empty
+    // Only run suggestions logic on the client-side after hydration
+    if (!isHydrated) {
+      return;
+    }
+
     if (totalItems === 0) {
       setSuggestions(null); // Clear previous suggestions
       return;
@@ -49,7 +52,12 @@ export function IntelligentSuggestions({ accessToken }: IntelligentSuggestionsPr
       setSuggestions(result);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalItems, accessToken]); // Rerun when totalItems or accessToken changes.
+  }, [totalItems, isHydrated, accessToken]); // Rerun when totalItems or hydration status changes
+
+  // Don't render anything until the cart is hydrated to avoid mismatch
+  if (!isHydrated) {
+    return null;
+  }
 
   if (isPending) {
     return (
@@ -82,5 +90,3 @@ export function IntelligentSuggestions({ accessToken }: IntelligentSuggestionsPr
     </Alert>
   );
 }
-
-    
