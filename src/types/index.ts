@@ -21,9 +21,6 @@ export type Promotion = {
   id: string;
   name: string;
   description: string | null;
-  // Simple example: { "type": "buy_x_get_y_free", "buy": 6, "get": 1 }
-  // or { "type": "free_shipping", "min_units": 12, "cities": ["CABA"] }
-  // This allows for flexible, JSON-based rule definitions.
   rules: any;
   created_at: string;
 };

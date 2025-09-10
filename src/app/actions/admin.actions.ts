@@ -13,8 +13,9 @@ type UpsertAgreementPayload = Pick<Agreement, "agreement_name" | "client_type" |
   id?: string;
 };
 
-type UpsertPromotionPayload = Omit<Promotion, "id" | "created_at"> & {
+type UpsertPromotionPayload = Omit<Promotion, "id" | "created_at" | "rules"> & {
   id?: string;
+  rules: any;
 };
 
 
@@ -167,6 +168,7 @@ export async function upsertPromotion(payload: UpsertPromotionPayload) {
   }
 
   revalidatePath("/admin/promotions");
+  revalidatePath("/admin/agreements");
   return { data, error: null };
 }
 
@@ -178,6 +180,7 @@ export async function deletePromotion(id: string) {
     return { error };
   }
   revalidatePath("/admin/promotions");
+  revalidatePath("/admin/agreements");
   return { error: null };
 }
 
