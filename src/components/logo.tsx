@@ -1,13 +1,22 @@
+"use client";
+
+import { useState, useEffect } from 'react';
 import { cn } from "@/lib/utils";
 import { Package } from "lucide-react";
 
 export function Logo({
   className,
-  showText = false,
+  showText: initialShowText = false, // Renamed to avoid conflict
 }: {
   className?: string;
   showText?: boolean;
 }) {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   return (
     <div
       className={cn(
@@ -16,7 +25,7 @@ export function Logo({
       )}
     >
       <Package className="h-6 w-6 text-primary" />
-      {showText && <span className="text-primary">Blonde Orders</span>}
+      {initialShowText && isClient && <span className="text-primary">Blonde Orders</span>}
     </div>
   );
 }
