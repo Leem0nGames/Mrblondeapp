@@ -1,3 +1,4 @@
+
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -46,40 +47,30 @@ export async function getOrderPageData(token: string) {
     const supabase = createClient();
 
     // 1. Verify token and get related agreement with its products
-    const { data: accessToken, error: tokenError } = await supabase
-        .from('access_tokens')
+    const { data: agreement, error: agreementError } = await supabase
+        .from('agreements')
         .select(`
             *,
-            agreement:agreements(
-                *,
-                agreement_products(
-                    price,
-                    products(*)
-                ),
-                agreement_promotions(
-                    promotions(*)
-                )
+            agreement_products(
+                price,
+                products(*)
+            ),
+            agreement_promotions(
+                promotions(*)
             )
         `)
-        .eq('token', token)
+        .eq('link_token', token)
         .single();
 
-    if (tokenError || !accessToken || !accessToken.agreement) {
-        console.error("getOrderPageData (token) error:", tokenError?.message);
+    if (agreementError || !agreement) {
+        console.error("getOrderPageData (agreement) error:", agreementError?.message);
         return { error: { message: "El enlace no es válido o ha expirado." } };
     }
     
-    const now = new Date();
-    const expiresAt = new Date(accessToken.expires_at!);
-    if (now > expiresAt) {
-        return { error: { message: "El enlace ha expirado." } };
-    }
-    
-    const products = accessToken.agreement.agreement_products.map(ap => ({
+    const products = agreement.agreement_products.map(ap => ({
         ...ap.products,
         price: ap.price, // Override base_price with the agreement-specific price
     }));
 
-    // We pass the full token data because it contains client name and agreement details.
-    return { data: { accessToken, products }, error: null };
+    return { data: { agreement, products }, error: null };
 }

@@ -1,3 +1,4 @@
+
 import { PlusCircle, FileWarning } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +27,7 @@ export default async function AgreementsPage() {
               <div className="grid gap-2">
                 <CardTitle>Dashboard de Convenios</CardTitle>
                 <CardDescription>
-                  Genera enlaces de pedido para tus clientes de forma rápida.
+                  Copia el enlace permanente de un convenio para enviárselo a tu cliente.
                 </CardDescription>
               </div>
               <div className="ml-auto flex items-center gap-2">

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -20,61 +21,15 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { OrderSummarySheet } from "./order-summary-sheet";
-import type { AccessToken } from "@/types";
+import type { AgreementPromotion } from "@/types";
 
-function CartItem({ item }: { item: CartItem }) {
-  const { updateQuantity } = useCartStore();
-
-  return (
-    <div className="flex items-center justify-between gap-4 py-4">
-      <div className="flex items-center gap-4">
-        <Image
-          src={`https://picsum.photos/seed/${item.product.id}/64/64`}
-          alt={item.product.name}
-          width={64}
-          height={64}
-          className="rounded-md"
-          data-ai-hint="product image"
-        />
-        <div>
-          <p className="font-medium">{item.product.name}</p>
-          <p className="text-sm text-muted-foreground">
-            ${item.product.price.toLocaleString()}
-          </p>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-        >
-          <Minus className="h-4 w-4" />
-        </Button>
-        <span className="w-8 text-center">{item.quantity}</span>
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-destructive"
-          onClick={() => updateQuantity(item.product.id, 0)}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-export function CartWidget({ accessToken }: { accessToken: AccessToken }) {
+export function CartWidget({ 
+  clientName, 
+  availablePromotions 
+}: { 
+  clientName: string, 
+  availablePromotions: AgreementPromotion[] 
+}) {
   const { items, totalItems, isHydrated } = useCartStore();
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
@@ -130,9 +85,61 @@ export function CartWidget({ accessToken }: { accessToken: AccessToken }) {
       <OrderSummarySheet 
         isOpen={isSummaryOpen}
         onOpenChange={setIsSummaryOpen}
-        clientName={accessToken.client_name}
-        availablePromotions={accessToken.agreement.agreement_promotions}
+        clientName={clientName}
+        availablePromotions={availablePromotions}
       />
     </>
+  );
+}
+
+function CartItem({ item }: { item: CartItem }) {
+  const { updateQuantity } = useCartStore();
+
+  return (
+    <div className="flex items-center justify-between gap-4 py-4">
+      <div className="flex items-center gap-4">
+        <Image
+          src={`https://picsum.photos/seed/${item.product.id}/64/64`}
+          alt={item.product.name}
+          width={64}
+          height={64}
+          className="rounded-md"
+          data-ai-hint="product image"
+        />
+        <div>
+          <p className="font-medium">{item.product.name}</p>
+          <p className="text-sm text-muted-foreground">
+            ${item.product.price.toLocaleString()}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+        >
+          <Minus className="h-4 w-4" />
+        </Button>
+        <span className="w-8 text-center">{item.quantity}</span>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-destructive"
+          onClick={() => updateQuantity(item.product.id, 0)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   );
 }

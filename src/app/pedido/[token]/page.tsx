@@ -1,3 +1,4 @@
+
 import { getOrderPageData } from "@/app/actions/user.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/components/logo";
@@ -34,7 +35,7 @@ export default async function OrderPage({
     );
   }
 
-  const { accessToken, products } = data;
+  const { agreement, products } = data;
 
   return (
     <div className="min-h-screen bg-muted/20">
@@ -42,8 +43,8 @@ export default async function OrderPage({
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Logo />
           <div className="text-right">
-            <p className="font-semibold text-foreground">{accessToken.client_name}</p>
-            <p className="text-sm capitalize text-muted-foreground">{accessToken.agreement.client_type}</p>
+            <p className="font-semibold text-foreground">{agreement.agreement_name}</p>
+            <p className="text-sm capitalize text-muted-foreground">{agreement.client_type}</p>
           </div>
         </div>
       </header>
@@ -61,7 +62,10 @@ export default async function OrderPage({
         </div>
       </main>
 
-      <CartWidget accessToken={accessToken} />
+      <CartWidget 
+        clientName={agreement.agreement_name}
+        availablePromotions={agreement.agreement_promotions}
+      />
     </div>
   );
 }

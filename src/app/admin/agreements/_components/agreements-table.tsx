@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useTransition } from "react";
 import Link from 'next/link';
-import { MoreHorizontal, Trash2, Edit, FileText, Link2 } from "lucide-react";
+import { MoreHorizontal, Trash2, Edit, FileText, Copy } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,7 +37,6 @@ import { useToast } from "@/hooks/use-toast";
 import type { Agreement } from "@/types";
 import { deleteAgreement } from "@/app/actions/admin.actions";
 import { AgreementDialog } from "./agreement-dialog";
-import { GenerateLinkDialog } from "./generate-link-dialog";
 
 export default function AgreementsTable({ agreements }: { agreements: Agreement[] }) {
   const [isPending, startTransition] = useTransition();
@@ -58,6 +58,14 @@ export default function AgreementsTable({ agreements }: { agreements: Agreement[
         });
       }
     });
+  };
+
+  const copyToClipboard = (token: string) => {
+    const host = window.location.host;
+    const protocol = window.location.protocol;
+    const link = `${protocol}//${host}/pedido/${token}`;
+    navigator.clipboard.writeText(link);
+    toast({ title: "Enlace copiado al portapapeles!" });
   };
   
   return (
@@ -83,12 +91,10 @@ export default function AgreementsTable({ agreements }: { agreements: Agreement[
               <TableCell className="hidden sm:table-cell">{agreement.agreement_promotions.length}</TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
-                    <GenerateLinkDialog agreement={agreement}>
-                        <Button variant="outline" size="sm">
-                            <Link2 className="mr-2 h-4 w-4" />
-                            Generar Link
-                        </Button>
-                    </GenerateLinkDialog>
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(agreement.link_token)}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copiar Link
+                    </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                         <Button aria-haspopup="true" size="icon" variant="ghost">

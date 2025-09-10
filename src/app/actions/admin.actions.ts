@@ -122,10 +122,15 @@ export async function upsertAgreement(payload: UpsertAgreementPayload) {
   const supabase = await getAuthenticatedClient();
   const { id, ...agreementData } = payload;
   
+  let finalData: any = agreementData;
+  if (!id) {
+    finalData.link_token = crypto.randomUUID();
+  }
+
   const query = supabase.from("agreements");
   const { data, error } = id
-    ? await query.update(agreementData).eq("id", id).select().single()
-    : await query.insert(agreementData).select().single();
+    ? await query.update(finalData).eq("id", id).select().single()
+    : await query.insert(finalData).select().single();
   
   if (error) { 
     console.error("upsertAgreement error:", error.message);
@@ -185,37 +190,6 @@ export async function deletePromotion(id: string) {
   revalidatePath("/admin/promotions");
   revalidatePath("/admin/agreements");
   return { error: null };
-}
-
-
-// --- Link Generation ---
-export async function generateOrderLink(agreementId: string, clientName: string) {
-  const supabase = await getAuthenticatedClient();
-
-  const token = crypto.randomUUID();
-  const expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
-  const { data, error } = await supabase
-    .from('access_tokens')
-    .insert({
-      agreement_id: agreementId,
-      client_name: clientName,
-      token,
-      expires_at,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error("generateOrderLink error:", error.message);
-    return { link: null, error };
-  }
-  
-  const host = process.env.NEXT_PUBLIC_HOST_URL || `https://9000-firebase-studio-1757456762433.cluster-mdgxqvvkkbfpqrfigfiuugu5pk.cloudworkstations.dev/` || process.env.VERCEL_URL || 'localhost:9002';
-  const protocol = host.startsWith('localhost') ? 'http' : 'https';
-  const link = `${protocol}://${host}/pedido/${token}`;
-
-  return { link, error: null };
 }
 
 // --- Agreement Product & Promotion Management ---

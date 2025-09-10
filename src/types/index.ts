@@ -46,20 +46,11 @@ export type Agreement = {
   agreement_name: string;
   client_type: "barberia" | "distribuidor" | "especial";
   price_adjustment: number;
+  link_token: string;
   created_at: string;
   agreement_products: AgreementProduct[]; // Joined data
   agreement_promotions: AgreementPromotion[]; // Joined data
 };
-
-export type AccessToken = {
-    id: string;
-    agreement_id: string;
-    client_name: string;
-    token: string;
-    expires_at: string;
-    created_at: string;
-    agreement: Agreement; // Joined data
-}
 
 export type OrderLog = {
   id: string;
