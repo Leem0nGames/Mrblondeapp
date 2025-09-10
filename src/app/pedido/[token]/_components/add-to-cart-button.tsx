@@ -2,10 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/hooks/use-cart-store";
-import type { Product } from "@/types";
+import type { ProductWithPrice } from "@/types";
 import { PlusCircle } from "lucide-react";
 
-export function AddToCartButton({ product }: { product: Product }) {
+export function AddToCartButton({ product }: { product: ProductWithPrice }) {
   const add = useCartStore((s) => s.addItem);
 
   return (

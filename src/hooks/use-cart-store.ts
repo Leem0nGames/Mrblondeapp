@@ -2,16 +2,16 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Product } from "@/types";
+import type { ProductWithPrice } from "@/types";
 
 export type CartItem = {
-  product: Product;
+  product: ProductWithPrice;
   quantity: number;
 };
 
 type CartState = {
   items: CartItem[];
-  addItem: (product: Product, quantity?: number) => void;
+  addItem: (product: ProductWithPrice, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -21,8 +21,9 @@ type CartState = {
 
 const calculateTotals = (items: CartItem[]) => {
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
+  // Use the agreement-specific price for calculations
   const totalPrice = items.reduce(
-    (total, item) => total + item.product.base_price * item.quantity,
+    (total, item) => total + item.product.price * item.quantity,
     0
   );
   return { totalItems, totalPrice };
@@ -34,7 +35,7 @@ export const useCartStore = create<CartState>()(
       items: [],
       totalItems: 0,
       totalPrice: 0,
-      addItem: (product: Product, quantity: number = 1) => {
+      addItem: (product: ProductWithPrice, quantity: number = 1) => {
         const { items } = get();
         const existingItem = items.find(
           (item) => item.product.id === product.id

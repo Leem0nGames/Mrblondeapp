@@ -39,7 +39,7 @@ function CartItem({ item }: { item: CartItem }) {
         <div>
           <p className="font-medium">{item.product.name}</p>
           <p className="text-sm text-muted-foreground">
-            ${item.product.base_price.toLocaleString()}
+            ${item.product.price.toLocaleString()}
           </p>
         </div>
       </div>

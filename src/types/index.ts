@@ -11,6 +11,13 @@ export type Product = {
   created_at: string;
 };
 
+// A Product with an agreement-specific price.
+// Used on the order page to ensure the correct price is used.
+export type ProductWithPrice = Product & {
+  price: number;
+};
+
+
 export type Client = {
   id: string;
   name: string;

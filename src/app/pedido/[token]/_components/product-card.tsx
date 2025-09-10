@@ -7,11 +7,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { Product } from "@/types";
+import type { ProductWithPrice } from "@/types";
 import Image from "next/image";
 import { AddToCartButton } from "./add-to-cart-button";
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product }: { product: ProductWithPrice }) {
   const stockStatus =
     product.stock > 10
       ? "In Stock"
@@ -48,7 +48,7 @@ export function ProductCard({ product }: { product: Product }) {
       </CardContent>
       <CardFooter className="flex justify-between items-center mt-auto pt-4">
         <p className="text-lg font-semibold">
-          ${product.base_price.toLocaleString()}
+          ${product.price.toLocaleString()}
         </p>
         <AddToCartButton product={product} />
       </CardFooter>

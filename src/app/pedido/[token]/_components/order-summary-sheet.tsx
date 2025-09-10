@@ -26,7 +26,7 @@ function formatWhatsAppMessage(
     .map(
       (item) =>
         `- ${item.product.name} (x${item.quantity}) = $${(
-          item.product.base_price * item.quantity
+          item.product.price * item.quantity
         ).toLocaleString()}`
     )
     .join("\n");
@@ -39,9 +39,9 @@ function formatWhatsAppMessage(
 *Productos:*
 ${itemsText}
 
-*Total (sin promos):* $${totalPrice.toLocaleString()}
+*Total (con precios de convenio):* $${totalPrice.toLocaleString()}
 
-_(Por favor, aplicar promociones correspondientes)_
+_(Por favor, aplicar promociones correspondientes al facturar)_
 
 ¡Gracias!
     `.trim();
@@ -106,18 +106,18 @@ export function OrderSummarySheet({
                             <div className="flex-grow">
                                 <p className="font-medium">{item.product.name}</p>
                                 <p className="text-sm text-muted-foreground">
-                                {item.quantity} x ${item.product.base_price.toLocaleString()}
+                                {item.quantity} x ${item.product.price.toLocaleString()}
                                 </p>
                             </div>
                             <p className="font-semibold">
-                                ${(item.quantity * item.product.base_price).toLocaleString()}
+                                ${(item.quantity * item.product.price).toLocaleString()}
                             </p>
                             </div>
                         ))}
                         </div>
                         <Separator className="my-4" />
                         <div className="flex justify-between font-bold text-lg">
-                            <span>Total (base)</span>
+                            <span>Total (precios convenio)</span>
                             <span>${totalPrice.toLocaleString()}</span>
                         </div>
                     </div>

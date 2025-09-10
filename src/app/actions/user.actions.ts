@@ -45,17 +45,26 @@ export async function logout() {
 export async function getOrderPageData(token: string) {
     const supabase = createClient();
 
-    // 1. Verify token and get related agreement
+    // 1. Verify token and get related agreement with its products
     const { data: accessToken, error: tokenError } = await supabase
         .from('access_tokens')
         .select(`
             *,
-            agreement:agreements(*)
+            agreement:agreements(
+                *,
+                agreement_products(
+                    price,
+                    products(*)
+                ),
+                agreement_promotions(
+                    promotions(*)
+                )
+            )
         `)
         .eq('token', token)
         .single();
 
-    if (tokenError || !accessToken) {
+    if (tokenError || !accessToken || !accessToken.agreement) {
         return { error: { message: "El enlace no es válido o ha expirado." } };
     }
     
@@ -65,15 +74,11 @@ export async function getOrderPageData(token: string) {
         return { error: { message: "El enlace ha expirado." } };
     }
     
-    // 2. Fetch products
-    const { data: products, error: productsError } = await supabase
-        .from('products')
-        .select('*')
-        .order('name', { ascending: true });
-        
-    if (productsError) {
-        return { error: { message: "No se pudieron cargar los productos." } };
-    }
+    const products = accessToken.agreement.agreement_products.map(ap => ({
+        ...ap.products,
+        price: ap.price, // Override base_price with the agreement-specific price
+    }));
 
-    return { data: { accessToken, products: products ?? [] }, error: null };
+    // We pass the full token data because it contains client name and agreement details.
+    return { data: { accessToken, products }, error: null };
 }
