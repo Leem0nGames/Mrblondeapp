@@ -1,5 +1,4 @@
-import { PlusCircle, FileWarning, FileText } from "lucide-react";
-import Link from 'next/link';
+import { PlusCircle, FileWarning } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,8 +9,7 @@ import {
 } from "@/components/ui/card";
 import { getAgreements } from "@/app/actions/admin.actions";
 import { AgreementDialog } from "./_components/agreement-dialog";
-import { AgreementCard } from "./_components/agreement-card";
-import { Separator } from "@/components/ui/separator";
+import AgreementsTable from "./_components/agreements-table";
 
 export default async function AgreementsPage() {
   const { data: agreements, error } = await getAgreements();
@@ -20,64 +18,32 @@ export default async function AgreementsPage() {
     return <p className="text-destructive">{error.message}</p>;
   }
 
-  const quickAccessAgreements = agreements?.slice(0, 3) ?? [];
-
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
-      <div className="flex items-center">
-        <h1 className="text-2xl font-bold">Convenios</h1>
-        <div className="ml-auto flex items-center gap-2">
-          <AgreementDialog>
-            <Button size="sm" className="h-8 gap-1">
-              <PlusCircle className="h-3.5 w-3.5" />
-              <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Agregar Convenio
-              </span>
-            </Button>
-          </AgreementDialog>
-        </div>
-      </div>
-
       {agreements && agreements.length > 0 ? (
-        <>
-          <Card>
-            <CardHeader>
-              <CardTitle>Acceso Rápido</CardTitle>
-              <CardDescription>
-                Gestiona tus convenios más recientes con un solo clic.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {quickAccessAgreements.map((agreement) => (
-                  <Button
-                    key={agreement.id}
-                    variant="outline"
-                    className="h-20 text-base"
-                    asChild
-                  >
-                    <Link href={`/admin/agreements/${agreement.id}`}>
-                      <FileText className="mr-4 h-6 w-6" />
-                      <div className="text-left flex-1">
-                        <p className="font-bold truncate">{agreement.agreement_name}</p>
-                        <p className="font-normal text-sm capitalize text-muted-foreground">{agreement.client_type}</p>
-                      </div>
-                    </Link>
-                  </Button>
-                ))}
+        <Card>
+           <CardHeader className="flex flex-row items-center">
+              <div className="grid gap-2">
+                <CardTitle>Dashboard de Convenios</CardTitle>
+                <CardDescription>
+                  Genera enlaces de pedido para tus clientes de forma rápida.
+                </CardDescription>
               </div>
-            </CardContent>
-          </Card>
-
-          <Separator />
-          
-          <h2 className="text-xl font-bold text-muted-foreground">Todos los Convenios</h2>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {agreements.map((agreement) => (
-              <AgreementCard key={agreement.id} agreement={agreement} />
-            ))}
-          </div>
-        </>
+              <div className="ml-auto flex items-center gap-2">
+                <AgreementDialog>
+                  <Button size="sm" className="h-8 gap-1">
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                      Agregar Convenio
+                    </span>
+                  </Button>
+                </AgreementDialog>
+              </div>
+            </CardHeader>
+          <CardContent>
+            <AgreementsTable agreements={agreements ?? []} />
+          </CardContent>
+        </Card>
       ) : (
         <Card className="flex flex-col items-center justify-center py-12">
            <CardHeader className="text-center">
