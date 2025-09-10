@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
@@ -6,19 +7,24 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useCartStore } from "@/hooks/use-cart-store";
 import { suggestPromotions, type SuggestPromotionsInput, type SuggestPromotionsOutput } from "@/ai/flows/intelligent-promo-suggestions";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Agreement } from "@/types";
+import type { AgreementPromotion, AccessToken } from "@/types";
 
 type IntelligentSuggestionsProps = {
-    agreement: Pick<Agreement, "client_type" | "id">,
-    clientName: string,
+    accessToken: AccessToken
 }
 
-export function IntelligentSuggestions({ agreement, clientName }: IntelligentSuggestionsProps) {
+export function IntelligentSuggestions({ accessToken }: IntelligentSuggestionsProps) {
   const { items, totalItems } = useCartStore();
   const [suggestions, setSuggestions] = useState<SuggestPromotionsOutput | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
+    // No need to run on initial mount if cart is empty
+    if (totalItems === 0) {
+      setSuggestions(null); // Clear previous suggestions
+      return;
+    };
+    
     startTransition(async () => {
       const cartItems = items.map(item => ({
         id: item.product.id,
@@ -26,23 +32,26 @@ export function IntelligentSuggestions({ agreement, clientName }: IntelligentSug
         name: item.product.name,
       }));
 
+      const availablePromotions = accessToken.agreement.agreement_promotions.map(ap => ({
+        name: ap.promotions.name,
+        description: ap.promotions.description || '',
+        rules: ap.promotions.rules,
+      }));
+
       const input: SuggestPromotionsInput = {
         items: cartItems,
-        type: agreement.client_type,
-        agreement_id: agreement.id,
         total_unidades: totalItems,
-        nombre: clientName,
-        // Hardcoded for now, as we removed the address form.
-        // In a real app, this could come from the client's profile.
-        ciudad: "CABA",
+        nombre: accessToken.client_name,
+        availablePromotions,
       };
 
       const result = await suggestPromotions(input);
       setSuggestions(result);
     });
-  }, [totalItems, items, agreement, clientName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalItems, accessToken]); // Rerun when totalItems or accessToken changes.
 
-  if (isPending && totalItems > 0) {
+  if (isPending) {
     return (
         <div className="space-y-2 rounded-lg border bg-background p-4">
             <Skeleton className="h-5 w-1/3" />
@@ -73,3 +82,5 @@ export function IntelligentSuggestions({ agreement, clientName }: IntelligentSug
     </Alert>
   );
 }
+
+    

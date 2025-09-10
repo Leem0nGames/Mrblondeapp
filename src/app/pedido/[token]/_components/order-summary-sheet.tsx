@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -125,10 +126,7 @@ export function OrderSummarySheet({
                     <Separator />
 
                     {/* AI Suggestions */}
-                    <IntelligentSuggestions 
-                        agreement={accessToken.agreement}
-                        clientName={accessToken.client_name}
-                    />
+                    <IntelligentSuggestions accessToken={accessToken}/>
 
                 </div>
             </ScrollArea>
@@ -147,3 +145,5 @@ export function OrderSummarySheet({
     </Sheet>
   );
 }
+
+    
