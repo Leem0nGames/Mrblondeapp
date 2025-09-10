@@ -7,27 +7,30 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function login(formData: FormData) {
   const pin = formData.get("pin") as string;
-  // This should be in environment variables
+  const supabase = createClient();
+  
+  // Se usan valores por defecto si las variables de entorno no están configuradas.
   const adminPin = process.env.ADMIN_PIN || "1234";
+  const adminEmail = process.env.ADMIN_EMAIL || "admin@blonde.com";
+  const adminPassword = process.env.ADMIN_PASSWORD || "admin1234";
 
-  if (pin === adminPin) {
-    const supabase = createClient();
-    // In a real app, you'd have a proper user management system.
-    // For this MVP, we sign in a "dummy" admin user.
-    const { error } = await supabase.auth.signInWithPassword({
-      email: process.env.ADMIN_EMAIL!,
-      password: process.env.ADMIN_PASSWORD!,
-    });
-
-    if (error) {
-      return { error: { message: "Credenciales de administrador base no configuradas." } };
-    }
-
-    revalidatePath("/", "layout");
-    redirect("/admin");
+  if (pin !== adminPin) {
+    return { error: { message: "PIN incorrecto." } };
   }
 
-  return { error: { message: "PIN incorrecto." } };
+  const { error } = await supabase.auth.signInWithPassword({
+    email: adminEmail,
+    password: adminPassword,
+  });
+
+  if (error) {
+    console.error("Login error:", error.message);
+    // Devuelve un error más genérico para no exponer detalles de la infraestructura.
+    return { error: { message: "No se pudo autenticar al administrador. Contacte al soporte." } };
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/admin");
 }
 
 export async function logout() {
