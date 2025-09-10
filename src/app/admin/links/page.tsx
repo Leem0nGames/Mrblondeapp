@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
@@ -92,72 +93,75 @@ export default function GenerateLinkPage() {
   };
 
   return (
-    <Card className="w-full max-w-lg mx-auto">
-      <CardHeader>
-        <CardTitle>Generate Order Link</CardTitle>
-        <CardDescription>
-          Create a unique link for a client to place an order based on an agreement.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="client-name">Client Name</Label>
-            <Input
-              id="client-name"
-              placeholder="e.g., Salon Estilo"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="agreement">Agreement</Label>
-             {isLoadingAgreements ? <Skeleton className="h-10 w-full" /> : (
-                <Select
-                  value={selectedAgreementId}
-                  onValueChange={setSelectedAgreementId}
-                >
-                  <SelectTrigger id="agreement">
-                    <SelectValue placeholder="Select an agreement" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {agreements.map((agreement) => (
-                        <SelectItem key={agreement.id} value={agreement.id}>{agreement.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-             )}
-          </div>
-          <Button type="submit" className="w-full" disabled={isPending || isLoadingAgreements}>
-            {isPending ? "Generating..." : "Generate Link"}
-          </Button>
-        </form>
-
-        {generatedLink && (
-          <div className="mt-6 space-y-2">
-            <Label>Generated Link</Label>
-            <div className="flex items-center gap-2">
+    <div className="grid flex-1 items-start gap-4 md:gap-8">
+      <h1 className="text-2xl font-bold">Generar Enlace de Pedido</h1>
+      <Card className="w-full max-w-lg mx-auto">
+        <CardHeader>
+          <CardTitle>Generate Order Link</CardTitle>
+          <CardDescription>
+            Create a unique link for a client to place an order based on an agreement.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="client-name">Client Name</Label>
               <Input
-                type="text"
-                readOnly
-                value={generatedLink}
-                className="bg-muted"
+                id="client-name"
+                placeholder="e.g., Salon Estilo"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                required
               />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={copyToClipboard}
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              This link will expire in 24 hours.
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+            <div className="space-y-2">
+              <Label htmlFor="agreement">Agreement</Label>
+              {isLoadingAgreements ? <Skeleton className="h-10 w-full" /> : (
+                  <Select
+                    value={selectedAgreementId}
+                    onValueChange={setSelectedAgreementId}
+                  >
+                    <SelectTrigger id="agreement">
+                      <SelectValue placeholder="Select an agreement" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {agreements.map((agreement) => (
+                          <SelectItem key={agreement.id} value={agreement.id}>{agreement.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+              )}
+            </div>
+            <Button type="submit" className="w-full" disabled={isPending || isLoadingAgreements}>
+              {isPending ? "Generating..." : "Generate Link"}
+            </Button>
+          </form>
+
+          {generatedLink && (
+            <div className="mt-6 space-y-2">
+              <Label>Generated Link</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="text"
+                  readOnly
+                  value={generatedLink}
+                  className="bg-muted"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={copyToClipboard}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                This link will expire in 24 hours.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

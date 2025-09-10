@@ -1,3 +1,4 @@
+
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getClients } from "@/app/actions/admin.actions";
@@ -13,7 +14,8 @@ export default async function ClientsPage() {
 
   return (
    <div className="grid flex-1 items-start gap-4 md:gap-8">
-      <div className="flex items-center">
+       <div className="flex items-center">
+        <h1 className="text-2xl font-bold">Clientes</h1>
         <div className="ml-auto flex items-center gap-2">
           <ClientDialog>
             <Button size="sm" className="h-8 gap-1">
