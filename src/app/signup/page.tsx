@@ -1,4 +1,4 @@
-import { hasUsers, signupSuperAdmin, type AuthState } from '@/app/actions/user.actions';
+import { hasUsers } from '@/app/actions/user.actions';
 import { Logo } from '@/components/logo';
 import {
   Card,

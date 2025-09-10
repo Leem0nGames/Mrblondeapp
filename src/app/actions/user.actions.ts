@@ -81,7 +81,7 @@ export async function login(
   }
 
   // 2. Si el PIN es correcto, intentar iniciar sesión con las credenciales del admin
-  //    Es fundamental que este usuario haya sido creado previamente a través del signup.
+  //    Es fundamental que este usuario haya sido creado previamente.
   const supabase = createClient();
   const { error } = await supabase.auth.signInWithPassword({
     email: 'admin@blonde.com',

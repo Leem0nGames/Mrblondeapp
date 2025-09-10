@@ -1,6 +1,15 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { hasUsers } from '@/app/actions/user.actions';
+import { supabaseAdmin } from './lib/supabase/admin';
+
+async function hasUsers(): Promise<boolean> {
+  const { data, error } = await supabaseAdmin.auth.admin.listUsers();
+  if (error) {
+    console.error('Middleware: Error checking for users:', error.message);
+    return true; // Safe default
+  }
+  return data.users.length > 0;
+}
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -42,57 +51,56 @@ export async function middleware(request: NextRequest) {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-
+  
   const { pathname } = request.nextUrl;
 
-  // --- Lógica de Registro vs Login ---
-  
-  // Si no hay usuarios en la DB, solo se puede acceder a /signup
   const usersExist = await hasUsers();
+  const isAuthRoute = pathname === '/login' || pathname === '/signup';
+  const isAdminRoute = pathname.startsWith('/admin');
 
-  if (!usersExist && pathname !== '/signup') {
-    return NextResponse.redirect(new URL('/signup', request.url));
+  // --- Caso 1: No hay usuarios en la base de datos ---
+  if (!usersExist) {
+    // Solo se puede acceder a la página de registro
+    if (pathname !== '/signup') {
+      return NextResponse.redirect(new URL('/signup', request.url));
+    }
+    return response;
   }
-  
-  // Si ya existen usuarios, la página de signup se convierte en inaccesible
-  if (usersExist && pathname === '/signup') {
+
+  // --- Caso 2: Ya existen usuarios ---
+  // La página de registro ya no es accesible
+  if (pathname === '/signup') {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-
-  // --- Lógica de Protección de Rutas ---
-
-  // Si no hay sesión y se intenta acceder a una ruta protegida
-  if (!session && pathname.startsWith('/admin')) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  // Si el usuario NO está autenticado
+  if (!session) {
+    // Si intenta acceder a una ruta de admin, redirigir a login
+    if (isAdminRoute) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
   }
 
-  // Si hay sesión y se intenta acceder a login o signup
-  if (session && (pathname === '/login' || pathname === '/signup')) {
-    return NextResponse.redirect(new URL('/admin', request.url));
-  }
-
-  // Si no hay usuarios y se va a la raíz, redirigir a signup
-  if (!usersExist && pathname === '/') {
-     return NextResponse.redirect(new URL('/signup', request.url));
+  // Si el usuario SÍ está autenticado
+  if (session) {
+    // Si intenta acceder a login o signup, redirigir al panel de admin
+    if (isAuthRoute) {
+      return NextResponse.redirect(new URL('/admin', request.url));
+    }
   }
   
-  // Si hay usuarios y se va a la raíz, redirigir a login
-  if (usersExist && !session && pathname === '/') {
-     return NextResponse.redirect(new URL('/login', request.url));
-  }
-  
-  // Si hay sesión y se va a la raíz, redirigir a admin
-  if(session && pathname === '/') {
-    return NextResponse.redirect(new URL('/admin', request.url));
-  }
-
-
   return response;
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api/).*)',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
