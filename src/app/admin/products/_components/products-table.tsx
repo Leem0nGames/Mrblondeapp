@@ -1,5 +1,19 @@
-import { MoreHorizontal } from "lucide-react";
 
+"use client";
+
+import { MoreHorizontal, Trash2 } from "lucide-react";
+import { useTransition } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import {
   Table,
@@ -27,8 +42,31 @@ import {
 } from "@/components/ui/table";
 import { Product } from "@/types";
 import { ProductDialog } from "./product-dialog";
+import { deleteProduct } from "@/app/actions/admin.actions";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ProductsTable({ products }: { products: Product[] }) {
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
+
+  const handleDelete = (productId: string) => {
+    startTransition(async () => {
+      const result = await deleteProduct(productId);
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: result.error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Product deleted successfully.",
+        });
+      }
+    });
+  };
+  
   return (
     <Card>
       <CardHeader>
@@ -58,13 +96,17 @@ export default function ProductsTable({ products }: { products: Product[] }) {
             {products.map((product) => (
               <TableRow key={product.id}>
                 <TableCell className="hidden sm:table-cell">
-                    <div className="h-16 w-16 bg-secondary rounded-md flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground">No img</span>
-                    </div>
+                  <div className="h-16 w-16 bg-secondary rounded-md flex items-center justify-center">
+                    <span className="text-xs text-muted-foreground">
+                      No img
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>
-                  <Badge variant={product.stock > 0 ? "outline" : "destructive"}>
+                  <Badge
+                    variant={product.stock > 0 ? "outline" : "destructive"}
+                  >
                     {product.stock > 0 ? "In Stock" : "Out of Stock"}
                   </Badge>
                 </TableCell>
@@ -88,9 +130,42 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <ProductDialog product={product}>
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                          Edit
+                        </DropdownMenuItem>
                       </ProductDialog>
-                      <DropdownMenuItem>Delete</DropdownMenuItem>
+                       <DropdownMenuSeparator />
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onSelect={(e) => e.preventDefault()}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Are you sure?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete the product.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(product.id)}
+                              disabled={isPending}
+                              className="bg-destructive hover:bg-destructive/90"
+                            >
+                              {isPending ? "Deleting..." : "Delete"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -101,7 +176,8 @@ export default function ProductsTable({ products }: { products: Product[] }) {
       </CardContent>
       <CardFooter>
         <div className="text-xs text-muted-foreground">
-          Showing <strong>1-{products.length}</strong> of <strong>{products.length}</strong> products
+          Showing <strong>1-{products.length}</strong> of{" "}
+          <strong>{products.length}</strong> products
         </div>
       </CardFooter>
     </Card>
