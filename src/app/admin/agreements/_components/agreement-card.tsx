@@ -64,7 +64,7 @@ export function AgreementCard({ agreement }: { agreement: Agreement }) {
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <CardTitle>{agreement.name}</CardTitle>
+            <CardTitle>{agreement.agreement_name}</CardTitle>
             <CardDescription className="capitalize">{agreement.client_type}</CardDescription>
           </div>
           <DropdownMenu>

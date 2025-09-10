@@ -57,7 +57,7 @@ export default async function AgreementDetailPage({
           </Link>
         </Button>
         <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">{agreement.name}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{agreement.agreement_name}</h1>
             <p className="text-muted-foreground capitalize">{agreement.client_type}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">

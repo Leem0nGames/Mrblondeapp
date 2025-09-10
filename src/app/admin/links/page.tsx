@@ -97,15 +97,15 @@ export default function GenerateLinkPage() {
       <h1 className="text-2xl font-bold">Generar Enlace de Pedido</h1>
       <Card className="w-full max-w-lg mx-auto">
         <CardHeader>
-          <CardTitle>Generate Order Link</CardTitle>
+          <CardTitle>Generar Enlace de Pedido</CardTitle>
           <CardDescription>
-            Create a unique link for a client to place an order based on an agreement.
+            Crea un enlace único para que un cliente haga un pedido basado en un convenio.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="client-name">Client Name</Label>
+              <Label htmlFor="client-name">Nombre del Cliente</Label>
               <Input
                 id="client-name"
                 placeholder="e.g., Salon Estilo"
@@ -115,31 +115,31 @@ export default function GenerateLinkPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="agreement">Agreement</Label>
+              <Label htmlFor="agreement">Convenio</Label>
               {isLoadingAgreements ? <Skeleton className="h-10 w-full" /> : (
                   <Select
                     value={selectedAgreementId}
                     onValueChange={setSelectedAgreementId}
                   >
                     <SelectTrigger id="agreement">
-                      <SelectValue placeholder="Select an agreement" />
+                      <SelectValue placeholder="Selecciona un convenio" />
                     </SelectTrigger>
                     <SelectContent>
                       {agreements.map((agreement) => (
-                          <SelectItem key={agreement.id} value={agreement.id}>{agreement.name}</SelectItem>
+                          <SelectItem key={agreement.id} value={agreement.id}>{agreement.agreement_name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
               )}
             </div>
             <Button type="submit" className="w-full" disabled={isPending || isLoadingAgreements}>
-              {isPending ? "Generating..." : "Generate Link"}
+              {isPending ? "Generando..." : "Generar Enlace"}
             </Button>
           </form>
 
           {generatedLink && (
             <div className="mt-6 space-y-2">
-              <Label>Generated Link</Label>
+              <Label>Enlace Generado</Label>
               <div className="flex items-center gap-2">
                 <Input
                   type="text"
@@ -156,7 +156,7 @@ export default function GenerateLinkPage() {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                This link will expire in 24 hours.
+                Este enlace expirará en 24 horas.
               </p>
             </div>
           )}

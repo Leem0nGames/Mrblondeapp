@@ -15,8 +15,8 @@ export default async function OrderPage({
   if (error || !data) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
-        <Logo className="mb-8" />
-        <Card className="max-w-md">
+        <Logo />
+        <Card className="max-w-md mt-8">
           <CardHeader>
             <CardTitle className="flex items-center justify-center gap-2 text-destructive">
               <AlertTriangle />

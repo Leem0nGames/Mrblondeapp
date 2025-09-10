@@ -55,7 +55,7 @@ export type AgreementPromotion = {
 
 export type Agreement = {
   id: string;
-  name: string;
+  agreement_name: string;
   client_type: "barberia" | "distribuidor" | "especial";
   price_adjustment: number;
   created_at: string;

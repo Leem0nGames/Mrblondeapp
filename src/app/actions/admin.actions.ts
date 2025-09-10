@@ -8,7 +8,7 @@ type UpsertProductPayload = Omit<Product, "id" | "created_at"> & {
   id?: string;
 };
 
-type UpsertAgreementPayload = Pick<Agreement, "name" | "client_type" | "price_adjustment"> & {
+type UpsertAgreementPayload = Pick<Agreement, "agreement_name" | "client_type" | "price_adjustment"> & {
   id?: string;
 };
 
@@ -82,7 +82,7 @@ export async function getAgreements() {
         promotions ( * )
       )
     `)
-    .order("name", { ascending: true });
+    .order("agreement_name", { ascending: true });
   return { data, error };
 }
 

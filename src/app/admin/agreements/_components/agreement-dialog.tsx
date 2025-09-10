@@ -37,7 +37,7 @@ import { upsertAgreement } from "@/app/actions/admin.actions";
 import type { Agreement } from "@/types";
 
 const agreementSchema = z.object({
-  name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
+  agreement_name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
   client_type: z.enum(["barberia", "distribuidor", "especial"]),
   price_adjustment: z.coerce.number().min(-100).max(100),
 });
@@ -58,7 +58,7 @@ export function AgreementDialog({
   const form = useForm<AgreementFormValues>({
     resolver: zodResolver(agreementSchema),
     defaultValues: {
-      name: agreement?.name ?? "",
+      agreement_name: agreement?.agreement_name ?? "",
       client_type: agreement?.client_type ?? "barberia",
       price_adjustment: agreement?.price_adjustment ?? 0,
     },
@@ -100,7 +100,7 @@ export function AgreementDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="name"
+              name="agreement_name"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nombre del Convenio</FormLabel>
