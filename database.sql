@@ -1,137 +1,206 @@
-ALTER TABLE agreements RENAME COLUMN name TO agreement_name;
--- Users table (managed by Supabase Auth)
--- This is just a reference, do not run this. Supabase handles it.
--- create table auth.users ( ... );
 
--- Products table
-CREATE TABLE IF NOT EXISTS products (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
-    description TEXT,
-    base_price NUMERIC(10, 2) NOT NULL DEFAULT 0,
-    stock INT NOT NULL DEFAULT 0,
-    category TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+-- Habilita la extensión pgcrypto si aún no está habilitada
+create extension if not exists "pgrst" with schema "public" version '0.1.0';
+create extension if not exists "uuid-ossp" with schema "extensions";
+
+-- Creación de la tabla de productos
+create table if not exists "public"."products" (
+    "id" uuid default extensions.uuid_generate_v4() not null,
+    "name" character varying not null,
+    "description" text,
+    "base_price" numeric(10,2) not null default 0.00,
+    "stock" integer not null default 0,
+    "category" character varying,
+    "created_at" timestamp with time zone not null default now()
 );
+alter table "public"."products" enable row level security;
+alter table "public"."products" add constraint "products_pkey" PRIMARY KEY using index ("id");
+grant delete on table "public"."products" to "anon";
+grant insert on table "public"."products" to "anon";
+grant select on table "public"."products" to "anon";
+grant update on table "public"."products" to "anon";
+grant delete on table "public"."products" to "authenticated";
+grant insert on table "public"."products" to "authenticated";
+grant select on table "public"."products" to "authenticated";
+grant update on table "public"."products" to "authenticated";
+grant delete on table "public"."products" to "service_role";
+grant insert on table "public"."products" to "service_role";
+grant select on table "public"."products" to "service_role";
+grant update on table "public"."products" to "service_role";
 
--- Clients table
-CREATE TABLE IF NOT EXISTS clients (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
-    phone TEXT,
-    address TEXT,
-    city TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+
+-- Creación de la tabla de promociones
+create table if not exists "public"."promotions" (
+    "id" uuid default extensions.uuid_generate_v4() not null,
+    "name" character varying not null,
+    "description" text,
+    "rules" jsonb not null,
+    "created_at" timestamp with time zone not null default now()
 );
+alter table "public"."promotions" enable row level security;
+alter table "public"."promotions" add constraint "promotions_pkey" PRIMARY KEY using index ("id");
+grant delete on table "public"."promotions" to "anon";
+grant insert on table "public"."promotions" to "anon";
+grant select on table "public"."promotions" to "anon";
+grant update on table "public"."promotions" to "anon";
+grant delete on table "public"."promotions" to "authenticated";
+grant insert on table "public"."promotions" to "authenticated";
+grant select on table "public"."promotions" to "authenticated";
+grant update on table "public"."promotions" to "authenticated";
+grant delete on table "public"."promotions" to "service_role";
+grant insert on table "public"."promotions" to "service_role";
+grant select on table "public"."promotions" to "service_role";
+grant update on table "public"."promotions" to "service_role";
 
--- Promotions table
-CREATE TABLE IF NOT EXISTS promotions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
-    description TEXT,
-    rules JSONB NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+
+-- Creación de la tabla de convenios
+create table if not exists "public"."agreements" (
+    "id" uuid default extensions.uuid_generate_v4() not null,
+    "agreement_name" character varying not null,
+    "client_type" character varying not null,
+    "price_adjustment" numeric(5,2) not null default 0.00,
+    "created_at" timestamp with time zone not null default now()
 );
+alter table "public"."agreements" enable row level security;
+alter table "public"."agreements" add constraint "agreements_pkey" PRIMARY KEY using index ("id");
+grant delete on table "public"."agreements" to "anon";
+grant insert on table "public"."agreements" to "anon";
+grant select on table "public"."agreements" to "anon";
+grant update on table "public"."agreements" to "anon";
+grant delete on table "public"."agreements" to "authenticated";
+grant insert on table "public"."agreements" to "authenticated";
+grant select on table "public"."agreements" to "authenticated";
+grant update on table "public"."agreements" to "authenticated";
+grant delete on table "public"."agreements" to "service_role";
+grant insert on table "public"."agreements" to "service_role";
+grant select on table "public"."agreements" to "service_role";
+grant update on table "public"."agreements" to "service_role";
 
--- Agreements table
-CREATE TABLE IF NOT EXISTS agreements (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
-    client_type TEXT NOT NULL CHECK (client_type IN ('barberia', 'distribuidor', 'especial')),
-    price_adjustment NUMERIC(5, 2) NOT NULL DEFAULT 0, -- e.g., -10.5 for a 10.5% discount
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+
+-- Tabla intermedia para convenios y productos
+create table if not exists "public"."agreement_products" (
+    "agreement_id" uuid not null,
+    "product_id" uuid not null,
+    "price" numeric(10,2) not null
 );
+alter table "public"."agreement_products" enable row level security;
+alter table "public"."agreement_products" add constraint "agreement_products_pkey" PRIMARY KEY using index ("agreement_id", "product_id");
+alter table "public"."agreement_products" add constraint "agreement_products_agreement_id_fkey" FOREIGN KEY ("agreement_id") REFERENCES "public"."agreements"("id") ON DELETE CASCADE;
+alter table "public"."agreement_products" add constraint "agreement_products_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE CASCADE;
+grant delete on table "public"."agreement_products" to "anon";
+grant insert on table "public"."agreement_products" to "anon";
+grant select on table "public"."agreement_products" to "anon";
+grant update on table "public"."agreement_products" to "anon";
+grant delete on table "public"."agreement_products" to "authenticated";
+grant insert on table "public"."agreement_products" to "authenticated";
+grant select on table "public"."agreement_products" to "authenticated";
+grant update on table "public"."agreement_products" to "authenticated";
+grant delete on table "public"."agreement_products" to "service_role";
+grant insert on table "public"."agreement_products" to "service_role";
+grant select on table "public"."agreement_products" to "service_role";
+grant update on table "public"."agreement_products" to "service_role";
 
--- Agreement-Products join table (for custom pricing)
-CREATE TABLE IF NOT EXISTS agreement_products (
-    agreement_id UUID NOT NULL REFERENCES agreements(id) ON DELETE CASCADE,
-    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    price NUMERIC(10, 2) NOT NULL,
-    PRIMARY KEY (agreement_id, product_id)
+
+-- Tabla intermedia para convenios y promociones
+create table if not exists "public"."agreement_promotions" (
+    "agreement_id" uuid not null,
+    "promotion_id" uuid not null
 );
+alter table "public"."agreement_promotions" enable row level security;
+alter table "public"."agreement_promotions" add constraint "agreement_promotions_pkey" PRIMARY KEY using index ("agreement_id", "promotion_id");
+alter table "public"."agreement_promotions" add constraint "agreement_promotions_agreement_id_fkey" FOREIGN KEY ("agreement_id") REFERENCES "public"."agreements"("id") ON DELETE CASCADE;
+alter table "public"."agreement_promotions" add constraint "agreement_promotions_promotion_id_fkey" FOREIGN KEY ("promotion_id") REFERENCES "public"."promotions"("id") ON DELETE CASCADE;
+grant delete on table "public"."agreement_promotions" to "anon";
+grant insert on table "public"."agreement_promotions" to "anon";
+grant select on table "public"."agreement_promotions" to "anon";
+grant update on table "public"."agreement_promotions" to "anon";
+grant delete on table "public"."agreement_promotions" to "authenticated";
+grant insert on table "public"."agreement_promotions" to "authenticated";
+grant select on table "public"."agreement_promotions" to "authenticated";
+grant update on table "public"."agreement_promotions" to "authenticated";
+grant delete on table "public"."agreement_promotions" to "service_role";
+grant insert on table "public"."agreement_promotions" to "service_role";
+grant select on table "public"."agreement_promotions" to "service_role";
+grant update on table "public"."agreement_promotions" to "service_role";
 
--- Agreement-Promotions join table
-CREATE TABLE IF NOT EXISTS agreement_promotions (
-    agreement_id UUID NOT NULL REFERENCES agreements(id) ON DELETE CASCADE,
-    promotion_id UUID NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
-    PRIMARY KEY (agreement_id, promotion_id)
+
+-- Creación de la tabla de tokens de acceso
+create table if not exists "public"."access_tokens" (
+    "id" uuid default extensions.uuid_generate_v4() not null,
+    "agreement_id" uuid not null,
+    "client_name" character varying not null,
+    "token" text not null,
+    "expires_at" timestamp with time zone not null,
+    "created_at" timestamp with time zone not null default now()
 );
+alter table "public"."access_tokens" enable row level security;
+alter table "public"."access_tokens" add constraint "access_tokens_pkey" PRIMARY KEY using index ("id");
+alter table "public"."access_tokens" add constraint "access_tokens_token_key" UNIQUE using index ("token");
+alter table "public"."access_tokens" add constraint "access_tokens_agreement_id_fkey" FOREIGN KEY ("agreement_id") REFERENCES "public"."agreements"("id") ON DELETE CASCADE;
+grant delete on table "public"."access_tokens" to "anon";
+grant insert on table "public"."access_tokens" to "anon";
+grant select on table "public"."access_tokens" to "anon";
+grant update on table "public"."access_tokens" to "anon";
+grant delete on table "public"."access_tokens" to "authenticated";
+grant insert on table "public"."access_tokens" to "authenticated";
+grant select on table "public"."access_tokens" to "authenticated";
+grant update on table "public"."access_tokens" to "authenticated";
+grant delete on table "public"."access_tokens" to "service_role";
+grant insert on table "public"."access_tokens" to "service_role";
+grant select on table "public"."access_tokens" to "service_role";
+grant update on table "public"."access_tokens" to "service_role";
 
 
--- Access Tokens table
-CREATE TABLE IF NOT EXISTS access_tokens (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    agreement_id UUID NOT NULL REFERENCES agreements(id) ON DELETE CASCADE,
-    client_name TEXT NOT NULL,
-    token TEXT NOT NULL UNIQUE,
-    expires_at TIMESTAMPTZ NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+-- Creación de la tabla de registro de pedidos
+create table if not exists "public"."order_logs" (
+    "id" uuid default extensions.uuid_generate_v4() not null,
+    "access_token_id" uuid not null,
+    "order_details" jsonb not null,
+    "total_price" numeric(10,2) not null,
+    "created_at" timestamp with time zone not null default now()
 );
+alter table "public"."order_logs" enable row level security;
+alter table "public"."order_logs" add constraint "order_logs_pkey" PRIMARY KEY using index ("id");
+alter table "public"."order_logs" add constraint "order_logs_access_token_id_fkey" FOREIGN KEY ("access_token_id") REFERENCES "public"."access_tokens"("id") ON DELETE RESTRICT;
+grant delete on table "public"."order_logs" to "anon";
+grant insert on table "public"."order_logs" to "anon";
+grant select on table "public"."order_logs" to "anon";
+grant update on table "public"."order_logs" to "anon";
+grant delete on table "public"."order_logs" to "authenticated";
+grant insert on table "public"."order_logs" to "authenticated";
+grant select on table "public"."order_logs" to "authenticated";
+grant update on table "public"."order_logs" to "authenticated";
+grant delete on table "public"."order_logs" to "service_role";
+grant insert on table "public"."order_logs" to "service_role";
+grant select on table "public"."order_logs" to "service_role";
+grant update on table "public"."order_logs" to "service_role";
 
--- Order Logs table
-CREATE TABLE IF NOT EXISTS order_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    agreement_id UUID REFERENCES agreements(id),
-    order_data JSONB,
-    sent_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
 
-
--- Enable RLS for all tables
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
-ALTER TABLE promotions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agreements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agreement_products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agreement_promotions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE access_tokens ENABLE ROW LEVEL SECURITY;
-ALTER TABLE order_logs ENABLE ROW LEVEL SECURITY;
-
--- Policies for authenticated users (admins) to manage data
-DROP POLICY IF EXISTS "Allow full access to authenticated users" ON products;
-CREATE POLICY "Allow full access to authenticated users" ON products
-FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-
-DROP POLICY IF EXISTS "Allow full access to authenticated users" ON clients;
-CREATE POLICY "Allow full access to authenticated users" ON clients
-FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-
-DROP POLICY IF EXISTS "Allow full access to authenticated users" ON promotions;
-CREATE POLICY "Allow full access to authenticated users" ON promotions
-FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-
-DROP POLICY IF EXISTS "Allow full access to authenticated users" ON agreements;
-CREATE POLICY "Allow full access to authenticated users" ON agreements
-FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-
-DROP POLICY IF EXISTS "Allow full access to authenticated users" ON agreement_products;
-CREATE POLICY "Allow full access to authenticated users" ON agreement_products
-FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-
-DROP POLICY IF EXISTS "Allow full access to authenticated users" ON agreement_promotions;
-CREATE POLICY "Allow full access to authenticated users" ON agreement_promotions
-FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-
-DROP POLICY IF EXISTS "Allow full access to authenticated users" ON access_tokens;
-CREATE POLICY "Allow full access to authenticated users" ON access_tokens
-FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-
-DROP POLICY IF EXISTS "Allow full access to authenticated users" ON order_logs;
-CREATE POLICY "Allow full access to authenticated users" ON order_logs
-FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-
--- Policies for public access (for order pages)
--- Public can read products
-DROP POLICY IF EXISTS "Allow public read access" ON products;
-CREATE POLICY "Allow public read access" ON products
-FOR SELECT USING (true);
-
--- Public can read specific access tokens
-DROP POLICY IF EXISTS "Allow public read access" ON access_tokens;
-CREATE POLICY "Allow public read access" ON access_tokens
-FOR SELECT USING (true);
-
--- Public can read agreements via access tokens
-DROP POLICY IF EXISTS "Allow public read access" ON agreements;
-CREATE POLICY "Allow public read access" ON agreements
-FOR SELECT USING (true);
+-- Crear la cuenta de administrador si no existe
+-- Esta es una solución simple para el MVP. En una aplicación real, se usaría un sistema más seguro.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'admin@blonde.com') THEN
+    INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, recovery_token, recovery_sent_at, last_sign_in_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, phone, phone_confirmed_at, email_change, email_change_sent_at)
+    VALUES (
+      '00000000-0000-0000-0000-000000000000',
+      extensions.uuid_generate_v4(),
+      'authenticated',
+      'authenticated',
+      'admin@blonde.com',
+      crypt('blondeadmin', gen_salt('bf')),
+      NOW(),
+      '',
+      NULL,
+      NULL,
+      '{"provider": "email", "providers": ["email"]}',
+      '{}',
+      NOW(),
+      NOW(),
+      NULL,
+      NULL,
+      '',
+      NULL
+    );
+  END IF;
+END $$;
