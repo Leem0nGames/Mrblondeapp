@@ -30,10 +30,10 @@ import { upsertProduct } from "@/app/actions/admin.actions";
 import type { Product } from "@/types";
 
 const productSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
+  name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
   description: z.string().optional(),
-  base_price: z.coerce.number().min(0, "Price must be a positive number"),
-  stock: z.coerce.number().int().min(0, "Stock must be a positive integer"),
+  base_price: z.coerce.number().min(0, "El precio debe ser un número positivo"),
+  stock: z.coerce.number().int().min(0, "El stock debe ser un número entero positivo"),
   category: z.string().optional(),
 });
 
@@ -72,8 +72,8 @@ export function ProductDialog({
         });
       } else {
         toast({
-          title: "Success",
-          description: `Product ${product ? "updated" : "created"} successfully.`,
+          title: "Éxito",
+          description: `Producto ${product ? "actualizado" : "creado"} correctamente.`,
         });
         setIsOpen(false);
         form.reset();
@@ -86,11 +86,11 @@ export function ProductDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>{product ? "Edit Product" : "Add New Product"}</DialogTitle>
+          <DialogTitle>{product ? "Editar Producto" : "Nuevo Producto"}</DialogTitle>
           <DialogDescription>
             {product
-              ? "Update the details of this product."
-              : "Fill in the details for the new product."}
+              ? "Actualiza los detalles de este producto."
+              : "Completa los detalles para el nuevo producto."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -100,7 +100,7 @@ export function ProductDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Product Name</FormLabel>
+                  <FormLabel>Nombre del Producto</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., Cera Modeladora" {...field} />
                   </FormControl>
@@ -113,9 +113,9 @@ export function ProductDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Descripción</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Product details..." {...field} />
+                    <Textarea placeholder="Detalles del producto..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -127,7 +127,7 @@ export function ProductDialog({
                 name="base_price"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Base Price</FormLabel>
+                    <FormLabel>Precio Base</FormLabel>
                     <FormControl>
                       <Input type="number" step="0.01" {...field} />
                     </FormControl>
@@ -154,7 +154,7 @@ export function ProductDialog({
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
+                  <FormLabel>Categoría</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., Cremas" {...field} />
                   </FormControl>
@@ -165,11 +165,11 @@ export function ProductDialog({
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="outline" type="button">
-                  Cancel
+                  Cancelar
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={isPending}>
-                {isPending ? "Saving..." : "Save Product"}
+                {isPending ? "Guardando..." : "Guardar Producto"}
               </Button>
             </DialogFooter>
           </form>

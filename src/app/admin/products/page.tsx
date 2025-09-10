@@ -14,12 +14,13 @@ export default async function ProductsPage() {
   return (
    <div className="grid flex-1 items-start gap-4 md:gap-8">
       <div className="flex items-center">
+        <h1 className="text-2xl font-bold">Productos</h1>
         <div className="ml-auto flex items-center gap-2">
           <ProductDialog>
             <Button size="sm" className="h-8 gap-1">
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Add Product
+                Agregar Producto
               </span>
             </Button>
           </ProductDialog>

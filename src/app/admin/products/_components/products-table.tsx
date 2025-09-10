@@ -1,4 +1,3 @@
-
 "use client";
 
 import { MoreHorizontal, Trash2 } from "lucide-react";
@@ -62,8 +61,8 @@ export default function ProductsTable({ products }: { products: Product[] }) {
         });
       } else {
         toast({
-          title: "Success",
-          description: "Product deleted successfully.",
+          title: "Éxito",
+          description: "Producto eliminado correctamente.",
         });
       }
     });
@@ -72,9 +71,9 @@ export default function ProductsTable({ products }: { products: Product[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Products</CardTitle>
+        <CardTitle>Productos</CardTitle>
         <CardDescription>
-          Manage your products and view their sales performance.
+          Gestiona tus productos y su inventario.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -82,15 +81,15 @@ export default function ProductsTable({ products }: { products: Product[] }) {
           <TableHeader>
             <TableRow>
               <TableHead className="hidden w-[100px] sm:table-cell">
-                <span className="sr-only">Image</span>
+                <span className="sr-only">Imagen</span>
               </TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden md:table-cell">Price</TableHead>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead className="hidden md:table-cell">Precio</TableHead>
               <TableHead className="hidden md:table-cell">Stock</TableHead>
-              <TableHead className="hidden md:table-cell">Created at</TableHead>
+              <TableHead className="hidden md:table-cell">Creado el</TableHead>
               <TableHead>
-                <span className="sr-only">Actions</span>
+                <span className="sr-only">Acciones</span>
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -112,7 +111,7 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                   <Badge
                     variant={product.stock > 0 ? "outline" : "destructive"}
                   >
-                    {product.stock > 0 ? "In Stock" : "Out of Stock"}
+                    {product.stock > 0 ? "En Stock" : "Agotado"}
                   </Badge>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
@@ -129,14 +128,14 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                     <DropdownMenuTrigger asChild>
                       <Button aria-haspopup="true" size="icon" variant="ghost">
                         <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Toggle menu</span>
+                        <span className="sr-only">Menú</span>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                       <ProductDialog product={product}>
                         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                          Edit
+                          Editar
                         </DropdownMenuItem>
                       </ProductDialog>
                        <DropdownMenuSeparator />
@@ -147,26 +146,26 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                             onSelect={(e) => e.preventDefault()}
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
+                            Eliminar
                           </DropdownMenuItem>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>
-                              Are you sure?
+                              ¿Estás seguro?
                             </AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the product.
+                              Esta acción no se puede deshacer. Esto eliminará permanentemente el producto.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleDelete(product.id)}
                               disabled={isPending}
                               className="bg-destructive hover:bg-destructive/90"
                             >
-                              {isPending ? "Deleting..." : "Delete"}
+                              {isPending ? "Eliminando..." : "Eliminar"}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -181,8 +180,8 @@ export default function ProductsTable({ products }: { products: Product[] }) {
       </CardContent>
       <CardFooter>
         <div className="text-xs text-muted-foreground">
-          Showing <strong>1-{products.length}</strong> of{" "}
-          <strong>{products.length}</strong> products
+          Mostrando <strong>{products.length}</strong> de{" "}
+          <strong>{products.length}</strong> productos
         </div>
       </CardFooter>
     </Card>
