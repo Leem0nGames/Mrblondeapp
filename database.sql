@@ -1,94 +1,100 @@
 
--- Habilitar la extensión pgcrypto si no está habilitada (para gen_random_uuid())
--- CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- Roles and Policies have been removed for simplicity in this MVP.
+-- In a production environment, you should implement Row Level Security.
 
--- Enum para el tipo de cliente
-CREATE TYPE client_type AS ENUM ('barberia', 'distribuidor', 'especial');
+-- Drop existing tables in reverse order of dependency to avoid conflicts.
+DROP TABLE IF EXISTS "public"."agreement_products";
+DROP TABLE IF EXISTS "public"."agreement_promotions";
+DROP TABLE IF EXISTS "public"."access_tokens"; -- This table is no longer needed.
+DROP TABLE IF EXISTS "public"."agreements";
+DROP TABLE IF EXISTS "public"."products";
+DROP TABLE IF EXISTS "public"."promotions";
 
--- Tabla de Productos
-CREATE TABLE products (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    name text NOT NULL,
-    description text,
-    base_price numeric(10, 2) NOT NULL DEFAULT 0.00,
-    stock integer NOT NULL DEFAULT 0,
-    category text,
-    created_at timestamptz DEFAULT now() NOT NULL
+
+-- Create products table
+CREATE TABLE "public"."products" (
+    "id" UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    "name" CHARACTER VARYING NOT NULL,
+    "description" TEXT,
+    "base_price" NUMERIC NOT NULL,
+    "stock" INTEGER NOT NULL DEFAULT 0,
+    "category" CHARACTER VARYING,
+    "created_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
 
--- Tabla de Promociones
-CREATE TABLE promotions (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    name text NOT NULL,
-    description text,
-    rules jsonb NOT NULL,
-    created_at timestamptz DEFAULT now() NOT NULL
+-- Create promotions table
+CREATE TABLE "public"."promotions" (
+    "id" UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    "name" CHARACTER VARYING NOT NULL,
+    "description" TEXT,
+    "rules" JSONB NOT NULL,
+    "created_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
 
--- Tabla de Convenios
-CREATE TABLE agreements (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    agreement_name text NOT NULL,
-    client_type client_type NOT NULL,
-    price_adjustment numeric(5, 2) NOT NULL DEFAULT 0.00,
-    link_token uuid DEFAULT gen_random_uuid() NOT NULL,
-    created_at timestamptz DEFAULT now() NOT NULL,
-    CONSTRAINT agreements_link_token_key UNIQUE (link_token)
+-- Create agreements table with the new permanent link_token
+CREATE TABLE "public"."agreements" (
+    "id" UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    "agreement_name" CHARACTER VARYING NOT NULL,
+    "client_type" CHARACTER VARYING NOT NULL,
+    "price_adjustment" NUMERIC NOT NULL DEFAULT 0,
+    "link_token" UUID DEFAULT gen_random_uuid() NOT NULL UNIQUE, -- The permanent, unique link token
+    "created_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
 
--- Tabla de Unión: Productos en Convenio
-CREATE TABLE agreement_products (
-    agreement_id uuid NOT NULL REFERENCES agreements(id) ON DELETE CASCADE,
-    product_id uuid NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    price numeric(10, 2) NOT NULL,
+-- Create agreement_products junction table
+CREATE TABLE "public"."agreement_products" (
+    "agreement_id" UUID NOT NULL REFERENCES "public"."agreements"(id) ON DELETE CASCADE,
+    "product_id" UUID NOT NULL REFERENCES "public"."products"(id) ON DELETE CASCADE,
+    "price" NUMERIC NOT NULL,
     PRIMARY KEY (agreement_id, product_id)
 );
 
--- Tabla de Unión: Promociones en Convenio
-CREATE TABLE agreement_promotions (
-    agreement_id uuid NOT NULL REFERENCES agreements(id) ON DELETE CASCADE,
-    promotion_id uuid NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+-- Create agreement_promotions junction table
+CREATE TABLE "public"."agreement_promotions" (
+    "agreement_id" UUID NOT NULL REFERENCES "public"."agreements"(id) ON DELETE CASCADE,
+    "promotion_id" UUID NOT NULL REFERENCES "public"."promotions"(id) ON DELETE CASCADE,
     PRIMARY KEY (agreement_id, promotion_id)
 );
 
--- Habilitar Row Level Security (RLS) para todas las tablas
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE promotions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agreements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agreement_products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE agreement_promotions ENABLE ROW LEVEL SECURITY;
+-- Dummy Data for initial setup
 
--- Políticas de RLS:
--- Los usuarios autenticados (admins) pueden gestionar todo.
-CREATE POLICY "Allow full access to authenticated users" ON products
-FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Products
+INSERT INTO "public"."products" (name, description, base_price, stock, category) VALUES
+('Cera Modeladora "Matte Rock"', 'Fijación fuerte con acabado matte. Ideal para estilos definidos y con textura.', 12500, 50, 'Ceras'),
+('Shampoo "Silver Blonde"', 'Neutraliza tonos amarillentos en cabellos rubios y grises. Limpieza profunda.', 15000, 30, 'Shampoos'),
+('Aceite para Barba "Luxe Oil"', 'Hidrata y suaviza la barba y la piel. Mezcla de aceites de argán y jojoba.', 11000, 40, 'Barbería');
 
-CREATE POLICY "Allow full access to authenticated users" ON promotions
-FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Promotions
+INSERT INTO "public"."promotions" (name, description, rules) VALUES
+('Promo Barberías 6+1', 'Comprando 6 unidades de cualquier producto, llevas 1 de regalo.', '{"type": "buy_x_get_y_free", "buy": 6, "get": 1, "scope": "any_product"}'),
+('Descuento por Volumen (10+)', '10% de descuento en el total de la compra superando las 10 unidades.', '{"type": "total_discount_by_units", "min_units": 10, "discount_percentage": 10}'),
+('Kit Silver', 'Llevando 1 Shampoo Silver y 1 Cera Matte, obtienes un 15% de descuento en ambos.', '{"type": "kit_discount", "products": ["Shampoo \"Silver Blonde\"", "Cera Modeladora \"Matte Rock\""], "discount_percentage": 15}');
 
-CREATE POLICY "Allow full access to authenticated users" ON agreements
-FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Agreements
+INSERT INTO "public"."agreements" (agreement_name, client_type, price_adjustment, link_token) VALUES
+('Barberías CABA', 'barberia', -5, 'f47ac10b-58cc-4372-a567-0e02b2c3d479'),
+('Distribuidores Premium', 'distribuidor', -15, '747ac10b-58cc-4372-a567-0e02b2c3d480');
 
-CREATE POLICY "Allow full access to authenticated users" ON agreement_products
-FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Assign products and promotions to agreements
+-- Barberías CABA
+INSERT INTO "public"."agreement_products" (agreement_id, product_id, price)
+SELECT a.id, p.id, p.base_price * 0.95
+FROM agreements a, products p
+WHERE a.agreement_name = 'Barberías CABA';
 
-CREATE POLICY "Allow full access to authenticated users" ON agreement_promotions
-FOR ALL TO authenticated USING (true) WITH CHECK (true);
+INSERT INTO "public"."agreement_promotions" (agreement_id, promotion_id)
+SELECT a.id, promo.id
+FROM agreements a, promotions promo
+WHERE a.agreement_name = 'Barberías CABA' AND promo.name IN ('Promo Barberías 6+1', 'Descuento por Volumen (10+)');
 
--- Los usuarios anónimos (clientes con link) pueden leer datos de convenios específicos.
--- Se asume que el acceso se valida en el backend mediante el link_token.
--- Por simplicidad, permitimos la lectura pública en tablas de solo lectura para el cliente.
-CREATE POLICY "Allow public read access" ON products
-FOR SELECT TO anon USING (true);
+-- Distribuidores Premium
+INSERT INTO "public"."agreement_products" (agreement_id, product_id, price)
+SELECT a.id, p.id, p.base_price * 0.85
+FROM agreements a, products p
+WHERE a.agreement_name = 'Distribuidores Premium';
 
-CREATE POLICY "Allow public read access" ON promotions
-FOR SELECT TO anon USING (true);
+INSERT INTO "public"."agreement_promotions" (agreement_id, promotion_id)
+SELECT a.id, promo.id
+FROM agreements a, promotions promo
+WHERE a.agreement_name = 'Distribuidores Premium';
 
-CREATE POLICY "Allow public read access" ON agreements
-FOR SELECT TO anon USING (true);
-
-CREATE POLICY "Allow public read access" ON agreement_products
-FOR SELECT TO anon USING (true);
-
-CREATE POLICY "Allow public read access" ON agreement_promotions
-FOR SELECT TO anon USING (true);

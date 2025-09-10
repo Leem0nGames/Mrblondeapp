@@ -163,5 +163,3 @@ export default function AgreementsTable({ agreements }: { agreements: Agreement[
     </>
   );
 }
-
-    

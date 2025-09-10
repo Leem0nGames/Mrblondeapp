@@ -74,5 +74,3 @@ export async function getOrderPageData(token: string) {
 
     return { data: { agreement, products }, error: null };
 }
-
-    
