@@ -86,6 +86,26 @@ export async function getAgreements() {
   return { data, error };
 }
 
+export async function getAgreementById(id: string) {
+    const supabase = await getAuthenticatedClient();
+    const { data, error } = await supabase
+        .from("agreements")
+        .select(`
+            *,
+            agreement_products (
+                price,
+                products ( * )
+            ),
+            agreement_promotions (
+                promotions ( * )
+            )
+        `)
+        .eq("id", id)
+        .single();
+    return { data, error };
+}
+
+
 export async function upsertAgreement(payload: UpsertAgreementPayload) {
   const supabase = await getAuthenticatedClient();
   const { id, ...agreementData } = payload;

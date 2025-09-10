@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import Link from 'next/link';
 import { MoreHorizontal, Trash2, Edit, Tag, Percent, FileText } from "lucide-react";
 import {
   AlertDialog,
@@ -147,9 +148,11 @@ export function AgreementCard({ agreement }: { agreement: Agreement }) {
         </div>
       </CardContent>
       <CardFooter className="border-t pt-4">
-        <Button variant="outline" className="w-full">
-            <FileText className="mr-2 h-4 w-4" />
-            Gestionar Convenio
+        <Button variant="outline" className="w-full" asChild>
+            <Link href={`/admin/agreements/${agreement.id}`}>
+              <FileText className="mr-2 h-4 w-4" />
+              Gestionar Convenio
+            </Link>
         </Button>
       </CardFooter>
     </Card>
