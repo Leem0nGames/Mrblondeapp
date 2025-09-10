@@ -5,7 +5,8 @@ import {
   Percent,
   LogOut,
   Home,
-  Link2
+  Link2,
+  FileText
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,18 @@ export default function AdminLayout({
               </TooltipTrigger>
               <TooltipContent side="right">Products</TooltipContent>
             </Tooltip>
+             <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/admin/agreements"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                >
+                  <FileText className="h-5 w-5" />
+                  <span className="sr-only">Agreements</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Agreements</TooltipContent>
+            </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
@@ -60,10 +73,10 @@ export default function AdminLayout({
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
                   <Users className="h-5 w-5" />
-                  <span className="sr-only">Agreements</span>
+                  <span className="sr-only">Clients</span>
                 </Link>
               </TooltipTrigger>
-              <TooltipContent side="right">Agreements</TooltipContent>
+              <TooltipContent side="right">Clients</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -164,10 +177,10 @@ export default function AdminLayout({
             </li>
              <li>
                 <Link
-                  href="#"
+                  href="/admin/agreements"
                   className="flex flex-col items-center text-muted-foreground hover:text-foreground"
                 >
-                  <Users className="h-6 w-6" />
+                  <FileText className="h-6 w-6" />
                   <span className="text-xs">Agreements</span>
                 </Link>
             </li>

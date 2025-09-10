@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -18,18 +18,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { generateOrderLink } from "@/app/actions/admin.actions";
+import { generateOrderLink, getAgreements } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { Copy } from "lucide-react";
+import type { Agreement } from "@/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function GenerateLinkPage() {
-  const [clientType, setClientType] = useState<"barberia" | "distribuidor">(
-    "barberia"
-  );
+  const [agreements, setAgreements] = useState<Agreement[]>([]);
+  const [selectedAgreementId, setSelectedAgreementId] = useState<string>("");
   const [clientName, setClientName] = useState("");
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isLoadingAgreements, startAgreementsLoading] = useTransition();
   const { toast } = useToast();
+
+  useEffect(() => {
+    startAgreementsLoading(async () => {
+      const { data, error } = await getAgreements();
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Could not fetch agreements.",
+          variant: "destructive",
+        });
+      } else {
+        setAgreements(data ?? []);
+      }
+    });
+  }, [toast]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -41,8 +58,16 @@ export default function GenerateLinkPage() {
       });
       return;
     }
+     if (!selectedAgreementId) {
+      toast({
+        title: "Error",
+        description: "Please select an agreement.",
+        variant: "destructive",
+      });
+      return;
+    }
     startTransition(async () => {
-      const result = await generateOrderLink(clientType, clientName);
+      const result = await generateOrderLink(selectedAgreementId, clientName);
       if (result.error) {
         toast({
           title: "Error generating link",
@@ -71,7 +96,7 @@ export default function GenerateLinkPage() {
       <CardHeader>
         <CardTitle>Generate Order Link</CardTitle>
         <CardDescription>
-          Create a unique link for a client to place an order.
+          Create a unique link for a client to place an order based on an agreement.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -87,23 +112,24 @@ export default function GenerateLinkPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="client-type">Client Type</Label>
-            <Select
-              value={clientType}
-              onValueChange={(
-                value: "barberia" | "distribuidor"
-              ) => setClientType(value)}
-            >
-              <SelectTrigger id="client-type">
-                <SelectValue placeholder="Select a client type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="barberia">Barbería</SelectItem>
-                <SelectItem value="distribuidor">Distribuidor</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="agreement">Agreement</Label>
+             {isLoadingAgreements ? <Skeleton className="h-10 w-full" /> : (
+                <Select
+                  value={selectedAgreementId}
+                  onValueChange={setSelectedAgreementId}
+                >
+                  <SelectTrigger id="agreement">
+                    <SelectValue placeholder="Select an agreement" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {agreements.map((agreement) => (
+                        <SelectItem key={agreement.id} value={agreement.id}>{agreement.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+             )}
           </div>
-          <Button type="submit" className="w-full" disabled={isPending}>
+          <Button type="submit" className="w-full" disabled={isPending || isLoadingAgreements}>
             {isPending ? "Generating..." : "Generate Link"}
           </Button>
         </form>

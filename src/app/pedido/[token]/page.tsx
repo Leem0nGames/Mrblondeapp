@@ -1,8 +1,7 @@
-
 import { getOrderPageData } from "@/app/actions/user.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/components/logo";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle } from "lucide-react";
 import { CartWidget } from "./_components/cart-widget";
 
@@ -35,7 +34,7 @@ export default async function OrderPage({
     );
   }
 
-  const { agreement, products } = data;
+  const { accessToken, products } = data;
 
   return (
     <div className="min-h-screen bg-muted/20">
@@ -43,8 +42,8 @@ export default async function OrderPage({
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Logo />
           <div className="text-right">
-            <p className="font-semibold text-foreground">{agreement.client_name}</p>
-            <p className="text-sm capitalize text-muted-foreground">{agreement.client_type}</p>
+            <p className="font-semibold text-foreground">{accessToken.client_name}</p>
+            <p className="text-sm capitalize text-muted-foreground">{accessToken.agreement.client_type}</p>
           </div>
         </div>
       </header>
@@ -62,7 +61,7 @@ export default async function OrderPage({
         </div>
       </main>
 
-      <CartWidget agreement={agreement} />
+      <CartWidget accessToken={accessToken} />
     </div>
   );
 }

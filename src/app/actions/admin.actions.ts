@@ -2,11 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { Product } from "@/types";
+import type { Product, Agreement } from "@/types";
 
 type UpsertProductPayload = Omit<Product, "id" | "created_at"> & {
   id?: string;
 };
+
+type UpsertAgreementPayload = Omit<Agreement, "id" | "created_at"> & {
+  id?: string;
+};
+
 
 // This is a helper function to ensure only authenticated users can perform admin actions.
 async function getAuthenticatedClient() {
@@ -21,6 +26,8 @@ async function getAuthenticatedClient() {
   return supabase;
 }
 
+// --- Product Actions ---
+
 export async function getProducts() {
   const supabase = await getAuthenticatedClient();
   const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false });
@@ -29,7 +36,6 @@ export async function getProducts() {
 
 export async function upsertProduct(payload: UpsertProductPayload) {
   const supabase = await getAuthenticatedClient();
-
   const { id, ...productData } = payload;
   
   const query = supabase.from("products");
@@ -38,9 +44,7 @@ export async function upsertProduct(payload: UpsertProductPayload) {
     ? await query.update(productData).eq("id", id).select().single()
     : await query.insert(productData).select().single();
 
-  if (error) {
-    return { data: null, error };
-  }
+  if (error) { return { data: null, error }; }
 
   revalidatePath("/admin/products");
   return { data, error: null };
@@ -48,28 +52,59 @@ export async function upsertProduct(payload: UpsertProductPayload) {
 
 export async function deleteProduct(id: string) {
   const supabase = await getAuthenticatedClient();
-
   const { error } = await supabase.from("products").delete().eq("id", id);
-  
-  if (error) {
-    return { error };
-  }
-
+  if (error) { return { error }; }
   revalidatePath("/admin/products");
   return { error: null };
 }
 
-export async function generateOrderLink(clientType: 'barberia' | 'distribuidor', clientName: string) {
+// --- Agreement Actions ---
+
+export async function getAgreements() {
+  const supabase = await getAuthenticatedClient();
+  const { data, error } = await supabase.from("agreements").select("*").order("name", { ascending: true });
+  return { data, error };
+}
+
+export async function upsertAgreement(payload: UpsertAgreementPayload) {
+  const supabase = await getAuthenticatedClient();
+  const { id, ...agreementData } = payload;
+
+  // For now, we are not allowing to edit promo_override from the UI.
+  const payloadToUpsert = { ...agreementData, promo_override: null };
+
+  const query = supabase.from("agreements");
+  const { data, error } = id
+    ? await query.update(payloadToUpsert).eq("id", id).select().single()
+    : await query.insert(payloadToUpsert).select().single();
+  
+  if (error) { return { data: null, error }; }
+
+  revalidatePath("/admin/agreements");
+  return { data, error: null };
+}
+
+export async function deleteAgreement(id: string) {
+    const supabase = await getAuthenticatedClient();
+    const { error } = await supabase.from("agreements").delete().eq("id", id);
+    if (error) { return { error }; }
+    revalidatePath("/admin/agreements");
+    return { error: null };
+}
+
+
+// --- Link Generation ---
+export async function generateOrderLink(agreementId: string, clientName: string) {
   const supabase = await getAuthenticatedClient();
 
   const token = crypto.randomUUID();
   const expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
   const { data, error } = await supabase
-    .from('agreements')
+    .from('access_tokens')
     .insert({
+      agreement_id: agreementId,
       client_name: clientName,
-      client_type: clientType,
       token,
       expires_at,
     })

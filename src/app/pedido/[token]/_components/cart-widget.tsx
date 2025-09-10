@@ -20,7 +20,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { OrderSummarySheet } from "./order-summary-sheet";
-import type { Agreement } from "@/types";
+import type { AccessToken } from "@/types";
 
 function CartItem({ item }: { item: CartItem }) {
   const { updateQuantity } = useCartStore();
@@ -74,7 +74,7 @@ function CartItem({ item }: { item: CartItem }) {
   );
 }
 
-export function CartWidget({ agreement }: { agreement: Agreement }) {
+export function CartWidget({ accessToken }: { accessToken: AccessToken }) {
   const { items, totalItems } = useCartStore();
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
@@ -125,7 +125,7 @@ export function CartWidget({ agreement }: { agreement: Agreement }) {
       <OrderSummarySheet 
         isOpen={isSummaryOpen}
         onOpenChange={setIsSummaryOpen}
-        agreement={agreement}
+        accessToken={accessToken}
       />
     </>
   );

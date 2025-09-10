@@ -6,8 +6,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useCartStore } from "@/hooks/use-cart-store";
 import { suggestPromotions, type SuggestPromotionsInput, type SuggestPromotionsOutput } from "@/ai/flows/intelligent-promo-suggestions";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { AccessToken } from "@/types";
 
-export function IntelligentSuggestions({ agreement }: { agreement: SuggestPromotionsInput }) {
+export function IntelligentSuggestions({ agreement: agreementProp }: { agreement: SuggestPromotionsInput }) {
   const { items, totalItems } = useCartStore();
   const [suggestions, setSuggestions] = useState<SuggestPromotionsOutput | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -23,7 +24,7 @@ export function IntelligentSuggestions({ agreement }: { agreement: SuggestPromot
         }));
 
         const result = await suggestPromotions({
-          ...agreement,
+          ...agreementProp,
           items: cartItems,
           total_unidades: totalItems
         });
@@ -32,7 +33,7 @@ export function IntelligentSuggestions({ agreement }: { agreement: SuggestPromot
     } else {
       setSuggestions(null);
     }
-  }, [totalItems, items, agreement]);
+  }, [totalItems, items, agreementProp]);
 
   if (isPending) {
     return (

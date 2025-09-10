@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/hooks/use-cart-store";
-import { Agreement, ClientDetails } from "@/types";
+import { AccessToken } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
@@ -50,11 +50,11 @@ ${itemsText}
 export function OrderSummarySheet({
   isOpen,
   onOpenChange,
-  agreement,
+  accessToken,
 }: {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  agreement: Agreement;
+  accessToken: AccessToken;
 }) {
   const { items, totalPrice, totalItems } = useCartStore();
   const { toast } = useToast();
@@ -70,7 +70,7 @@ export function OrderSummarySheet({
       });
       return;
     }
-    const message = formatWhatsAppMessage(agreement.client_name, items, totalPrice);
+    const message = formatWhatsAppMessage(accessToken.client_name, items, totalPrice);
     const whatsappUrl = `https://wa.me/${whatsAppNumber}?text=${message}`;
     window.open(whatsappUrl, "_blank");
   };
@@ -124,10 +124,10 @@ export function OrderSummarySheet({
 
                     {/* AI Suggestions */}
                     <IntelligentSuggestions agreement={{
-                        type: agreement.client_type,
-                        agreement_id: agreement.id,
+                        type: accessToken.agreement.client_type,
+                        agreement_id: accessToken.agreement.id,
                         total_unidades: totalItems,
-                        nombre: agreement.client_name,
+                        nombre: accessToken.client_name,
                         items: items.map(i => ({id: i.product.id, name: i.product.name, quantity: i.quantity}))
                     }}/>
 

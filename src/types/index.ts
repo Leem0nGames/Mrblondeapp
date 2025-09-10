@@ -14,14 +14,14 @@ export type Product = {
 export type ClientPrice = {
   id: string;
   product_id: string;
-  client_type: "barberia" | "distribuidor";
+  client_type: "barberia" | "distribuidor" | "especial";
   price: number;
   created_at: string;
 };
 
 export type Promotion = {
   id: string;
-  client_type: "barberia" | "distribuidor";
+  client_type: "barberia" | "distribuidor" | "especial";
   name: string;
   description: string | null;
   threshold: number;
@@ -32,14 +32,22 @@ export type Promotion = {
 
 export type Agreement = {
   id: string;
-  client_name: string;
-  client_type: "barberia" | "distribuidor";
+  name: string;
+  client_type: "barberia" | "distribuidor" | "especial";
   price_adjustment: number;
   promo_override: { threshold: number; bonus: number } | null;
-  token: string | null;
-  expires_at: string | null;
   created_at: string;
 };
+
+export type AccessToken = {
+    id: string;
+    agreement_id: string;
+    client_name: string;
+    token: string;
+    expires_at: string;
+    created_at: string;
+    agreement: Agreement; // Joined data
+}
 
 export type OrderLog = {
   id: string;
