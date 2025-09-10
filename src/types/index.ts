@@ -51,3 +51,5 @@ export type Agreement = {
   agreement_products: AgreementProduct[]; // Joined data
   agreement_promotions: AgreementPromotion[]; // Joined data
 };
+
+    
