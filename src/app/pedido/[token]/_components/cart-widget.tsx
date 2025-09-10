@@ -1,12 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useCartStore, type CartItem } from "@/hooks/use-cart-store";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
   SheetDescription,
-  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -16,10 +16,11 @@ import {
   Trash2,
   Plus,
   Minus,
-  AlertTriangle,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
+import { OrderSummarySheet } from "./order-summary-sheet";
+import type { Agreement } from "@/types";
 
 function CartItem({ item }: { item: CartItem }) {
   const { updateQuantity } = useCartStore();
@@ -73,54 +74,59 @@ function CartItem({ item }: { item: CartItem }) {
   );
 }
 
-export function CartWidget() {
-  const { items, totalItems, totalPrice } = useCartStore();
+export function CartWidget({ agreement }: { agreement: Agreement }) {
+  const { items, totalItems } = useCartStore();
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="outline" className="fixed bottom-4 right-4 z-50 h-14 rounded-full shadow-lg">
-          <ShoppingCart className="mr-2" />
-          Ver Pedido ({totalItems})
-        </Button>
-      </SheetTrigger>
-      <SheetContent className="flex flex-col">
-        <SheetHeader>
-          <SheetTitle>Tu Pedido</SheetTitle>
-          <SheetDescription>
-            Revisa los productos en tu carrito de compras.
-          </SheetDescription>
-        </SheetHeader>
-        {items.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-            <ShoppingCart className="h-16 w-16 text-muted-foreground" />
-            <p className="text-muted-foreground">Tu carrito está vacío</p>
-            <p className="text-sm text-muted-foreground">
-              Agrega productos para comenzar tu pedido.
-            </p>
-          </div>
-        ) : (
-          <>
-            <ScrollArea className="flex-1 -mx-6">
-              <div className="px-6 divide-y">
-                {items.map((item) => (
-                  <CartItem key={item.product.id} item={item} />
-                ))}
-              </div>
-            </ScrollArea>
-            <SheetFooter className="mt-auto flex-col space-y-4 pt-4 border-t">
-              <div className="flex justify-between font-semibold">
-                <span>Subtotal</span>
-                <span>${totalPrice.toLocaleString()}</span>
-              </div>
-              <Button size="lg" className="w-full">
-                <AlertTriangle className="mr-2 h-4 w-4" />
-                Continuar (próximamente)
+    <>
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button variant="outline" className="fixed bottom-4 right-4 z-50 h-14 rounded-full shadow-lg">
+            <ShoppingCart className="mr-2" />
+            Ver Pedido ({totalItems})
+          </Button>
+        </SheetTrigger>
+        <SheetContent className="flex flex-col">
+          <SheetHeader>
+            <SheetTitle>Tu Pedido</SheetTitle>
+            <SheetDescription>
+              Revisa los productos en tu carrito de compras.
+            </SheetDescription>
+          </SheetHeader>
+          {items.length === 0 ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+              <ShoppingCart className="h-16 w-16 text-muted-foreground" />
+              <p className="text-muted-foreground">Tu carrito está vacío</p>
+              <p className="text-sm text-muted-foreground">
+                Agrega productos para comenzar tu pedido.
+              </p>
+            </div>
+          ) : (
+            <>
+              <ScrollArea className="flex-1 -mx-6">
+                <div className="px-6 divide-y">
+                  {items.map((item) => (
+                    <CartItem key={item.product.id} item={item} />
+                  ))}
+                </div>
+              </ScrollArea>
+              <Button 
+                size="lg" 
+                className="w-full mt-4"
+                onClick={() => setIsSummaryOpen(true)}
+              >
+                Continuar
               </Button>
-            </SheetFooter>
-          </>
-        )}
-      </SheetContent>
-    </Sheet>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+      <OrderSummarySheet 
+        isOpen={isSummaryOpen}
+        onOpenChange={setIsSummaryOpen}
+        agreement={agreement}
+      />
+    </>
   );
 }

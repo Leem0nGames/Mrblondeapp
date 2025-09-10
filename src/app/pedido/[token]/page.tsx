@@ -21,7 +21,7 @@ export default async function OrderPage({
             <CardTitle className="flex items-center justify-center gap-2 text-destructive">
               <AlertTriangle />
               Error
-            </CardTitle>
+            </Title>
           </CardHeader>
           <CardContent>
             <p className="text-lg text-muted-foreground">{error?.message || "Algo salió mal."}</p>
@@ -61,7 +61,7 @@ export default async function OrderPage({
         </div>
       </main>
 
-      <CartWidget />
+      <CartWidget agreement={agreement} />
     </div>
   );
 }
