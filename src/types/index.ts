@@ -11,22 +11,23 @@ export type Product = {
   created_at: string;
 };
 
-export type ClientPrice = {
+export type Client = {
   id: string;
-  product_id: string;
-  client_type: "barberia" | "distribuidor" | "especial";
-  price: number;
+  name: string;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
   created_at: string;
-};
+}
 
 export type Promotion = {
   id: string;
-  client_type: "barberia" | "distribuidor" | "especial";
   name: string;
   description: string | null;
-  threshold: number;
-  bonus: number;
-  is_global: boolean;
+  // Simple example: { "type": "buy_x_get_y_free", "buy": 6, "get": 1 }
+  // or { "type": "free_shipping", "min_units": 12, "cities": ["CABA"] }
+  // This allows for flexible, JSON-based rule definitions.
+  rules: any;
   created_at: string;
 };
 
@@ -35,7 +36,6 @@ export type Agreement = {
   name: string;
   client_type: "barberia" | "distribuidor" | "especial";
   price_adjustment: number;
-  promo_override: { threshold: number; bonus: number } | null;
   created_at: string;
 };
 

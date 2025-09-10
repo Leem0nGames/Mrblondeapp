@@ -2,15 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { Product, Agreement } from "@/types";
+import type { Product, Agreement, Client, Promotion } from "@/types";
 
 type UpsertProductPayload = Omit<Product, "id" | "created_at"> & {
   id?: string;
 };
 
-// We only allow editing a subset of the agreement fields from the UI for now.
-// The complex rules are managed elsewhere (e.g., AI prompt).
 type UpsertAgreementPayload = Pick<Agreement, "name" | "client_type" | "price_adjustment"> & {
+  id?: string;
+};
+
+type UpsertClientPayload = Omit<Client, "id" | "created_at"> & {
+  id?: string;
+};
+
+type UpsertPromotionPayload = Omit<Promotion, "id" | "created_at"> & {
   id?: string;
 };
 
@@ -71,16 +77,11 @@ export async function getAgreements() {
 export async function upsertAgreement(payload: UpsertAgreementPayload) {
   const supabase = await getAuthenticatedClient();
   const { id, ...agreementData } = payload;
-
-  // The 'promo_override' field is complex and not managed by this simple form.
-  // We set it to null or keep its existing value if we were to extend this logic.
-  // For now, we just upsert the data from the form.
-  const payloadToUpsert = { ...agreementData, promo_override: null };
-
+  
   const query = supabase.from("agreements");
   const { data, error } = id
-    ? await query.update(payloadToUpsert).eq("id", id).select().single()
-    : await query.insert(payloadToUpsert).select().single();
+    ? await query.update(agreementData).eq("id", id).select().single()
+    : await query.insert(agreementData).select().single();
   
   if (error) { return { data: null, error }; }
 
@@ -94,6 +95,69 @@ export async function deleteAgreement(id: string) {
     if (error) { return { error }; }
     revalidatePath("/admin/agreements");
     return { error: null };
+}
+
+// --- Client Actions ---
+
+export async function getClients() {
+  const supabase = await getAuthenticatedClient();
+  const { data, error } = await supabase.from("clients").select("*").order("name", { ascending: true });
+  return { data, error };
+}
+
+export async function upsertClient(payload: UpsertClientPayload) {
+  const supabase = await getAuthenticatedClient();
+  const { id, ...clientData } = payload;
+  
+  const query = supabase.from("clients");
+  const { data, error } = id
+    ? await query.update(clientData).eq("id", id).select().single()
+    : await query.insert(clientData).select().single();
+    
+  if (error) { return { data: null, error }; }
+
+  revalidatePath("/admin/clients");
+  return { data, error: null };
+}
+
+export async function deleteClient(id: string) {
+  const supabase = await getAuthenticatedClient();
+  const { error } = await supabase.from("clients").delete().eq("id", id);
+  if (error) { return { error }; }
+  revalidatePath("/admin/clients");
+  return { error: null };
+}
+
+
+// --- Promotion Actions ---
+
+export async function getPromotions() {
+  const supabase = await getAuthenticatedClient();
+  const { data, error } = await supabase.from("promotions").select("*").order("name", { ascending: true });
+  return { data, error };
+}
+
+export async function upsertPromotion(payload: UpsertPromotionPayload) {
+  const supabase = await getAuthenticatedClient();
+  const { id, ...promoData } = payload;
+  
+  const query = supabase.from("promotions");
+  const { data, error } = id
+    ? await query.update(promoData).eq("id", id).select().single()
+    : await query.insert(promoData).select().single();
+    
+  if (error) { return { data: null, error }; }
+
+  revalidatePath("/admin/promotions");
+  return { data, error: null };
+}
+
+export async function deletePromotion(id: string) {
+  const supabase = await getAuthenticatedClient();
+  const { error } = await supabase.from("promotions").delete().eq("id", id);
+  if (error) { return { error }; }
+  revalidatePath("/admin/promotions");
+  return { error: null };
 }
 
 

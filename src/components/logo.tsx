@@ -7,12 +7,12 @@ export function Logo({ className }: { className?: string }) {
     <Link
       href="/"
       className={cn(
-        "flex items-center gap-2 text-lg font-bold font-headline text-primary",
+        "flex items-center gap-2 text-lg font-bold font-headline",
         className
       )}
     >
-      <Package className="h-6 w-6" />
-      <span>Blonde Orders</span>
+      <Package className="h-6 w-6 text-primary" />
+      <span className="text-primary">Blonde Orders</span>
     </Link>
   );
 }
