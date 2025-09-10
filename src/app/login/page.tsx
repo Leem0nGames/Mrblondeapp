@@ -1,8 +1,5 @@
-'use client';
-
-import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
-import { Button } from '@/components/ui/button';
+import { hasUsers } from '@/app/actions/user.actions';
+import { Logo } from '@/components/logo';
 import {
   Card,
   CardContent,
@@ -10,27 +7,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { login, type AuthState } from '@/app/actions/user.actions';
-import { Logo } from '@/components/logo';
+import { LoginForm } from './_components/login-form';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
-const initialState: AuthState = {
-  error: null,
-};
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? 'Accediendo...' : 'Acceder'}
-    </Button>
-  );
-}
-
-export default function LoginPage() {
-  const [state, formAction] = useActionState(login, initialState);
+// Esta página es un Server Component.
+// Comprueba si existen usuarios antes de decidir qué renderizar.
+export default async function LoginPage() {
+  const usersExist = await hasUsers();
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40">
@@ -41,28 +25,24 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-2xl">Admin Login</CardTitle>
           <CardDescription>
-            Ingresa tu PIN para acceder al panel de administración.
+            {usersExist
+              ? 'Ingresa tus credenciales para acceder al panel.'
+              : 'No hay cuentas de administrador configuradas.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={formAction} className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="pin">PIN</Label>
-              <Input
-                id="pin"
-                type="password"
-                name="pin"
-                placeholder="••••"
-                required
-                maxLength={4}
-                autoComplete="current-password"
-              />
-              {state?.error?.message && (
-                <p className="text-sm text-destructive pt-1">{state.error.message}</p>
-              )}
+          {usersExist ? (
+            <LoginForm />
+          ) : (
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground mb-4">
+                Crea la primera cuenta para empezar a usar el sistema.
+              </p>
+              <Button asChild className="w-full">
+                <Link href="/signup">Ir a la página de registro</Link>
+              </Button>
             </div>
-            <SubmitButton />
-          </form>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -67,19 +67,44 @@ export async function signupSuperAdmin(
     return { error: { message: 'El email y la contraseña son requeridos.' } };
   }
 
-  const { data: { session }, error } = await supabase.auth.signUp({ email, password });
+  // 1. Intentar registrar al nuevo usuario.
+  const { data: signupData, error: signupError } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      // Opcional: Desactivar el email de confirmación si se configura en el panel de Supabase
+      // emailRedirectTo: `${new URL(request.url).origin}/auth/callback`,
+    },
+  });
 
-  if (error) {
-    console.error('Supabase signup error:', error.message);
-    return { error: { message: 'No se pudo crear la cuenta. Inténtelo de nuevo.' } };
+  if (signupError) {
+    console.error('Supabase signup error:', signupError.message);
+    return { error: { message: 'No se pudo crear la cuenta. ' + signupError.message } };
   }
 
-  if (!session) {
-     return { error: { message: 'No se pudo iniciar sesión después del registro.' } };
-  }
+  // 2. Comprobar si el usuario se creó pero no se inició sesión (comportamiento por defecto)
+  if (signupData.user && !signupData.session) {
+    // 3. Iniciar sesión manualmente para establecer la sesión
+    const { data: signinData, error: signinError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
+    if (signinError) {
+      console.error('Supabase signin after signup error:', signinError.message);
+      return { error: { message: 'Se creó el usuario, pero no se pudo iniciar sesión. Contacte al soporte.' } };
+    }
+    
+    if (!signinData.session) {
+        return { error: { message: 'No se pudo iniciar sesión después del registro.' } };
+    }
+
+  } else if (!signupData.session) {
+      return { error: { message: 'No se pudo obtener una sesión después del registro.' } };
+  }
+  
   revalidatePath('/'); // Invalida la cache para que la próxima comprobación de `hasUsers` sea correcta.
-  redirect('/admin'); // Redirige al panel de admin tras el registro exitoso.
+  redirect('/admin'); // Redirige al panel de admin tras el registro y login exitosos.
 }
 
 /**
