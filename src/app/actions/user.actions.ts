@@ -9,12 +9,12 @@ export async function login(formData: FormData) {
   const pin = formData.get("pin") as string;
   const supabase = createClient();
   
-  // Se usan valores por defecto si las variables de entorno no están configuradas.
   const adminPin = process.env.ADMIN_PIN || "1234";
   const adminEmail = process.env.ADMIN_EMAIL || "admin@blonde.com";
   const adminPassword = process.env.ADMIN_PASSWORD || "admin1234";
 
   if (pin !== adminPin) {
+    console.error("Login failed: Incorrect PIN");
     return { error: { message: "PIN incorrecto." } };
   }
 
@@ -25,7 +25,6 @@ export async function login(formData: FormData) {
 
   if (error) {
     console.error("Login error:", error.message);
-    // Devuelve un error más genérico para no exponer detalles de la infraestructura.
     return { error: { message: "No se pudo autenticar al administrador. Contacte al soporte." } };
   }
 
