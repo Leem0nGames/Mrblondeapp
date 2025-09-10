@@ -17,7 +17,7 @@ Si necesitas empezar de cero, sigue estos pasos para borrar las tablas desde la 
     *   Selecciona la opción **"Delete table"**.
     *   Confirma la acción escribiendo el nombre de la tabla cuando se te pida.
 3.  **Repite el proceso** para todas las tablas de la aplicación. Es posible que necesites seguir un orden específico debido a las relaciones entre ellas. Si recibes un error, prueba a borrar en este orden:
-    *   Primero: `agreement_products`, `agreement_promotions`, `access_tokens`.
+    *   Primero: `agreement_products`, `agreement_promotions`.
     *   Después: `agreements`, `products`, y `promotions`.
 
 ### Ejecutar el Script SQL

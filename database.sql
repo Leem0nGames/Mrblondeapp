@@ -1,79 +1,157 @@
 
--- Habilitar la extensión pgcrypto para generar UUIDs
-create extension if not exists "pgcrypto" with schema "public";
+-- Roles and Policies will be managed through the Supabase dashboard.
+-- This script focuses on creating the necessary tables and relationships.
 
--- Tabla de Productos
--- Almacena el catálogo de todos los productos disponibles.
-drop table if exists products cascade;
-create table public.products (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  description text,
-  base_price numeric(10, 2) not null default 0,
-  stock integer not null default 0,
-  category text,
-  created_at timestamp with time zone not null default now()
+-- 1. PRODUCTS TABLE
+-- Stores the catalog of all products available.
+CREATE TABLE IF NOT EXISTS public.products (
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    name character varying NOT NULL,
+    description text,
+    base_price numeric(10,2) DEFAULT 0.00 NOT NULL,
+    stock integer DEFAULT 0 NOT NULL,
+    category character varying,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+-- Anyone can view products.
+CREATE POLICY "Enable read access for all users" ON "public"."products"
+AS PERMISSIVE FOR SELECT
+TO public
+USING (true);
+-- Only authenticated users can modify products (for now, assumes admin role is handled by app logic).
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."products"
+AS PERMISSIVE FOR INSERT
+TO authenticated
+WITH CHECK (true);
+CREATE POLICY "Enable update for authenticated users only" ON "public"."products"
+AS PERMISSIVE FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
+CREATE POLICY "Enable delete for authenticated users only" ON "public"."products"
+AS PERMISSIVE FOR DELETE
+TO authenticated
+USING (true);
 
--- Tabla de Promociones
--- Almacena todas las promociones que pueden ser asignadas a los convenios.
--- Las 'rules' se guardan como JSON para máxima flexibilidad.
-drop table if exists promotions cascade;
-create table public.promotions (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  description text,
-  rules jsonb not null,
-  created_at timestamp with time zone not null default now()
+
+-- 2. PROMOTIONS TABLE
+-- Stores all available promotions and their rules.
+CREATE TABLE IF NOT EXISTS public.promotions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    name character varying NOT NULL,
+    description text,
+    rules jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
+ALTER TABLE public.promotions ENABLE ROW LEVEL SECURITY;
+-- Anyone can view promotions.
+CREATE POLICY "Enable read access for all users" ON "public"."promotions"
+AS PERMISSIVE FOR SELECT
+TO public
+USING (true);
+-- Only authenticated users can modify promotions.
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."promotions"
+AS PERMISSIVE FOR INSERT
+TO authenticated
+WITH CHECK (true);
+CREATE POLICY "Enable update for authenticated users only" ON "public"."promotions"
+AS PERMISSIVE FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
+CREATE POLICY "Enable delete for authenticated users only" ON "public"."promotions"
+AS PERMISSIVE FOR DELETE
+TO authenticated
+USING (true);
 
--- Tabla de Convenios (Agreements)
--- Define las reglas de negocio para diferentes tipos de clientes.
--- Cada convenio tiene un link_token único y permanente.
-drop table if exists agreements cascade;
-create table public.agreements (
-  id uuid primary key default gen_random_uuid(),
-  agreement_name text not null,
-  client_type text not null check (client_type in ('barberia', 'distribuidor', 'especial')),
-  price_adjustment numeric(5, 2) not null default 0,
-  link_token uuid not null default gen_random_uuid(),
-  created_at timestamp with time zone not null default now(),
-  constraint agreements_link_token_key unique (link_token) -- RESTRICCIÓN ÚNICA AÑADIDA
+
+-- 3. AGREEMENTS TABLE
+-- Defines specific agreements for clients or client types.
+CREATE TABLE IF NOT EXISTS public.agreements (
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    agreement_name character varying NOT NULL,
+    client_type character varying NOT NULL,
+    price_adjustment numeric(5,2) DEFAULT 0.00 NOT NULL,
+    link_token uuid DEFAULT gen_random_uuid() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT agreements_link_token_key UNIQUE (link_token)
 );
+ALTER TABLE public.agreements ENABLE ROW LEVEL SECURITY;
+-- Anyone can view agreements (needed for order page via token).
+CREATE POLICY "Enable read access for all users" ON "public"."agreements"
+AS PERMISSIVE FOR SELECT
+TO public
+USING (true);
+-- Only authenticated users can modify agreements.
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."agreements"
+AS PERMISSIVE FOR INSERT
+TO authenticated
+WITH CHECK (true);
+CREATE POLICY "Enable update for authenticated users only" ON "public"."agreements"
+AS PERMISSIVE FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
+CREATE POLICY "Enable delete for authenticated users only" ON "public"."agreements"
+AS PERMISSIVE FOR DELETE
+TO authenticated
+USING (true);
 
--- Tabla de Convenio-Productos (Tabla Pivote)
--- Asigna productos a un convenio con un precio específico.
-drop table if exists agreement_products cascade;
-create table public.agreement_products (
-    agreement_id uuid not null references public.agreements(id) on delete cascade,
-    product_id uuid not null references public.products(id) on delete cascade,
-    price numeric(10, 2) not null,
-    primary key (agreement_id, product_id)
+-- 4. AGREEMENT_PRODUCTS JUNCTION TABLE
+-- Links products to agreements with a specific price.
+CREATE TABLE IF NOT EXISTS public.agreement_products (
+    agreement_id uuid NOT NULL REFERENCES public.agreements(id) ON DELETE CASCADE,
+    product_id uuid NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+    price numeric(10,2) NOT NULL,
+    PRIMARY KEY (agreement_id, product_id)
 );
+ALTER TABLE public.agreement_products ENABLE ROW LEVEL SECURITY;
+-- Anyone can view these relationships (needed for order page).
+CREATE POLICY "Enable read access for all users" ON "public"."agreement_products"
+AS PERMISSIVE FOR SELECT
+TO public
+USING (true);
+-- Only authenticated users can modify these relationships.
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."agreement_products"
+AS PERMISSIVE FOR INSERT
+TO authenticated
+WITH CHECK (true);
+CREATE POLICY "Enable update for authenticated users only" ON "public"."agreement_products"
+AS PERMISSIVE FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
+CREATE POLICY "Enable delete for authenticated users only" ON "public"."agreement_products"
+AS PERMISSIVE FOR DELETE
+TO authenticated
+USING (true);
 
--- Tabla de Convenio-Promociones (Tabla Pivote)
--- Asigna promociones a un convenio.
-drop table if exists agreement_promotions cascade;
-create table public.agreement_promotions (
-    agreement_id uuid not null references public.agreements(id) on delete cascade,
-    promotion_id uuid not null references public.promotions(id) on delete cascade,
-    primary key (agreement_id, promotion_id)
+
+-- 5. AGREEMENT_PROMOTIONS JUNCTION TABLE
+-- Links promotions to agreements.
+CREATE TABLE IF NOT EXISTS public.agreement_promotions (
+    agreement_id uuid NOT NULL REFERENCES public.agreements(id) ON DELETE CASCADE,
+    promotion_id uuid NOT NULL REFERENCES public.promotions(id) ON DELETE CASCADE,
+    PRIMARY KEY (agreement_id, promotion_id)
 );
-
--- Habilitar Row Level Security (RLS) para todas las tablas
--- Esto es una buena práctica de seguridad, aunque las reglas no estén definidas aún.
-alter table public.products enable row level security;
-alter table public.promotions enable row level security;
-alter table public.agreements enable row level security;
-alter table public.agreement_products enable row level security;
-alter table public.agreement_promotions enable row level security;
-
--- Políticas de RLS para acceso público de lectura (si es necesario)
--- Por defecto, se deniega el acceso. Las reglas se deben crear según la lógica de la app.
--- Ejemplo: permitir lectura pública de productos.
--- create policy "Allow public read access to products" on public.products for select using (true);
--- create policy "Allow public read access to promotions" on public.promotions for select using (true);
-
--- No se necesita la tabla `access_tokens` ya que ahora los convenios tienen un link_token permanente.
--- drop table if exists access_tokens;
-
+ALTER TABLE public.agreement_promotions ENABLE ROW LEVEL SECURITY;
+-- Anyone can view these relationships (needed for order page).
+CREATE POLICY "Enable read access for all users" ON "public"."agreement_promotions"
+AS PERMISSIVE FOR SELECT
+TO public
+USING (true);
+-- Only authenticated users can modify these relationships.
+CREATE POLICY "Enable insert for authenticated users only" ON "public"."agreement_promotions"
+AS PERMISSIVE FOR INSERT
+TO authenticated
+WITH CHECK (true);
+CREATE POLICY "Enable update for authenticated users only" ON "public"."agreement_promotions"
+AS PERMISSIVE FOR UPDATE
+TO authenticated
+USING (true)
+WITH CHECK (true);
+CREATE POLICY "Enable delete for authenticated users only" ON "public"."agreement_promotions"
+AS PERMISSIVE FOR DELETE
+TO authenticated
+USING (true);
