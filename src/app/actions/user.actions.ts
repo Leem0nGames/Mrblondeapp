@@ -68,43 +68,25 @@ export async function signupSuperAdmin(
   }
 
   // 1. Intentar registrar al nuevo usuario.
-  const { data: signupData, error: signupError } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: {
-      // Opcional: Desactivar el email de confirmación si se configura en el panel de Supabase
-      // emailRedirectTo: `${new URL(request.url).origin}/auth/callback`,
-    },
   });
 
-  if (signupError) {
-    console.error('Supabase signup error:', signupError.message);
-    return { error: { message: 'No se pudo crear la cuenta. ' + signupError.message } };
+  if (error) {
+    console.error('Supabase signup error:', error.message);
+    return { error: { message: 'No se pudo crear la cuenta. ' + error.message } };
   }
 
-  // 2. Comprobar si el usuario se creó pero no se inició sesión (comportamiento por defecto)
-  if (signupData.user && !signupData.session) {
-    // 3. Iniciar sesión manualmente para establecer la sesión
-    const { data: signinData, error: signinError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (signinError) {
-      console.error('Supabase signin after signup error:', signinError.message);
-      return { error: { message: 'Se creó el usuario, pero no se pudo iniciar sesión. Contacte al soporte.' } };
-    }
-    
-    if (!signinData.session) {
-        return { error: { message: 'No se pudo iniciar sesión después del registro.' } };
-    }
-
-  } else if (!signupData.session) {
-      return { error: { message: 'No se pudo obtener una sesión después del registro.' } };
+  // 2. Si el registro es exitoso, no intentamos iniciar sesión aquí.
+  // En su lugar, invalidamos la cache y redirigimos al login con PIN.
+  // El usuario ha sido creado y el próximo paso natural es que inicie sesión.
+  if (data.user) {
+    revalidatePath('/'); // Invalida la cache para que la próxima comprobación de `hasUsers` sea correcta.
+    redirect('/login'); // Redirige a la página de login con PIN.
   }
-  
-  revalidatePath('/'); // Invalida la cache para que la próxima comprobación de `hasUsers` sea correcta.
-  redirect('/admin'); // Redirige al panel de admin tras el registro y login exitosos.
+
+  return { error: { message: 'Ocurrió un error inesperado durante el registro.' }};
 }
 
 /**

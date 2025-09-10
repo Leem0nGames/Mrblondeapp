@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,20 +26,17 @@ export function LoginForm() {
   return (
     <form action={formAction} className="grid gap-4">
       <div className="grid gap-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          name="email"
-          placeholder="admin@ejemplo.com"
-          required
+        <Label htmlFor="pin">PIN de Administrador</Label>
+        <Input 
+            id="pin" 
+            type="password" 
+            name="pin" 
+            required 
+            maxLength={4}
+            className="text-center text-lg tracking-[1em]"
         />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="password">Contraseña</Label>
-        <Input id="password" type="password" name="password" required />
-        {state.error?.message && (
-          <p className="text-sm text-red-500">{state.error.message}</p>
+        {state?.error?.message && (
+          <p className="text-sm text-destructive">{state.error.message}</p>
         )}
       </div>
       <SubmitButton />

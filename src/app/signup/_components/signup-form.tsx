@@ -31,9 +31,10 @@ export function SignupForm() {
           id="email"
           type="email"
           name="email"
-          placeholder="admin@blonde.com"
           required
+          readOnly
           defaultValue="admin@blonde.com"
+          className="bg-muted/50"
         />
       </div>
       <div className="grid gap-2">
@@ -42,11 +43,13 @@ export function SignupForm() {
           id="password" 
           type="password" 
           name="password" 
-          required 
+          required
+          readOnly
           defaultValue="admin1234"
+          className="bg-muted/50"
         />
         <p className="text-xs text-muted-foreground">
-          Por seguridad, el email debe ser 'admin@blonde.com' y la contraseña 'admin1234'.
+          Por seguridad, el email y la contraseña están predefinidos.
         </p>
         {state?.error?.message && (
           <p className="text-sm text-destructive">{state.error.message}</p>
