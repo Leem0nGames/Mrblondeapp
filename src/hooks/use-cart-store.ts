@@ -1,3 +1,4 @@
+
 "use client";
 
 import { create } from "zustand";
@@ -101,17 +102,17 @@ useCartStore.subscribe((state) => {
 // Cargar desde localStorage
 if (typeof window !== 'undefined') {
   const savedState = localStorage.getItem(CART_STORAGE_KEY);
+  let items: CartItem[] = [];
   if (savedState) {
     try {
-      const { items } = JSON.parse(savedState);
-      useCartStore.setState({ items, ...calculateTotals(items), isHydrated: true });
+      // Ensure that parsed items is an array, default to empty array if not
+      items = JSON.parse(savedState)?.items || [];
     } catch (e) {
       console.error("Could not rehydrate cart from localStorage", e);
-      // If parsing fails, ensure hydration is marked as complete
-      useCartStore.setState({ isHydrated: true });
+      // If parsing fails, items will remain an empty array
     }
-  } else {
-    // If no saved state, just mark as hydrated
-    useCartStore.setState({ isHydrated: true });
   }
+  
+  // Set state after determining items, ensuring calculateTotals always gets an array
+  useCartStore.setState({ items, ...calculateTotals(items), isHydrated: true });
 }
