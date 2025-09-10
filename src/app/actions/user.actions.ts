@@ -19,27 +19,31 @@ export interface AuthState {
 /**
  * Comprueba si existe algún usuario en la base de datos.
  * Utiliza el cliente de servicio para tener los permisos necesarios.
- * Es crucial que esta función sea robusta.
+ * Es crucial que esta función sea robusta y maneje errores de configuración.
  * @returns {Promise<boolean>} `true` si hay al menos un usuario, `false` si no o en caso de error.
  */
 export async function hasUsers(): Promise<boolean> {
-  // Si las variables de entorno cruciales no están, no podemos conectar a Supabase.
-  // En este caso, devolvemos `false` para permitir el acceso a la página de registro
-  // donde se podrían mostrar instrucciones para configurar el .env.
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.error('Supabase URL or Service Role Key are not configured.');
+  // Si el cliente de admin no se pudo inicializar (faltan env vars), no hay usuarios.
+  if (!supabaseAdmin) {
+    console.warn('Supabase admin client is not configured. Assuming no users exist.');
     return false;
   }
   
-  const { data, error } = await supabaseAdmin.auth.admin.listUsers();
-  
-  if (error) {
-    console.error('Error checking for users:', error.message);
-    // Si hay un error al consultar (ej. la base de datos no está disponible),
-    // es más seguro devolver `false` para no bloquear el proceso de setup.
+  try {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers();
+    
+    // Si la API key es inválida o hay otro error de Supabase, lo capturamos.
+    if (error) {
+      console.error('Error checking for users:', error.message);
+      // Es más seguro devolver false para no bloquear el setup en caso de un error de configuración.
+      return false;
+    }
+    
+    return data.users.length > 0;
+  } catch (err: any) {
+    console.error('Catastrophic error checking for users:', err.message);
     return false;
   }
-  return data.users.length > 0;
 }
 
 /**
@@ -62,24 +66,20 @@ export async function signupSuperAdmin(
   if (!email || !password) {
     return { error: { message: 'El email y la contraseña son requeridos.' } };
   }
-  // Se requiere que la contraseña coincida con la del admin para el login por PIN.
-  if (password !== 'admin1234') {
-    return { error: { message: 'La contraseña debe ser "admin1234".' } };
-  }
-  // Se requiere que el email sea el del admin para el login por PIN.
-  if (email !== 'admin@blonde.com') {
-    return { error: { message: 'El email debe ser "admin@blonde.com".' } };
-  }
 
-  const { error } = await supabase.auth.signUp({ email, password });
+  const { data: { session }, error } = await supabase.auth.signUp({ email, password });
 
   if (error) {
     console.error('Supabase signup error:', error.message);
     return { error: { message: 'No se pudo crear la cuenta. Inténtelo de nuevo.' } };
   }
 
+  if (!session) {
+     return { error: { message: 'No se pudo iniciar sesión después del registro.' } };
+  }
+
   revalidatePath('/'); // Invalida la cache para que la próxima comprobación de `hasUsers` sea correcta.
-  redirect('/login'); // Redirige a la página de login con PIN tras el registro exitoso.
+  redirect('/admin'); // Redirige al panel de admin tras el registro exitoso.
 }
 
 /**
@@ -106,8 +106,11 @@ export async function login(
 
   if (error) {
     console.error('Supabase admin login error:', error.message);
-    // Este error es para el desarrollador, al usuario le decimos que algo falló.
-    return { error: { message: 'Error de autenticación. Verifique que el usuario admin esté configurado.' } };
+    // Este error puede ocurrir si el admin todavia no fue creado con las credenciales correctas.
+    if(error.message.includes('Invalid login credentials')) {
+        return { error: { message: 'El usuario admin no existe o la contraseña es incorrecta. Regístrelo primero.'}};
+    }
+    return { error: { message: 'Error de autenticación. Verifique la consola del servidor.' } };
   }
   
   revalidatePath('/admin');
