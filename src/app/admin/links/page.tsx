@@ -10,7 +10,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -19,42 +18,60 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { generateOrderLink, getAgreements } from "@/app/actions/admin.actions";
+import { generateOrderLink, getAgreements, getClients } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { Copy } from "lucide-react";
-import type { Agreement } from "@/types";
+import type { Agreement, Client } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 
 export default function GenerateLinkPage() {
   const [agreements, setAgreements] = useState<Agreement[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [selectedAgreementId, setSelectedAgreementId] = useState<string>("");
-  const [clientName, setClientName] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [isLoadingAgreements, startAgreementsLoading] = useTransition();
+  const [isLoading, startLoading] = useTransition();
   const { toast } = useToast();
 
   useEffect(() => {
-    startAgreementsLoading(async () => {
-      const { data, error } = await getAgreements();
-      if (error) {
+    startLoading(async () => {
+      const agreementsPromise = getAgreements();
+      const clientsPromise = getClients();
+
+      const [agreementsResult, clientsResult] = await Promise.all([agreementsPromise, clientsPromise]);
+
+      if (agreementsResult.error) {
         toast({
           title: "Error",
-          description: "Could not fetch agreements.",
+          description: "No se pudieron cargar los convenios.",
           variant: "destructive",
         });
       } else {
-        setAgreements(data ?? []);
+        setAgreements(agreementsResult.data ?? []);
+      }
+
+      if (clientsResult.error) {
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los clientes.",
+          variant: "destructive",
+        });
+      } else {
+        setClients(clientsResult.data ?? []);
       }
     });
   }, [toast]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!clientName) {
+    const selectedClient = clients.find(c => c.id === selectedClientId);
+
+    if (!selectedClient) {
       toast({
         title: "Error",
-        description: "Please enter a client name.",
+        description: "Por favor, selecciona un cliente.",
         variant: "destructive",
       });
       return;
@@ -62,16 +79,16 @@ export default function GenerateLinkPage() {
      if (!selectedAgreementId) {
       toast({
         title: "Error",
-        description: "Please select an agreement.",
+        description: "Por favor, selecciona un convenio.",
         variant: "destructive",
       });
       return;
     }
     startTransition(async () => {
-      const result = await generateOrderLink(selectedAgreementId, clientName);
+      const result = await generateOrderLink(selectedAgreementId, selectedClient.name);
       if (result.error) {
         toast({
-          title: "Error generating link",
+          title: "Error al generar enlace",
           description: result.error.message,
           variant: "destructive",
         });
@@ -79,7 +96,7 @@ export default function GenerateLinkPage() {
       } else {
         setGeneratedLink(result.link);
         toast({
-          title: "Link generated successfully!",
+          title: "Enlace generado correctamente!",
         });
       }
     });
@@ -88,7 +105,7 @@ export default function GenerateLinkPage() {
   const copyToClipboard = () => {
     if (generatedLink) {
       navigator.clipboard.writeText(generatedLink);
-      toast({ title: "Link copied to clipboard!" });
+      toast({ title: "Enlace copiado al portapapeles!" });
     }
   };
 
@@ -103,39 +120,53 @@ export default function GenerateLinkPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {isLoading ? (
+            <div className="space-y-4">
+                <Skeleton className="h-4 w-1/4" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-4 w-1/4" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full mt-4" />
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="client-name">Nombre del Cliente</Label>
-              <Input
-                id="client-name"
-                placeholder="e.g., Salon Estilo"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                required
-              />
+              <Label htmlFor="client">Cliente</Label>
+               <Select
+                value={selectedClientId}
+                onValueChange={setSelectedClientId}
+              >
+                <SelectTrigger id="client">
+                  <SelectValue placeholder="Selecciona un cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="agreement">Convenio</Label>
-              {isLoadingAgreements ? <Skeleton className="h-10 w-full" /> : (
-                  <Select
-                    value={selectedAgreementId}
-                    onValueChange={setSelectedAgreementId}
-                  >
-                    <SelectTrigger id="agreement">
-                      <SelectValue placeholder="Selecciona un convenio" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {agreements.map((agreement) => (
-                          <SelectItem key={agreement.id} value={agreement.id}>{agreement.agreement_name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-              )}
+              <Select
+                value={selectedAgreementId}
+                onValueChange={setSelectedAgreementId}
+              >
+                <SelectTrigger id="agreement">
+                  <SelectValue placeholder="Selecciona un convenio" />
+                </SelectTrigger>
+                <SelectContent>
+                  {agreements.map((agreement) => (
+                      <SelectItem key={agreement.id} value={agreement.id}>{agreement.agreement_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Button type="submit" className="w-full" disabled={isPending || isLoadingAgreements}>
+            <Button type="submit" className="w-full" disabled={isPending || isLoading}>
               {isPending ? "Generando..." : "Generar Enlace"}
             </Button>
           </form>
+          )}
 
           {generatedLink && (
             <div className="mt-6 space-y-2">
