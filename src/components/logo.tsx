@@ -12,7 +12,7 @@ export function Logo({ className }: { className?: string }) {
       )}
     >
       <Package className="h-6 w-6 text-primary" />
-      <span className="text-primary">Blonde Orders</span>
+      <span className="text-primary hidden group-[.is-expanded]:inline">Blonde Orders</span>
     </Link>
   );
 }
