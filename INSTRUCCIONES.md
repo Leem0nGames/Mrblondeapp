@@ -27,6 +27,8 @@ Una vez que la base de datos esté limpia (sin tablas):
 2.  Ve a la sección **"SQL Editor"** en tu panel de Supabase (el ícono que parece una página con `SQL`).
 3.  Pega el contenido en la ventana de consulta y haz clic en el botón verde **"RUN"**.
 
+**Nota sobre cambios**: Si se realiza un cambio en la estructura de la base de datos (como añadir una restricción `UNIQUE` a la columna `token`), la forma más segura de aplicarlo es borrar las tablas y volver a ejecutar el script SQL actualizado.
+
 ## 2. Crear el Usuario Administrador
 
 La aplicación necesita un usuario administrador para funcionar.
