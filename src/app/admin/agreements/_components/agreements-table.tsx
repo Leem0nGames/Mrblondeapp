@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useCallback } from "react";
 import Link from 'next/link';
 import { MoreHorizontal, Trash2, Edit, FileText, Copy } from "lucide-react";
 import {
@@ -60,13 +60,13 @@ export default function AgreementsTable({ agreements }: { agreements: Agreement[
     });
   };
 
-  const copyToClipboard = (token: string) => {
+  const copyToClipboard = useCallback((token: string) => {
     const host = window.location.host;
     const protocol = window.location.protocol;
     const link = `${protocol}//${host}/pedido/${token}`;
     navigator.clipboard.writeText(link);
     toast({ title: "Enlace copiado al portapapeles!" });
-  };
+  }, [toast]);
   
   return (
     <>
