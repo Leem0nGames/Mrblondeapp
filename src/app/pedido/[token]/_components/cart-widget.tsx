@@ -23,6 +23,7 @@ import Image from "next/image";
 import { OrderSummarySheet } from "./order-summary-sheet";
 import type { AgreementPromotion } from "@/types";
 import { getImageUrl } from "@/lib/placeholder-images";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function CartWidget({ 
   clientName, 
@@ -33,17 +34,11 @@ export function CartWidget({
 }) {
   const { items, totalItems } = useCartStore();
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
-  const [isClient, setIsClient] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
+    setHasMounted(true);
   }, []);
-
-  // Render nothing until the component has mounted on the client
-  // This prevents hydration mismatches with the cart state from localStorage
-  if (!isClient) {
-    return null;
-  }
 
   return (
     <>
@@ -51,7 +46,7 @@ export function CartWidget({
         <SheetTrigger asChild>
           <Button variant="outline" className="fixed bottom-4 right-4 z-50 h-14 rounded-full shadow-lg">
             <ShoppingCart className="mr-2" />
-            Ver Pedido ({totalItems})
+            Ver Pedido ({hasMounted ? totalItems : 0})
           </Button>
         </SheetTrigger>
         <SheetContent className="flex flex-col">
@@ -61,7 +56,13 @@ export function CartWidget({
               Revisa los productos en tu carrito de compras.
             </SheetDescription>
           </SheetHeader>
-          {items.length === 0 ? (
+          {!hasMounted ? (
+             <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+              <Skeleton className="h-16 w-16 rounded-full" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          ) : items.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
               <ShoppingCart className="h-16 w-16 text-muted-foreground" />
               <p className="text-muted-foreground">Tu carrito está vacío</p>
