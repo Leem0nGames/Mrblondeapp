@@ -29,11 +29,14 @@ const calculateTotals = (items: CartItem[]) => {
   return { totalItems, totalPrice };
 };
 
+const CART_STORAGE_KEY = "cart-storage";
+
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
   totalItems: 0,
   totalPrice: 0,
   isHydrated: false,
+  
   addItem: (product: ProductWithPrice, quantity: number = 1) => {
     const { items } = get();
     const existingItem = items.find(
@@ -52,21 +55,20 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
 
     updatedItems = updatedItems.filter(item => item.quantity > 0);
-
-    set({
-      items: updatedItems,
-      ...calculateTotals(updatedItems)
-    });
+    const totals = calculateTotals(updatedItems);
+    set({ items: updatedItems, ...totals });
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ items: updatedItems }));
   },
+
   removeItem: (productId: string) => {
     const updatedItems = get().items.filter(
       (item) => item.product.id !== productId
     );
-    set({
-      items: updatedItems,
-      ...calculateTotals(updatedItems)
-    });
+    const totals = calculateTotals(updatedItems);
+    set({ items: updatedItems, ...totals });
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ items: updatedItems }));
   },
+
   updateQuantity: (productId: string, quantity: number) => {
     let updatedItems;
     if (quantity <= 0) {
@@ -78,42 +80,37 @@ export const useCartStore = create<CartState>((set, get) => ({
         item.product.id === productId ? { ...item, quantity } : item
       );
     }
-    set({
-      items: updatedItems,
-      ...calculateTotals(updatedItems)
-    });
+    const totals = calculateTotals(updatedItems);
+    set({ items: updatedItems, ...totals });
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ items: updatedItems }));
   },
+
   clearCart: () => {
-    set({ items: [], totalItems: 0, totalPrice: 0 });
+    const totals = calculateTotals([]);
+    set({ items: [], ...totals });
+    localStorage.removeItem(CART_STORAGE_KEY);
   },
 }));
 
-// --- Persistencia Manual para evitar errores de hidratación ---
 
-const CART_STORAGE_KEY = "cart-storage";
-
-// Guardar en localStorage
-useCartStore.subscribe((state) => {
-  if (typeof window !== 'undefined' && state.isHydrated) {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ items: state.items }));
-  }
-});
-
-// Cargar desde localStorage
+// Hydration logic must be run on the client
 if (typeof window !== 'undefined') {
-  const savedState = localStorage.getItem(CART_STORAGE_KEY);
-  let items: CartItem[] = [];
-  if (savedState) {
-    try {
-      // Ensure that parsed items is an array, default to empty array if not
-      const parsed = JSON.parse(savedState);
-      items = Array.isArray(parsed?.items) ? parsed.items : [];
-    } catch (e) {
-      console.error("Could not rehydrate cart from localStorage", e);
-      // If parsing fails, items will remain an empty array
+    const savedState = localStorage.getItem(CART_STORAGE_KEY);
+    if (savedState) {
+        try {
+            const parsed = JSON.parse(savedState);
+            if (Array.isArray(parsed?.items)) {
+                const items: CartItem[] = parsed.items;
+                const totals = calculateTotals(items);
+                useCartStore.setState({ items, ...totals, isHydrated: true });
+            } else {
+                useCartStore.setState({ isHydrated: true }); // Mark as hydrated even if data is malformed
+            }
+        } catch (e) {
+            console.error("Could not rehydrate cart from localStorage", e);
+            useCartStore.setState({ isHydrated: true }); // Mark as hydrated on error
+        }
+    } else {
+        useCartStore.setState({ isHydrated: true }); // Mark as hydrated if no saved state
     }
-  }
-  
-  // Set state after determining items, ensuring calculateTotals always gets an array
-  useCartStore.setState({ items, ...calculateTotals(items), isHydrated: true });
 }
