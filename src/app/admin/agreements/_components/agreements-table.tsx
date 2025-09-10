@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useTransition, useCallback } from "react";
@@ -35,7 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import type { Agreement } from "@/types";
-import { deleteAgreement, generateLinkToken } from "@/app/actions/admin.actions";
+import { deleteAgreement } from "@/app/actions/admin.actions";
 import { AgreementDialog } from "./agreement-dialog";
 
 export default function AgreementsTable({ agreements }: { agreements: Agreement[] }) {
@@ -60,26 +59,14 @@ export default function AgreementsTable({ agreements }: { agreements: Agreement[
     });
   };
 
-  const handleGenerateLink = (agreementId: string) => {
-    startTransition(async () => {
-        const result = await generateLinkToken(agreementId);
-        if (result.error) {
-            toast({ title: "Error", description: result.error.message, variant: "destructive" });
-        } else {
-            toast({ title: "Éxito", description: "Nuevo enlace generado y copiado." });
-            copyToClipboard(result.data?.link_token ?? null);
-        }
-    });
-  }
-
-  const copyToClipboard = useCallback((token: string | null) => {
-    if (!token) {
-        toast({ title: "Error", description: "Este convenio no tiene un link.", variant: "destructive"});
+  const copyToClipboard = useCallback((agreementId: string | null) => {
+    if (!agreementId) {
+        toast({ title: "Error", description: "Este convenio no tiene un ID.", variant: "destructive"});
         return;
     }
     const host = window.location.host;
     const protocol = window.location.protocol;
-    const link = `${protocol}//${host}/pedido/${token}`;
+    const link = `${protocol}//${host}/pedido/${agreementId}`;
     navigator.clipboard.writeText(link);
     toast({ title: "Enlace copiado al portapapeles!" });
   }, [toast]);
@@ -103,21 +90,14 @@ export default function AgreementsTable({ agreements }: { agreements: Agreement[
               <TableCell>
                 <Badge variant="outline" className="capitalize">{agreement.client_type}</Badge>
               </TableCell>
-              <TableCell className="hidden sm:table-cell">{agreement.agreement_products.length}</TableCell>
-              <TableCell className="hidden sm:table-cell">{agreement.agreement_promotions.length}</TableCell>
+              <TableCell className="hidden sm:table-cell">{agreement.agreement_products[0]?.count ?? 0}</TableCell>
+              <TableCell className="hidden sm:table-cell">{agreement.agreement_promotions[0]?.count ?? 0}</TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-2">
-                    {agreement.link_token ? (
-                        <Button variant="outline" size="sm" onClick={() => copyToClipboard(agreement.link_token)}>
-                            <Copy className="mr-2 h-4 w-4" />
-                            Copiar Link
-                        </Button>
-                    ) : (
-                        <Button variant="secondary" size="sm" onClick={() => handleGenerateLink(agreement.id)} disabled={isPending}>
-                            <Link2 className="mr-2 h-4 w-4" />
-                            {isPending ? "Generando..." : "Generar Link"}
-                        </Button>
-                    )}
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(agreement.id)}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copiar Link
+                    </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                         <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -133,16 +113,7 @@ export default function AgreementsTable({ agreements }: { agreements: Agreement[
                                 Gestionar
                             </Link>
                         </DropdownMenuItem>
-                        <AgreementDialog agreement={agreement}>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Editar Detalles
-                            </DropdownMenuItem>
-                        </AgreementDialog>
-                        <DropdownMenuItem onClick={() => handleGenerateLink(agreement.id)} disabled={isPending}>
-                           <Link2 className="mr-2 h-4 w-4" />
-                           {isPending ? "Generando..." : "Regenerar Link"}
-                        </DropdownMenuItem>
+                        
                         <DropdownMenuSeparator />
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -160,7 +131,7 @@ export default function AgreementsTable({ agreements }: { agreements: Agreement[
                                 ¿Estás seguro?
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                Esta acción no se puede deshacer. Esto eliminará permanentemente el convenio.
+                                Esta acción no se puede deshacer. Esto eliminará permanentemente el convenio y todas sus asignaciones.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

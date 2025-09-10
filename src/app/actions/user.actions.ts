@@ -43,10 +43,10 @@ export async function logout() {
   redirect("/login");
 }
 
-export async function getOrderPageData(token: string) {
+export async function getOrderPageData(agreementId: string) {
     const supabase = createClient();
 
-    // 1. Verify token and get related agreement with its products
+    // 1. Verify agreementId and get related agreement with its products
     const { data: agreement, error: agreementError } = await supabase
         .from('agreements')
         .select(`
@@ -59,12 +59,12 @@ export async function getOrderPageData(token: string) {
                 promotions(*)
             )
         `)
-        .eq('link_token', token)
+        .eq('id', agreementId)
         .single();
 
     if (agreementError || !agreement) {
         console.error("getOrderPageData (agreement) error:", agreementError?.message);
-        return { error: { message: "El enlace no es válido o ha expirado." } };
+        return { error: { message: "El convenio no es válido o no existe." } };
     }
     
     const products = agreement.agreement_products.map(ap => ({

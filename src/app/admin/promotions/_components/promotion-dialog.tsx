@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useTransition } from "react";
@@ -50,11 +49,25 @@ const promotionSchema = z.object({
 
 type PromotionFormValues = z.infer<typeof promotionSchema>;
 
+const defaultRules = {
+  "buy_x_get_y_free": {
+    "type": "buy_x_get_y_free",
+    "buy": 8,
+    "get": 1
+  },
+  "free_shipping": {
+    "type": "free_shipping",
+    "min_units": 12,
+    "locations": ["CABA", "ROSARIO", "CORDOBA"]
+  }
+}
+
 // Default rule structure as a placeholder
 const defaultRule = {
   type: "buy_x_get_y_free",
-  buy: 6,
-  get: 1,
+  buy_quantity: 8,
+  get_quantity: 2,
+  applies_to: "all",
 };
 
 
@@ -107,17 +120,17 @@ export function PromotionDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{promotion ? "Editar Promoción" : "Nueva Promoción"}</DialogTitle>
           <DialogDescription>
             {promotion
-              ? "Actualiza los detalles de esta promoción."
-              : "Define una nueva promoción con sus reglas."}
+              ? "Actualiza los detalles y reglas de esta promoción."
+              : "Define una nueva promoción con sus reglas en formato JSON."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
             <FormField
               control={form.control}
               name="name"
@@ -125,7 +138,7 @@ export function PromotionDialog({
                 <FormItem>
                   <FormLabel>Nombre de la Promoción</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Promo Barberías 6+1" {...field} />
+                    <Input placeholder="e.g., Promo Barberías 8+2" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -136,9 +149,9 @@ export function PromotionDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descripción</FormLabel>
+                  <FormLabel>Descripción Breve</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Llevando 6 pagas 5" {...field} />
+                    <Input placeholder="e.g., Llevando 8 productos, te llevas 2 gratis." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -152,18 +165,24 @@ export function PromotionDialog({
                   <FormLabel>Reglas (JSON)</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder='{ "type": "buy_x_get_y_free", "buy": 6, "get": 1 }'
+                      placeholder={`Ej:\n${JSON.stringify(defaultRule, null, 2)}`}
                       {...field}
-                      rows={6}
+                      rows={8}
                       className="font-code text-xs"
                     />
                   </FormControl>
+                   <p className="text-xs text-muted-foreground pt-1">
+                    Copia un ejemplo: 
+                    <Button type="button" variant="link" className="text-xs p-1" onClick={() => form.setValue("rules", JSON.stringify(defaultRules.buy_x_get_y_free, null, 2))}>8+2</Button>
+                    | 
+                    <Button type="button" variant="link" className="text-xs p-1" onClick={() => form.setValue("rules", JSON.stringify(defaultRules.free_shipping, null, 2))}>Envío Gratis</Button>
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
             />
            
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <DialogClose asChild>
                 <Button variant="outline" type="button">
                   Cancelar

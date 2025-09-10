@@ -24,13 +24,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -39,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getUnassignedProducts, assignProductToAgreement } from "@/app/actions/admin.actions";
 import type { Product } from "@/types";
 import { getImageUrl } from "@/lib/placeholder-images";
+import { Badge } from "@/components/ui/badge";
 
 const assignSchema = z.object({
   product_id: z.string().min(1, "Debes seleccionar un producto."),
@@ -102,19 +96,24 @@ export function AssignProductDialog({
       }
     });
   };
+  
+  const handleSelectProduct = (product: Product) => {
+    form.setValue("product_id", product.id);
+    form.setValue("price", product.base_price);
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Asignar Producto</DialogTitle>
+          <DialogTitle>Asignar Producto al Convenio</DialogTitle>
           <DialogDescription>
-            Selecciona un producto para añadir al convenio y establece su precio especial.
+            Selecciona un producto y define el precio especial para este convenio. El precio base se sugiere por defecto.
           </DialogDescription>
         </DialogHeader>
         {isLoading ? <div className="space-y-4 py-4">
-            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-24 w-full" />
             <Skeleton className="h-10 w-full" />
             <div className="flex justify-end gap-2 pt-4">
                 <Skeleton className="h-10 w-24" />
@@ -122,40 +121,40 @@ export function AssignProductDialog({
             </div>
         </div> : (
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-             <FormField
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
               control={form.control}
               name="product_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Producto</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona un producto" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <ScrollArea className="h-60">
-                         {products.length > 0 ? products.map(product => (
-                            <SelectItem key={product.id} value={product.id}>
-                                <div className="flex items-center gap-2">
-                                     <Image
-                                        src={getImageUrl("product_sm", {id: product.id, width: 40, height: 40})}
-                                        alt={product.name}
-                                        width={24}
-                                        height={24}
-                                        className="rounded-sm"
-                                        data-ai-hint="product image"
-                                    />
-                                    <span>{product.name}</span>
-                                </div>
-                            </SelectItem>
-                         )) : <div className="p-4 text-center text-sm text-muted-foreground">No hay más productos para asignar.</div>}
-                         </ScrollArea>
-                      </SelectContent>
-                    </Select>
-                  <FormMessage />
+                  <FormLabel>Productos Disponibles</FormLabel>
+                   <ScrollArea className="h-60 border rounded-md">
+                     <div className="p-2 space-y-1">
+                      {products.length > 0 ? products.map(product => (
+                          <button
+                            type="button"
+                            key={product.id}
+                            onClick={() => handleSelectProduct(product)}
+                            className={`w-full flex items-center gap-4 p-2 rounded-md text-left transition-colors ${field.value === product.id ? 'bg-secondary' : 'hover:bg-muted/50'}`}
+                          >
+                              <Image
+                                  src={getImageUrl("product_sm", {id: product.id, width: 40, height: 40})}
+                                  alt={product.name}
+                                  width={40}
+                                  height={40}
+                                  className="rounded-md aspect-square object-cover"
+                                  data-ai-hint="product image"
+                              />
+                              <div className="flex-grow">
+                                <p className="font-medium">{product.name}</p>
+                                <p className="text-sm text-muted-foreground">{product.category}</p>
+                              </div>
+                              <Badge variant="outline">${product.base_price.toLocaleString()}</Badge>
+                          </button>
+                      )) : <p className="p-4 text-center text-sm text-muted-foreground">No hay más productos para asignar.</p>}
+                      </div>
+                    </ScrollArea>
+                  <FormMessage className="pt-2" />
                 </FormItem>
               )}
             />
@@ -164,7 +163,7 @@ export function AssignProductDialog({
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Precio para Convenio</FormLabel>
+                  <FormLabel>Precio Especial para Convenio</FormLabel>
                   <FormControl>
                     <Input type="number" step="0.01" {...field} disabled={!selectedProductId} />
                   </FormControl>
@@ -178,7 +177,7 @@ export function AssignProductDialog({
                   Cancelar
                 </Button>
               </DialogClose>
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={isPending || !selectedProductId}>
                 {isPending ? "Asignando..." : "Asignar Producto"}
               </Button>
             </DialogFooter>

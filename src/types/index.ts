@@ -1,4 +1,3 @@
-
 // These types are manually created to match the Supabase schema.
 // For a more robust solution, you can use `supabase gen types typescript`.
 
@@ -45,11 +44,16 @@ export type Agreement = {
   id: string;
   agreement_name: string;
   client_type: "barberia" | "distribuidor" | "especial";
-  price_adjustment: number;
-  link_token: string;
+  created_at: string;
+  agreement_products: { count: number }[];
+  agreement_promotions: { count: number }[];
+};
+
+export type DetailedAgreement = {
+  id: string;
+  agreement_name: string;
+  client_type: "barberia" | "distribuidor" | "especial";
   created_at: string;
   agreement_products: AgreementProduct[]; // Joined data
   agreement_promotions: AgreementPromotion[]; // Joined data
-};
-
-    
+}

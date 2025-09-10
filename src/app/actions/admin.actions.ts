@@ -8,7 +8,7 @@ type UpsertProductPayload = Omit<Product, "id" | "created_at"> & {
   id?: string;
 };
 
-type UpsertAgreementPayload = Pick<Agreement, "agreement_name" | "client_type" | "price_adjustment"> & {
+type UpsertAgreementPayload = Pick<Agreement, "agreement_name" | "client_type"> & {
   id?: string;
 };
 
@@ -85,14 +85,11 @@ export async function getAgreements() {
   const { data, error } = await supabase
     .from("agreements")
     .select(`
-      *,
-      agreement_products (
-        price,
-        products ( * )
-      ),
-      agreement_promotions (
-        promotions ( * )
-      )
+      id,
+      agreement_name,
+      client_type,
+      agreement_products ( count ),
+      agreement_promotions ( count )
     `)
     .order("agreement_name", { ascending: true });
   if (error) {
@@ -136,15 +133,13 @@ export async function upsertAgreement(payload: UpsertAgreementPayload) {
 
   const query = supabase.from("agreements");
 
-  // On creation, we ONLY insert the base data. The link_token will be generated on demand.
   const { data, error } = id
     ? await query.update(agreementData).eq("id", id).select().single()
     : await query.insert(agreementData).select().single();
 
   if (error) {
     console.error("upsertAgreement error:", error.message);
-    // Let's provide a more helpful error message for the unique constraint violation
-    if (error.code === '23505') { // Postgres unique violation code
+    if (error.code === '23505') {
         return { data: null, error: { ...error, message: `Error: El nombre del convenio '${agreementData.agreement_name}' ya existe.` } };
     }
     return { data: null, error };
@@ -153,27 +148,6 @@ export async function upsertAgreement(payload: UpsertAgreementPayload) {
   revalidatePath("/admin/agreements");
   return { data, error: null };
 }
-
-export async function generateLinkToken(agreementId: string) {
-    await checkAuth();
-    const supabase = createClient();
-    const token = crypto.randomUUID();
-    const { data, error } = await supabase
-        .from('agreements')
-        .update({ link_token: token })
-        .eq('id', agreementId)
-        .select()
-        .single();
-    
-    if (error) {
-        console.error("generateLinkToken error:", error.message);
-        return { data: null, error };
-    }
-
-    revalidatePath("/admin/agreements");
-    return { data, error: null };
-}
-
 
 export async function deleteAgreement(id: string) {
     await checkAuth();

@@ -1,4 +1,3 @@
-
 import { getOrderPageData } from "@/app/actions/user.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/components/logo";
@@ -11,6 +10,7 @@ export default async function OrderPage({
 }: {
   params: { token: string };
 }) {
+  // The "token" parameter is now the agreement ID
   const { data, error } = await getOrderPageData(params.token);
 
   if (error || !data) {

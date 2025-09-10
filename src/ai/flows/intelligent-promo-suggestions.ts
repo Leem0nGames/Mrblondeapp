@@ -1,6 +1,4 @@
-// intelligent-promo-suggestions.ts
 'use server';
-
 /**
  * @fileOverview An AI agent that intelligently suggests the most advantageous promotions
  * or bundled offers based on a user's cart items, quantities, and a list of available promotions
@@ -80,7 +78,7 @@ const prompt = ai.definePrompt({
   **YOUR TASK:**
   Based on the client's cart and the list of available promotions, generate a list of promotion suggestions.
   - For each suggestion, provide a 'name', a detailed 'description' of how it works and its benefits, and a clear 'reason' explaining why it's a good deal for them.
-  - **BE PROACTIVE:** If the client is close to qualifying for a better promotion, your 'reason' should explicitly tell them what to do. For example: "Estás a solo 1 unidad de conseguir 2 productos gratis con la promo 8+2!".
+  - **BE PROACTIVE:** If the client is close to qualifying for a better promotion (like "buy_x_get_y_free" or "free_shipping"), your 'reason' should explicitly tell them what to do. For example: "Estás a solo 1 unidad de conseguir 2 productos gratis con la promo 8+2!" or "¡Agrega solo 2 unidades más y tu envío a CABA será gratis!".
   - If a promotion's conditions are met, highlight it as an active benefit.
   - If no promotions from the list are applicable or beneficial given the cart, return an empty array for 'promotionSuggestions'.
   - Ensure the output strictly adheres to the 'SuggestPromotionsOutputSchema' JSON format.

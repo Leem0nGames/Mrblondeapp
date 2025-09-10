@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
@@ -23,19 +22,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { getUnassignedPromotions, assignPromotionToAgreement } from "@/app/actions/admin.actions";
 import type { Promotion } from "@/types";
+import { Check, PlusCircle } from "lucide-react";
 
 const assignSchema = z.object({
   promotion_id: z.string().min(1, "Debes seleccionar una promoción."),
@@ -91,66 +84,66 @@ export function AssignPromotionDialog({
   };
 
   return (
-    <>
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>{children}</DialogTrigger>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Asignar Promoción</DialogTitle>
-            <DialogDescription>
-              Selecciona una promoción para aplicar a este convenio.
-            </DialogDescription>
-          </DialogHeader>
-          {isLoading ? <div className="space-y-4 py-4">
-              <Skeleton className="h-10 w-full" />
-              <div className="flex justify-end gap-2 pt-4">
-                  <Skeleton className="h-10 w-24" />
-                  <Skeleton className="h-10 w-24" />
-              </div>
-          </div> : (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-               <FormField
-                control={form.control}
-                name="promotion_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Promoción</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona una promoción" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <ScrollArea className="h-60">
-                           {promotions.length > 0 ? promotions.map(promo => (
-                              <SelectItem key={promo.id} value={promo.id}>
-                                  {promo.name}
-                              </SelectItem>
-                           )) : <div className="p-4 text-center text-sm text-muted-foreground">No hay más promociones para asignar.</div>}
-                           </ScrollArea>
-                        </SelectContent>
-                      </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline" type="button" onClick={() => form.reset()}>
-                    Cancelar
-                  </Button>
-                </DialogClose>
-                <Button type="submit" disabled={isPending}>
-                  {isPending ? "Asignando..." : "Asignar Promoción"}
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Asignar Promoción</DialogTitle>
+          <DialogDescription>
+            Selecciona una promoción para aplicar a los clientes de este convenio.
+          </DialogDescription>
+        </DialogHeader>
+        {isLoading ? <div className="space-y-4 py-4">
+            <Skeleton className="h-24 w-full" />
+            <div className="flex justify-end gap-2 pt-4">
+                <Skeleton className="h-10 w-24" />
+                <Skeleton className="h-10 w-24" />
+            </div>
+        </div> : (
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="promotion_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Promociones Disponibles</FormLabel>
+                   <ScrollArea className="h-60 border rounded-md">
+                     <div className="p-2 space-y-1">
+                      {promotions.length > 0 ? promotions.map(promo => (
+                          <button
+                            type="button"
+                            key={promo.id}
+                            onClick={() => field.onChange(promo.id)}
+                            className={`w-full flex items-start gap-4 p-3 rounded-md text-left transition-colors ${field.value === promo.id ? 'bg-secondary' : 'hover:bg-muted/50'}`}
+                          >
+                              <div className="flex-grow">
+                                <p className="font-medium">{promo.name}</p>
+                                <p className="text-sm text-muted-foreground">{promo.description}</p>
+                              </div>
+                              {field.value === promo.id && <Check className="h-5 w-5 text-primary" />}
+                          </button>
+                      )) : <p className="p-4 text-center text-sm text-muted-foreground">No hay más promociones para asignar.</p>}
+                      </div>
+                    </ScrollArea>
+                  <FormMessage className="pt-2" />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline" type="button" onClick={() => form.reset()}>
+                  Cancelar
                 </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+              </DialogClose>
+              <Button type="submit" disabled={isPending || !form.getValues("promotion_id")}>
+                {isPending ? "Asignando..." : "Asignar Promoción"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useTransition } from "react";
@@ -35,12 +34,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { upsertAgreement } from "@/app/actions/admin.actions";
-import type { Agreement } from "@/types";
+import type { DetailedAgreement } from "@/types";
 
 const agreementSchema = z.object({
   agreement_name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
   client_type: z.enum(["barberia", "distribuidor", "especial"]),
-  price_adjustment: z.coerce.number().min(-100).max(100),
 });
 
 type AgreementFormValues = z.infer<typeof agreementSchema>;
@@ -50,7 +48,7 @@ export function AgreementDialog({
   agreement,
 }: {
   children: React.ReactNode;
-  agreement?: Agreement;
+  agreement?: DetailedAgreement;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -61,7 +59,6 @@ export function AgreementDialog({
     defaultValues: {
       agreement_name: agreement?.agreement_name ?? "",
       client_type: agreement?.client_type ?? "barberia",
-      price_adjustment: agreement?.price_adjustment ?? 0,
     },
   });
 
@@ -88,17 +85,17 @@ export function AgreementDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{agreement ? "Editar Convenio" : "Nuevo Convenio"}</DialogTitle>
           <DialogDescription>
             {agreement
               ? "Actualiza los detalles de este convenio."
-              : "Completa los detalles para el nuevo convenio."}
+              : "Define un nuevo convenio para agrupar clientes y reglas."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
             <FormField
               control={form.control}
               name="agreement_name"
@@ -113,45 +110,30 @@ export function AgreementDialog({
               )}
             />
             
-            <div className="grid grid-cols-2 gap-4">
-               <FormField
-                control={form.control}
-                name="client_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de Cliente</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecciona un tipo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                           <SelectItem value="barberia">Barbería</SelectItem>
-                           <SelectItem value="distribuidor">Distribuidor</SelectItem>
-                           <SelectItem value="especial">Especial</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="price_adjustment"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ajuste de Precio (%)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.1" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="client_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Cliente</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un tipo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                          <SelectItem value="barberia">Barbería</SelectItem>
+                          <SelectItem value="distribuidor">Distribuidor</SelectItem>
+                          <SelectItem value="especial">Especial</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
            
-            <DialogFooter>
+            <DialogFooter className="pt-4">
               <DialogClose asChild>
                 <Button variant="outline" type="button">
                   Cancelar
