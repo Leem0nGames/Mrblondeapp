@@ -1,3 +1,4 @@
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { supabaseAdmin } from './lib/supabase/admin';
@@ -6,7 +7,9 @@ async function hasUsers(): Promise<boolean> {
   const { data, error } = await supabaseAdmin.auth.admin.listUsers();
   if (error) {
     console.error('Middleware: Error checking for users:', error.message);
-    return true; // Safe default
+    // Si hay un error (ej. service key no configurada), es más seguro
+    // asumir que existen usuarios para prevenir registros múltiples.
+    return true; 
   }
   return data.users.length > 0;
 }
@@ -48,15 +51,18 @@ export async function middleware(request: NextRequest) {
     }
   );
 
+  // Es crucial refrescar la sesión en el middleware
   const {
     data: { session },
   } = await supabase.auth.getSession();
   
   const { pathname } = request.nextUrl;
 
+  // Comprobación de existencia de usuarios
   const usersExist = await hasUsers();
   const isAuthRoute = pathname === '/login' || pathname === '/signup';
   const isAdminRoute = pathname.startsWith('/admin');
+  const isOrderRoute = pathname.startsWith('/pedido');
 
   // --- Caso 1: No hay usuarios en la base de datos ---
   if (!usersExist) {
@@ -89,6 +95,7 @@ export async function middleware(request: NextRequest) {
     }
   }
   
+  // Para todas las demás rutas (públicas como /pedido, etc.), permitir el acceso
   return response;
 }
 
