@@ -1,16 +1,8 @@
 import { PlusCircle } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { getProducts } from "@/app/actions/admin.actions";
 import ProductsTable from "./_components/products-table";
 import { ProductDialog } from "./_components/product-dialog";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 export default async function ProductsPage() {
   const { data: products, error } = await getProducts();
@@ -33,17 +25,7 @@ export default async function ProductsPage() {
           </ProductDialog>
         </div>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Products</CardTitle>
-          <CardDescription>
-            Manage your products and view their sales performance.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ProductsTable products={products ?? []} />
-        </CardContent>
-      </Card>
+      <ProductsTable products={products ?? []} />
     </div>
   );
 }

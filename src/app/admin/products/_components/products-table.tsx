@@ -3,6 +3,7 @@
 
 import { MoreHorizontal, Trash2 } from "lucide-react";
 import { useTransition } from "react";
+import Image from "next/image";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -97,11 +98,14 @@ export default function ProductsTable({ products }: { products: Product[] }) {
             {products.map((product) => (
               <TableRow key={product.id}>
                 <TableCell className="hidden sm:table-cell">
-                  <div className="h-16 w-16 bg-secondary rounded-md flex items-center justify-center">
-                    <span className="text-xs text-muted-foreground">
-                      No img
-                    </span>
-                  </div>
+                  <Image
+                    src={`https://picsum.photos/seed/${product.id}/100/100`}
+                    alt={product.name}
+                    width={64}
+                    height={64}
+                    className="rounded-md aspect-square object-cover"
+                    data-ai-hint="product image"
+                  />
                 </TableCell>
                 <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>
