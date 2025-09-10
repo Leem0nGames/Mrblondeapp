@@ -44,6 +44,7 @@ import { Product } from "@/types";
 import { ProductDialog } from "./product-dialog";
 import { deleteProduct } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
+import { ClientDate } from "./client-date";
 
 export default function ProductsTable({ products }: { products: Product[] }) {
   const [isPending, startTransition] = useTransition();
@@ -117,7 +118,7 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                   {product.stock}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  {new Date(product.created_at).toLocaleDateString()}
+                  <ClientDate date={product.created_at} />
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>
