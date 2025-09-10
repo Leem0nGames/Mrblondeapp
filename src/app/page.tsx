@@ -4,24 +4,24 @@ import { redirect } from 'next/navigation';
 import { hasUsers } from './actions/user.actions';
 
 export default async function HomePage() {
+  const usersExist = await hasUsers();
+
+  // If no users exist in the database, the middleware should have already
+  // redirected to /signup. This is a server-side safeguard.
+  if (!usersExist) {
+    redirect('/signup');
+  }
+
   const supabase = createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // Si el usuario tiene una sesión activa, lo llevamos al panel de admin
-  if (session) {
-    redirect('/admin');
+  // If users exist but there is no active session, redirect to the login page.
+  if (!session) {
+    redirect('/login');
   }
 
-  // Si no hay sesión, comprobamos si ya se creó el usuario admin
-  const usersExist = await hasUsers();
-
-  // Si no hay usuarios, lo llevamos a la página de registro
-  if (!usersExist) {
-    redirect('/signup');
-  }
-  
-  // Si ya hay usuarios pero no hay sesión, lo llevamos al login
-  redirect('/login');
+  // If users exist and there is an active session, redirect to the admin panel.
+  redirect('/admin');
 }

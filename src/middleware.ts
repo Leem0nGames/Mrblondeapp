@@ -3,12 +3,14 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { supabaseAdmin } from './lib/supabase/admin';
 
+// Helper function to check if users exist in the database.
+// This uses the admin client, so it should be used carefully.
 async function hasUsers(): Promise<boolean> {
   const { data, error } = await supabaseAdmin.auth.admin.listUsers();
   if (error) {
     console.error('Middleware: Error checking for users:', error.message);
-    // Si hay un error (ej. service key no configurada), es más seguro
-    // asumir que existen usuarios para prevenir registros múltiples.
+    // In case of an error (e.g., service key not configured),
+    // it's safer to assume users exist to prevent multiple sign-ups.
     return true; 
   }
   return data.users.length > 0;
@@ -51,51 +53,49 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Es crucial refrescar la sesión en el middleware
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  // It's crucial to refresh the session in the middleware
+  const { data: { session } } = await supabase.auth.getSession();
   
   const { pathname } = request.nextUrl;
 
-  // Comprobación de existencia de usuarios
   const usersExist = await hasUsers();
   const isAuthRoute = pathname === '/login' || pathname === '/signup';
   const isAdminRoute = pathname.startsWith('/admin');
-  const isOrderRoute = pathname.startsWith('/pedido');
 
-  // --- Caso 1: No hay usuarios en la base de datos ---
+  // --- Primary Logic: Handle First-Time Setup ---
   if (!usersExist) {
-    // Solo se puede acceder a la página de registro
+    // If no users exist, the only allowed page is the signup page.
     if (pathname !== '/signup') {
       return NextResponse.redirect(new URL('/signup', request.url));
     }
+    // Allow the request to proceed to the signup page.
     return response;
   }
 
-  // --- Caso 2: Ya existen usuarios ---
-  // La página de registro ya no es accesible
+  // --- Secondary Logic: Handle App After Setup ---
+
+  // If users exist, the signup page is no longer accessible.
   if (pathname === '/signup') {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Si el usuario NO está autenticado
+  // If the user is NOT authenticated
   if (!session) {
-    // Si intenta acceder a una ruta de admin, redirigir a login
+    // If they try to access a protected admin route, redirect to login.
     if (isAdminRoute) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 
-  // Si el usuario SÍ está autenticado
+  // If the user IS authenticated
   if (session) {
-    // Si intenta acceder a login o signup, redirigir al panel de admin
+    // If they try to access the login or signup page, redirect to the admin dashboard.
     if (isAuthRoute) {
       return NextResponse.redirect(new URL('/admin', request.url));
     }
   }
   
-  // Para todas las demás rutas (públicas como /pedido, etc.), permitir el acceso
+  // For all other cases (e.g., public pages, already correct navigation), allow the request.
   return response;
 }
 
