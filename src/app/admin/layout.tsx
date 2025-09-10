@@ -28,7 +28,13 @@ export default function AdminLayout({
     <div className="flex min-h-screen w-full flex-col bg-background">
       <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-muted/40 sm:flex">
         <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
-          <Logo className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base" />
+          <Link
+            href="#"
+            className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
+          >
+            <Logo />
+            <span className="sr-only">Blonde Orders</span>
+          </Link>
           <TooltipProvider>
              <Tooltip>
               <TooltipTrigger asChild>
@@ -65,18 +71,6 @@ export default function AdminLayout({
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">Agreements</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/admin/clients"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                  <Users className="h-5 w-5" />
-                  <span className="sr-only">Clients</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Clients</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -164,15 +158,6 @@ export default function AdminLayout({
                 >
                   <Package className="h-6 w-6" />
                   <span className="text-xs">Products</span>
-                </Link>
-            </li>
-             <li>
-                <Link
-                  href="/admin/clients"
-                  className="flex flex-col items-center text-muted-foreground hover:text-foreground"
-                >
-                  <Users className="h-6 w-6" />
-                  <span className="text-xs">Clients</span>
                 </Link>
             </li>
             <li>

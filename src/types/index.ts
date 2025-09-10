@@ -17,16 +17,6 @@ export type ProductWithPrice = Product & {
   price: number;
 };
 
-
-export type Client = {
-  id: string;
-  name: string;
-  phone: string | null;
-  address: string | null;
-  city: string | null;
-  created_at: string;
-}
-
 export type Promotion = {
   id: string;
   name: string;

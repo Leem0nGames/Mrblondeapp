@@ -18,18 +18,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { generateOrderLink, getAgreements, getClients } from "@/app/actions/admin.actions";
+import { generateOrderLink, getAgreements } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { Copy } from "lucide-react";
-import type { Agreement, Client } from "@/types";
+import type { Agreement } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 
 export default function GenerateLinkPage() {
   const [agreements, setAgreements] = useState<Agreement[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
   const [selectedAgreementId, setSelectedAgreementId] = useState<string>("");
-  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [clientName, setClientName] = useState<string>("");
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isLoading, startLoading] = useTransition();
@@ -37,10 +36,7 @@ export default function GenerateLinkPage() {
 
   useEffect(() => {
     startLoading(async () => {
-      const agreementsPromise = getAgreements();
-      const clientsPromise = getClients();
-
-      const [agreementsResult, clientsResult] = await Promise.all([agreementsPromise, clientsPromise]);
+      const agreementsResult = await getAgreements();
 
       if (agreementsResult.error) {
         toast({
@@ -51,27 +47,16 @@ export default function GenerateLinkPage() {
       } else {
         setAgreements(agreementsResult.data ?? []);
       }
-
-      if (clientsResult.error) {
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los clientes.",
-          variant: "destructive",
-        });
-      } else {
-        setClients(clientsResult.data ?? []);
-      }
     });
   }, [toast]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const selectedClient = clients.find(c => c.id === selectedClientId);
-
-    if (!selectedClient) {
+    
+    if (!clientName) {
       toast({
         title: "Error",
-        description: "Por favor, selecciona un cliente.",
+        description: "Por favor, ingresa un nombre para el cliente.",
         variant: "destructive",
       });
       return;
@@ -85,7 +70,7 @@ export default function GenerateLinkPage() {
       return;
     }
     startTransition(async () => {
-      const result = await generateOrderLink(selectedAgreementId, selectedClient.name);
+      const result = await generateOrderLink(selectedAgreementId, clientName);
       if (result.error) {
         toast({
           title: "Error al generar enlace",
@@ -131,20 +116,13 @@ export default function GenerateLinkPage() {
           ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="client">Cliente</Label>
-               <Select
-                value={selectedClientId}
-                onValueChange={setSelectedClientId}
-              >
-                <SelectTrigger id="client">
-                  <SelectValue placeholder="Selecciona un cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="clientName">Nombre del Cliente</Label>
+               <Input 
+                id="clientName"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                placeholder="e.g., Barbería Don Julio"
+               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="agreement">Convenio</Label>

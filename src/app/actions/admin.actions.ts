@@ -1,18 +1,15 @@
+
 "use server";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { Product, Agreement, Client, Promotion } from "@/types";
+import type { Product, Agreement, Promotion } from "@/types";
 
 type UpsertProductPayload = Omit<Product, "id" | "created_at"> & {
   id?: string;
 };
 
 type UpsertAgreementPayload = Pick<Agreement, "agreement_name" | "client_type" | "price_adjustment"> & {
-  id?: string;
-};
-
-type UpsertClientPayload = Omit<Client, "id" | "created_at"> & {
   id?: string;
 };
 
@@ -130,38 +127,6 @@ export async function deleteAgreement(id: string) {
     revalidatePath("/admin/agreements");
     return { error: null };
 }
-
-// --- Client Actions ---
-
-export async function getClients() {
-  const supabase = await getAuthenticatedClient();
-  const { data, error } = await supabase.from("clients").select("*").order("name", { ascending: true });
-  return { data, error };
-}
-
-export async function upsertClient(payload: UpsertClientPayload) {
-  const supabase = await getAuthenticatedClient();
-  const { id, ...clientData } = payload;
-  
-  const query = supabase.from("clients");
-  const { data, error } = id
-    ? await query.update(clientData).eq("id", id).select().single()
-    : await query.insert(clientData).select().single();
-    
-  if (error) { return { data: null, error }; }
-
-  revalidatePath("/admin/clients");
-  return { data, error: null };
-}
-
-export async function deleteClient(id: string) {
-  const supabase = await getAuthenticatedClient();
-  const { error } = await supabase.from("clients").delete().eq("id", id);
-  if (error) { return { error }; }
-  revalidatePath("/admin/clients");
-  return { error: null };
-}
-
 
 // --- Promotion Actions ---
 
