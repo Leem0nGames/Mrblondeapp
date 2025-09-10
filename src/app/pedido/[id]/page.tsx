@@ -17,7 +17,7 @@ export default async function OrderPage({
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
         <div className="mb-8">
-            <Logo />
+            <Logo showText={true} />
         </div>
         <Card className="max-w-md mt-8">
           <CardHeader>
@@ -43,7 +43,7 @@ export default async function OrderPage({
     <div className="min-h-screen bg-muted/20 pb-32">
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Logo />
+          <Logo showText={true}/>
           <div className="text-right">
             <p className="font-semibold text-foreground">{agreement.agreement_name}</p>
             <p className="text-sm capitalize text-muted-foreground">{agreement.client_type}</p>
