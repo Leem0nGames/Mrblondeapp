@@ -1,3 +1,4 @@
+
 // These types are manually created to match the Supabase schema.
 // For a more robust solution, you can use `supabase gen types typescript`.
 
@@ -21,7 +22,7 @@ export type Promotion = {
   id: string;
   name: string;
   description: string | null;
-  rules: any;
+  rules: any; // JSON object
   created_at: string;
 };
 
@@ -62,7 +63,8 @@ export type AccessToken = {
 
 export type OrderLog = {
   id: string;
-  agreement_id: string | null;
-  order_data: object | null;
-  sent_at: string;
+  access_token_id: string;
+  order_details: any; // JSON object
+  total_price: number;
+  created_at: string;
 };

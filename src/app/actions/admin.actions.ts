@@ -208,7 +208,7 @@ export async function generateOrderLink(agreementId: string, clientName: string)
     return { link: null, error };
   }
   
-  const host = process.env.NEXT_PUBLIC_HOST_URL || `https://${process.env.GITPOD_WORKSPACE_ID}.` || process.env.VERCEL_URL || 'localhost:9002';
+  const host = process.env.NEXT_PUBLIC_HOST_URL || `https://9000-firebase-studio-1757456762433.cluster-mdgxqvvkkbfpqrfigfiuugu5pk.cloudworkstations.dev/` || process.env.VERCEL_URL || 'localhost:9002';
   const protocol = host.startsWith('localhost') ? 'http' : 'https';
   const link = `${protocol}://${host}/pedido/${token}`;
 

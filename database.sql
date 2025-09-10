@@ -1,3 +1,4 @@
+ALTER TABLE agreements RENAME COLUMN name TO agreement_name;
 -- Users table (managed by Supabase Auth)
 -- This is just a reference, do not run this. Supabase handles it.
 -- create table auth.users ( ... );
