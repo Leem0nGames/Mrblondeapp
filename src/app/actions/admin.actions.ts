@@ -1,4 +1,3 @@
-
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -18,7 +17,7 @@ type UpsertPromotionPayload = Omit<Promotion, "id" | "created_at" | "rules"> & {
   rules: any;
 };
 
-// Helper function to ensure user is authenticated.
+// Helper function to ensure user is authenticated and the Supabase client is fresh.
 // It will be called at the start of every action.
 async function checkAuth() {
   const supabase = createClient();
@@ -39,7 +38,10 @@ export async function getProducts() {
   await checkAuth();
   const supabase = createClient();
   const { data, error } = await supabase.from("products").select("*").order("name", { ascending: true });
-  if (error) console.error("getProducts error:", error.message);
+  if (error) {
+    console.error("getProducts error:", error.message);
+    throw error;
+  }
   return { data, error };
 }
 
@@ -119,7 +121,10 @@ export async function getAgreementById(id: string) {
         `)
         .eq("id", id)
         .single();
-    if (error) console.error("getAgreementById error:", error.message);
+    if (error) {
+        console.error("getAgreementById error:", error.message);
+        throw error;
+    }
     return { data, error };
 }
 
@@ -129,15 +134,15 @@ export async function upsertAgreement(payload: UpsertAgreementPayload) {
   const supabase = createClient();
   const { id, ...agreementData } = payload;
   
-  let finalData: any = agreementData;
+  const upsertData: any = { ...agreementData };
   if (!id) {
-    finalData.link_token = crypto.randomUUID();
+    upsertData.link_token = crypto.randomUUID();
   }
 
   const query = supabase.from("agreements");
   const { data, error } = id
-    ? await query.update(finalData).eq("id", id).select().single()
-    : await query.insert(finalData).select().single();
+    ? await query.update(upsertData).eq("id", id).select().single()
+    : await query.insert(upsertData).select().single();
   
   if (error) { 
     console.error("upsertAgreement error:", error.message);
@@ -166,7 +171,10 @@ export async function getPromotions() {
   await checkAuth();
   const supabase = createClient();
   const { data, error } = await supabase.from("promotions").select("*").order("name", { ascending: true });
-  if (error) console.error("getPromotions error:", error.message);
+  if (error) {
+    console.error("getPromotions error:", error.message);
+    throw error;
+  }
   return { data, error };
 }
 
@@ -222,7 +230,10 @@ export async function getUnassignedProducts(agreementId: string) {
     
     if (assignedIds.length === 0) {
       const { data, error } = await supabase.from('products').select('*').order('name');
-      if (error) console.error("getUnassignedProducts (all) error:", error.message);
+      if (error) {
+        console.error("getUnassignedProducts (all) error:", error.message);
+        throw error;
+      }
       return { data, error };
     }
 
@@ -232,7 +243,10 @@ export async function getUnassignedProducts(agreementId: string) {
         .not('id', 'in', `(${assignedIds.join(',')})`)
         .order('name');
     
-    if (error) console.error("getUnassignedProducts (filtered) error:", error.message);
+    if (error) {
+        console.error("getUnassignedProducts (filtered) error:", error.message);
+        throw error;
+    }
     return { data, error };
 }
 
@@ -253,7 +267,10 @@ export async function getUnassignedPromotions(agreementId: string) {
 
     if (assignedIds.length === 0) {
         const { data, error } = await supabase.from('promotions').select('*').order('name');
-        if (error) console.error("getUnassignedPromotions (all) error:", error.message);
+        if (error) {
+            console.error("getUnassignedPromotions (all) error:", error.message);
+            throw error;
+        }
         return { data, error };
     }
 
@@ -263,7 +280,10 @@ export async function getUnassignedPromotions(agreementId: string) {
         .not('id', 'in', `(${assignedIds.join(',')})`)
         .order('name');
     
-    if (error) console.error("getUnassignedPromotions (filtered) error:", error.message);
+    if (error) {
+        console.error("getUnassignedPromotions (filtered) error:", error.message);
+        throw error;
+    }
     return { data, error };
 }
 
