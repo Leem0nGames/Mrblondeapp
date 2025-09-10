@@ -6,13 +6,14 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useCartStore } from "@/hooks/use-cart-store";
 import { suggestPromotions, type SuggestPromotionsInput, type SuggestPromotionsOutput } from "@/ai/flows/intelligent-promo-suggestions";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { AccessToken } from "@/types";
+import type { AgreementPromotion } from "@/types";
 
 type IntelligentSuggestionsProps = {
-    accessToken: AccessToken
+    clientName: string;
+    availablePromotions: AgreementPromotion[];
 }
 
-export function IntelligentSuggestions({ accessToken }: IntelligentSuggestionsProps) {
+export function IntelligentSuggestions({ clientName, availablePromotions }: IntelligentSuggestionsProps) {
   const { items, totalItems, isHydrated } = useCartStore();
   const [suggestions, setSuggestions] = useState<SuggestPromotionsOutput | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -35,7 +36,7 @@ export function IntelligentSuggestions({ accessToken }: IntelligentSuggestionsPr
         name: item.product.name,
       }));
 
-      const availablePromotions = accessToken.agreement.agreement_promotions.map(ap => ({
+      const promotionsForAI = availablePromotions.map(ap => ({
         name: ap.promotions.name,
         description: ap.promotions.description || '',
         rules: ap.promotions.rules,
@@ -44,15 +45,15 @@ export function IntelligentSuggestions({ accessToken }: IntelligentSuggestionsPr
       const input: SuggestPromotionsInput = {
         items: cartItems,
         total_unidades: totalItems,
-        nombre: accessToken.client_name,
-        availablePromotions,
+        nombre: clientName,
+        availablePromotions: promotionsForAI,
       };
 
       const result = await suggestPromotions(input);
       setSuggestions(result);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalItems, isHydrated, accessToken]); // Rerun when totalItems or hydration status changes
+  }, [totalItems, isHydrated, clientName, availablePromotions]); // Rerun when totalItems or hydration status changes
 
   // Don't render anything until the cart is hydrated to avoid mismatch
   if (!isHydrated) {

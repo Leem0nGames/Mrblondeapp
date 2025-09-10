@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useCartStore, type CartItem } from "@/hooks/use-cart-store";
 import { Button } from "@/components/ui/button";
 import {
@@ -130,7 +130,8 @@ export function CartWidget({ accessToken }: { accessToken: AccessToken }) {
       <OrderSummarySheet 
         isOpen={isSummaryOpen}
         onOpenChange={setIsSummaryOpen}
-        accessToken={accessToken}
+        clientName={accessToken.client_name}
+        availablePromotions={accessToken.agreement.agreement_promotions}
       />
     </>
   );

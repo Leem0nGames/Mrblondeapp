@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -11,7 +10,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/hooks/use-cart-store";
-import { AccessToken } from "@/types";
+import { AgreementPromotion } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
@@ -53,11 +52,13 @@ _(Por favor, aplicar promociones correspondientes al facturar)_
 export function OrderSummarySheet({
   isOpen,
   onOpenChange,
-  accessToken,
+  clientName,
+  availablePromotions
 }: {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  accessToken: AccessToken;
+  clientName: string;
+  availablePromotions: AgreementPromotion[];
 }) {
   const { items, totalPrice } = useCartStore();
   const { toast } = useToast();
@@ -73,7 +74,7 @@ export function OrderSummarySheet({
       });
       return;
     }
-    const message = formatWhatsAppMessage(accessToken.client_name, items, totalPrice);
+    const message = formatWhatsAppMessage(clientName, items, totalPrice);
     const whatsappUrl = `https://wa.me/${whatsAppNumber}?text=${message}`;
     window.open(whatsappUrl, "_blank");
   };
@@ -126,7 +127,10 @@ export function OrderSummarySheet({
                     <Separator />
 
                     {/* AI Suggestions */}
-                    <IntelligentSuggestions accessToken={accessToken}/>
+                    <IntelligentSuggestions 
+                      clientName={clientName} 
+                      availablePromotions={availablePromotions}
+                    />
 
                 </div>
             </ScrollArea>
@@ -145,5 +149,3 @@ export function OrderSummarySheet({
     </Sheet>
   );
 }
-
-    
