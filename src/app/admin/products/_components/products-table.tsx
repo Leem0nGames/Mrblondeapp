@@ -1,3 +1,4 @@
+
 "use client";
 
 import { MoreHorizontal, Trash2 } from "lucide-react";
@@ -19,10 +20,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -71,22 +69,16 @@ export default function ProductsTable({ products }: { products: Product[] }) {
   
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Productos</CardTitle>
-        <CardDescription>
-          Gestiona tus productos y su inventario.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="hidden w-[100px] sm:table-cell">
+              <TableHead className="hidden w-[64px] sm:table-cell">
                 <span className="sr-only">Imagen</span>
               </TableHead>
               <TableHead>Nombre</TableHead>
               <TableHead>Estado</TableHead>
-              <TableHead className="hidden md:table-cell">Precio</TableHead>
+              <TableHead className="hidden md:table-cell">Precio Base</TableHead>
               <TableHead className="hidden md:table-cell">Stock</TableHead>
               <TableHead className="hidden md:table-cell">Creado el</TableHead>
               <TableHead>
@@ -99,10 +91,10 @@ export default function ProductsTable({ products }: { products: Product[] }) {
               <TableRow key={product.id}>
                 <TableCell className="hidden sm:table-cell">
                   <Image
-                    src={getImageUrl("product", { id: product.id, width: 100, height: 100 })}
+                    src={getImageUrl("product", { id: product.id, width: 64, height: 64 })}
                     alt={product.name}
-                    width={64}
-                    height={64}
+                    width={48}
+                    height={48}
                     className="rounded-md aspect-square object-cover"
                     data-ai-hint="product image"
                   />
@@ -124,7 +116,7 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                 <TableCell className="hidden md:table-cell">
                   {formatDate(product.created_at)}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button aria-haspopup="true" size="icon" variant="ghost">

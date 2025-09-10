@@ -1,3 +1,4 @@
+
 "use client";
 
 import { MoreHorizontal, Trash2 } from "lucide-react";
@@ -17,10 +18,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -68,13 +66,7 @@ export default function PromotionsTable({ promotions }: { promotions: Promotion[
   
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Promociones</CardTitle>
-        <CardDescription>
-          Gestiona las promociones y reglas de negocio de la tienda.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         <Table>
           <TableHeader>
             <TableRow>
@@ -95,14 +87,14 @@ export default function PromotionsTable({ promotions }: { promotions: Promotion[
                   {promotion.description}
                 </TableCell>
                  <TableCell className="hidden md:table-cell">
-                  <pre className="text-xs bg-muted p-2 rounded-md font-code">
+                  <pre className="text-xs bg-muted p-2 rounded-md font-code max-w-xs overflow-x-auto">
                     <code>{JSON.stringify(promotion.rules, null, 2)}</code>
                   </pre>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {formatDate(promotion.created_at)}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -159,7 +151,7 @@ export default function PromotionsTable({ promotions }: { promotions: Promotion[
       </CardContent>
       <CardFooter>
         <div className="text-xs text-muted-foreground">
-          Mostrando <strong>1-{promotions.length}</strong> de{" "}
+          Mostrando <strong>{promotions.length}</strong> de{" "}
           <strong>{promotions.length}</strong> promociones
         </div>
       </CardFooter>
