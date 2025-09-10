@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
@@ -34,12 +35,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn(
-        "font-body antialiased min-h-screen bg-background",
-        belleza.variable,
-        alegreya.variable,
-        sourceCodePro.variable
-      )}>
+      <body 
+        className={cn(
+          "font-body antialiased min-h-screen bg-background",
+          belleza.variable,
+          alegreya.variable,
+          sourceCodePro.variable
+        )}
+        suppressHydrationWarning={true}
+      >
         {children}
         <Toaster />
       </body>
