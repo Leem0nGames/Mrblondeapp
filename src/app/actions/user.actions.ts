@@ -41,3 +41,36 @@ export async function logout() {
   await supabase.auth.signOut();
   redirect("/login");
 }
+
+export async function getOrderPageData(token: string) {
+    const supabase = createClient();
+
+    // 1. Verify token
+    const { data: agreement, error: agreementError } = await supabase
+        .from('agreements')
+        .select('*')
+        .eq('token', token)
+        .single();
+
+    if (agreementError || !agreement) {
+        return { error: { message: "El enlace no es válido o ha expirado." } };
+    }
+    
+    const now = new Date();
+    const expiresAt = new Date(agreement.expires_at!);
+    if (now > expiresAt) {
+        return { error: { message: "El enlace ha expirado." } };
+    }
+    
+    // 2. Fetch products
+    const { data: products, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .order('name', { ascending: true });
+        
+    if (productsError) {
+        return { error: { message: "No se pudieron cargar los productos." } };
+    }
+
+    return { data: { agreement, products: products ?? [] }, error: null };
+}
