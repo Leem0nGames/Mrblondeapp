@@ -1,100 +1,79 @@
 
--- Roles and Policies have been removed for simplicity in this MVP.
--- In a production environment, you should implement Row Level Security.
+-- Habilitar la extensión pgcrypto para generar UUIDs
+create extension if not exists "pgcrypto" with schema "public";
 
--- Drop existing tables in reverse order of dependency to avoid conflicts.
-DROP TABLE IF EXISTS "public"."agreement_products";
-DROP TABLE IF EXISTS "public"."agreement_promotions";
-DROP TABLE IF EXISTS "public"."access_tokens"; -- This table is no longer needed.
-DROP TABLE IF EXISTS "public"."agreements";
-DROP TABLE IF EXISTS "public"."products";
-DROP TABLE IF EXISTS "public"."promotions";
-
-
--- Create products table
-CREATE TABLE "public"."products" (
-    "id" UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    "name" CHARACTER VARYING NOT NULL,
-    "description" TEXT,
-    "base_price" NUMERIC NOT NULL,
-    "stock" INTEGER NOT NULL DEFAULT 0,
-    "category" CHARACTER VARYING,
-    "created_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+-- Tabla de Productos
+-- Almacena el catálogo de todos los productos disponibles.
+drop table if exists products cascade;
+create table public.products (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  description text,
+  base_price numeric(10, 2) not null default 0,
+  stock integer not null default 0,
+  category text,
+  created_at timestamp with time zone not null default now()
 );
 
--- Create promotions table
-CREATE TABLE "public"."promotions" (
-    "id" UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    "name" CHARACTER VARYING NOT NULL,
-    "description" TEXT,
-    "rules" JSONB NOT NULL,
-    "created_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+-- Tabla de Promociones
+-- Almacena todas las promociones que pueden ser asignadas a los convenios.
+-- Las 'rules' se guardan como JSON para máxima flexibilidad.
+drop table if exists promotions cascade;
+create table public.promotions (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  description text,
+  rules jsonb not null,
+  created_at timestamp with time zone not null default now()
 );
 
--- Create agreements table with the new permanent link_token
-CREATE TABLE "public"."agreements" (
-    "id" UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    "agreement_name" CHARACTER VARYING NOT NULL,
-    "client_type" CHARACTER VARYING NOT NULL,
-    "price_adjustment" NUMERIC NOT NULL DEFAULT 0,
-    "link_token" UUID DEFAULT gen_random_uuid() NOT NULL UNIQUE, -- The permanent, unique link token
-    "created_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+-- Tabla de Convenios (Agreements)
+-- Define las reglas de negocio para diferentes tipos de clientes.
+-- Cada convenio tiene un link_token único y permanente.
+drop table if exists agreements cascade;
+create table public.agreements (
+  id uuid primary key default gen_random_uuid(),
+  agreement_name text not null,
+  client_type text not null check (client_type in ('barberia', 'distribuidor', 'especial')),
+  price_adjustment numeric(5, 2) not null default 0,
+  link_token uuid not null default gen_random_uuid(),
+  created_at timestamp with time zone not null default now(),
+  constraint agreements_link_token_key unique (link_token) -- RESTRICCIÓN ÚNICA AÑADIDA
 );
 
--- Create agreement_products junction table
-CREATE TABLE "public"."agreement_products" (
-    "agreement_id" UUID NOT NULL REFERENCES "public"."agreements"(id) ON DELETE CASCADE,
-    "product_id" UUID NOT NULL REFERENCES "public"."products"(id) ON DELETE CASCADE,
-    "price" NUMERIC NOT NULL,
-    PRIMARY KEY (agreement_id, product_id)
+-- Tabla de Convenio-Productos (Tabla Pivote)
+-- Asigna productos a un convenio con un precio específico.
+drop table if exists agreement_products cascade;
+create table public.agreement_products (
+    agreement_id uuid not null references public.agreements(id) on delete cascade,
+    product_id uuid not null references public.products(id) on delete cascade,
+    price numeric(10, 2) not null,
+    primary key (agreement_id, product_id)
 );
 
--- Create agreement_promotions junction table
-CREATE TABLE "public"."agreement_promotions" (
-    "agreement_id" UUID NOT NULL REFERENCES "public"."agreements"(id) ON DELETE CASCADE,
-    "promotion_id" UUID NOT NULL REFERENCES "public"."promotions"(id) ON DELETE CASCADE,
-    PRIMARY KEY (agreement_id, promotion_id)
+-- Tabla de Convenio-Promociones (Tabla Pivote)
+-- Asigna promociones a un convenio.
+drop table if exists agreement_promotions cascade;
+create table public.agreement_promotions (
+    agreement_id uuid not null references public.agreements(id) on delete cascade,
+    promotion_id uuid not null references public.promotions(id) on delete cascade,
+    primary key (agreement_id, promotion_id)
 );
 
--- Dummy Data for initial setup
+-- Habilitar Row Level Security (RLS) para todas las tablas
+-- Esto es una buena práctica de seguridad, aunque las reglas no estén definidas aún.
+alter table public.products enable row level security;
+alter table public.promotions enable row level security;
+alter table public.agreements enable row level security;
+alter table public.agreement_products enable row level security;
+alter table public.agreement_promotions enable row level security;
 
--- Products
-INSERT INTO "public"."products" (name, description, base_price, stock, category) VALUES
-('Cera Modeladora "Matte Rock"', 'Fijación fuerte con acabado matte. Ideal para estilos definidos y con textura.', 12500, 50, 'Ceras'),
-('Shampoo "Silver Blonde"', 'Neutraliza tonos amarillentos en cabellos rubios y grises. Limpieza profunda.', 15000, 30, 'Shampoos'),
-('Aceite para Barba "Luxe Oil"', 'Hidrata y suaviza la barba y la piel. Mezcla de aceites de argán y jojoba.', 11000, 40, 'Barbería');
+-- Políticas de RLS para acceso público de lectura (si es necesario)
+-- Por defecto, se deniega el acceso. Las reglas se deben crear según la lógica de la app.
+-- Ejemplo: permitir lectura pública de productos.
+-- create policy "Allow public read access to products" on public.products for select using (true);
+-- create policy "Allow public read access to promotions" on public.promotions for select using (true);
 
--- Promotions
-INSERT INTO "public"."promotions" (name, description, rules) VALUES
-('Promo Barberías 6+1', 'Comprando 6 unidades de cualquier producto, llevas 1 de regalo.', '{"type": "buy_x_get_y_free", "buy": 6, "get": 1, "scope": "any_product"}'),
-('Descuento por Volumen (10+)', '10% de descuento en el total de la compra superando las 10 unidades.', '{"type": "total_discount_by_units", "min_units": 10, "discount_percentage": 10}'),
-('Kit Silver', 'Llevando 1 Shampoo Silver y 1 Cera Matte, obtienes un 15% de descuento en ambos.', '{"type": "kit_discount", "products": ["Shampoo \"Silver Blonde\"", "Cera Modeladora \"Matte Rock\""], "discount_percentage": 15}');
-
--- Agreements
-INSERT INTO "public"."agreements" (agreement_name, client_type, price_adjustment, link_token) VALUES
-('Barberías CABA', 'barberia', -5, 'f47ac10b-58cc-4372-a567-0e02b2c3d479'),
-('Distribuidores Premium', 'distribuidor', -15, '747ac10b-58cc-4372-a567-0e02b2c3d480');
-
--- Assign products and promotions to agreements
--- Barberías CABA
-INSERT INTO "public"."agreement_products" (agreement_id, product_id, price)
-SELECT a.id, p.id, p.base_price * 0.95
-FROM agreements a, products p
-WHERE a.agreement_name = 'Barberías CABA';
-
-INSERT INTO "public"."agreement_promotions" (agreement_id, promotion_id)
-SELECT a.id, promo.id
-FROM agreements a, promotions promo
-WHERE a.agreement_name = 'Barberías CABA' AND promo.name IN ('Promo Barberías 6+1', 'Descuento por Volumen (10+)');
-
--- Distribuidores Premium
-INSERT INTO "public"."agreement_products" (agreement_id, product_id, price)
-SELECT a.id, p.id, p.base_price * 0.85
-FROM agreements a, products p
-WHERE a.agreement_name = 'Distribuidores Premium';
-
-INSERT INTO "public"."agreement_promotions" (agreement_id, promotion_id)
-SELECT a.id, promo.id
-FROM agreements a, promotions promo
-WHERE a.agreement_name = 'Distribuidores Premium';
+-- No se necesita la tabla `access_tokens` ya que ahora los convenios tienen un link_token permanente.
+-- drop table if exists access_tokens;
 
