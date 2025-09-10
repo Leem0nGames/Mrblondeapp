@@ -1,12 +1,11 @@
+
 import Link from "next/link";
 import {
   Package,
-  Users,
-  Percent,
   LogOut,
-  Home,
-  Link2,
-  FileText
+  FileText,
+  Percent,
+  Settings
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -28,26 +27,11 @@ export default function AdminLayout({
     <div className="flex min-h-screen w-full flex-col bg-background">
       <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-muted/40 sm:flex">
         <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
-          <Link
-            href="/admin"
-            className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
-          >
+          <div className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base">
             <Logo />
             <span className="sr-only">Blonde Orders</span>
-          </Link>
+          </div>
           <TooltipProvider>
-             <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/admin"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                  <Home className="h-5 w-5" />
-                  <span className="sr-only">Dashboard</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Dashboard</TooltipContent>
-            </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link
@@ -55,10 +39,10 @@ export default function AdminLayout({
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
                   <Package className="h-5 w-5" />
-                  <span className="sr-only">Products</span>
+                  <span className="sr-only">Productos</span>
                 </Link>
               </TooltipTrigger>
-              <TooltipContent side="right">Products</TooltipContent>
+              <TooltipContent side="right">Productos</TooltipContent>
             </Tooltip>
              <Tooltip>
               <TooltipTrigger asChild>
@@ -67,10 +51,10 @@ export default function AdminLayout({
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
                   <FileText className="h-5 w-5" />
-                  <span className="sr-only">Agreements</span>
+                  <span className="sr-only">Convenios</span>
                 </Link>
               </TooltipTrigger>
-              <TooltipContent side="right">Agreements</TooltipContent>
+              <TooltipContent side="right">Convenios</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -79,22 +63,22 @@ export default function AdminLayout({
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
                   <Percent className="h-5 w-5" />
-                  <span className="sr-only">Promotions</span>
+                  <span className="sr-only">Promociones</span>
                 </Link>
               </TooltipTrigger>
-              <TooltipContent side="right">Promotions</TooltipContent>
+              <TooltipContent side="right">Promociones</TooltipContent>
             </Tooltip>
              <Tooltip>
               <TooltipTrigger asChild>
                 <Link
-                  href="/admin/links"
+                  href="/admin/settings"
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
-                  <Link2 className="h-5 w-5" />
-                  <span className="sr-only">Links</span>
+                  <Settings className="h-5 w-5" />
+                  <span className="sr-only">Configuración</span>
                 </Link>
               </TooltipTrigger>
-              <TooltipContent side="right">Links</TooltipContent>
+              <TooltipContent side="right">Configuración</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </nav>
@@ -109,11 +93,11 @@ export default function AdminLayout({
                     className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                   >
                     <LogOut className="h-5 w-5" />
-                    <span className="sr-only">Logout</span>
+                    <span className="sr-only">Cerrar Sesión</span>
                   </Button>
                 </form>
               </TooltipTrigger>
-              <TooltipContent side="right">Logout</TooltipContent>
+              <TooltipContent side="right">Cerrar Sesión</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </nav>
@@ -132,7 +116,7 @@ export default function AdminLayout({
                     size="icon"
                   >
                     <LogOut className="h-5 w-5" />
-                    <span className="sr-only">Logout</span>
+                    <span className="sr-only">Cerrar Sesión</span>
                   </Button>
                 </form>
             </div>
@@ -146,20 +130,11 @@ export default function AdminLayout({
           <ul className="h-full flex justify-around items-center">
             <li>
                 <Link
-                  href="/admin"
-                  className="flex flex-col items-center text-muted-foreground hover:text-foreground"
-                >
-                  <Home className="h-6 w-6" />
-                  <span className="text-xs">Home</span>
-                </Link>
-            </li>
-            <li>
-                <Link
                   href="/admin/products"
                   className="flex flex-col items-center text-muted-foreground hover:text-foreground"
                 >
                   <Package className="h-6 w-6" />
-                  <span className="text-xs">Products</span>
+                  <span className="text-xs">Productos</span>
                 </Link>
             </li>
             <li>
@@ -168,7 +143,7 @@ export default function AdminLayout({
                   className="flex flex-col items-center text-muted-foreground hover:text-foreground"
                 >
                   <FileText className="h-6 w-6" />
-                  <span className="text-xs">Agreements</span>
+                  <span className="text-xs">Convenios</span>
                 </Link>
             </li>
              <li>
@@ -182,11 +157,11 @@ export default function AdminLayout({
             </li>
              <li>
                 <Link
-                  href="/admin/links"
+                  href="/admin/settings"
                   className="flex flex-col items-center text-muted-foreground hover:text-foreground"
                 >
-                  <Link2 className="h-6 w-6" />
-                  <span className="text-xs">Links</span>
+                  <Settings className="h-6 w-6" />
+                  <span className="text-xs">Ajustes</span>
                 </Link>
             </li>
           </ul>

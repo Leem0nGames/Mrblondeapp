@@ -35,7 +35,7 @@ async function getAuthenticatedClient() {
 
 export async function getProducts() {
   const supabase = await getAuthenticatedClient();
-  const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+  const { data, error } = await supabase.from("products").select("*").order("name", { ascending: true });
   return { data, error };
 }
 
@@ -201,6 +201,12 @@ export async function getUnassignedProducts(agreementId: string) {
     if (assignedIdsError) return { data: [], error: assignedIdsError };
 
     const assignedIds = assignedProductIds.map(p => p.product_id);
+    
+    // Handle case where assignedIds is empty to avoid Supabase error
+    if (assignedIds.length === 0) {
+      const { data, error } = await supabase.from('products').select('*').order('name');
+      return { data, error };
+    }
 
     const { data, error } = await supabase
         .from('products')
@@ -221,6 +227,12 @@ export async function getUnassignedPromotions(agreementId: string) {
     if (assignedIdsError) return { data: [], error: assignedIdsError };
 
     const assignedIds = assignedPromotionIds.map(p => p.promotion_id);
+
+    // Handle case where assignedIds is empty to avoid Supabase error
+    if (assignedIds.length === 0) {
+        const { data, error } = await supabase.from('promotions').select('*').order('name');
+        return { data, error };
+    }
 
     const { data, error } = await supabase
         .from('promotions')

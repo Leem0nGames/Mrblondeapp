@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useTransition } from "react";
 import Link from 'next/link';
-import { MoreHorizontal, Trash2, Edit, Tag, Percent, FileText } from "lucide-react";
+import { MoreHorizontal, Trash2, Edit, Tag, Percent, FileText, Link2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,8 @@ import { useToast } from "@/hooks/use-toast";
 import type { Agreement } from "@/types";
 import { deleteAgreement } from "@/app/actions/admin.actions";
 import { AgreementDialog } from "./agreement-dialog";
+import { GenerateLinkDialog } from "./generate-link-dialog";
+
 
 export function AgreementCard({ agreement }: { agreement: Agreement }) {
   const [isPending, startTransition] = useTransition();
@@ -147,11 +150,17 @@ export function AgreementCard({ agreement }: { agreement: Agreement }) {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="border-t pt-4">
-        <Button variant="outline" className="w-full" asChild>
+      <CardFooter className="grid grid-cols-2 gap-2 border-t pt-4">
+        <GenerateLinkDialog agreement={agreement}>
+            <Button variant="outline">
+                <Link2 className="mr-2 h-4 w-4" />
+                Generar Link
+            </Button>
+        </GenerateLinkDialog>
+        <Button asChild>
             <Link href={`/admin/agreements/${agreement.id}`}>
               <FileText className="mr-2 h-4 w-4" />
-              Gestionar Convenio
+              Gestionar
             </Link>
         </Button>
       </CardFooter>
