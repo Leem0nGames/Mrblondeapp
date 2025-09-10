@@ -19,10 +19,13 @@ export interface AuthState {
 /**
  * Comprueba si existe algún usuario en la base de datos.
  * Utiliza el cliente de servicio para tener los permisos necesarios.
+ * Es crucial que esta función sea robusta.
  * @returns {Promise<boolean>} `true` si hay al menos un usuario, `false` si no o en caso de error.
  */
 export async function hasUsers(): Promise<boolean> {
-  // Asegurarse de que las claves están presentes para evitar errores en tiempo de ejecución.
+  // Si las variables de entorno cruciales no están, no podemos conectar a Supabase.
+  // En este caso, devolvemos `false` para permitir el acceso a la página de registro
+  // donde se podrían mostrar instrucciones para configurar el .env.
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.error('Supabase URL or Service Role Key are not configured.');
     return false;
@@ -32,8 +35,8 @@ export async function hasUsers(): Promise<boolean> {
   
   if (error) {
     console.error('Error checking for users:', error.message);
-    // En caso de error (ej: la API no está disponible), es más seguro devolver `false`
-    // para permitir el intento de registro, que podría ser el primer paso necesario.
+    // Si hay un error al consultar (ej. la base de datos no está disponible),
+    // es más seguro devolver `false` para no bloquear el proceso de setup.
     return false;
   }
   return data.users.length > 0;
@@ -47,9 +50,9 @@ export async function signupSuperAdmin(
   prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
-  // Medida de seguridad: volver a comprobar si ya hay usuarios.
+  // Medida de seguridad: volver a comprobar si ya hay usuarios antes de intentar crear uno.
   if (await hasUsers()) {
-    return { error: { message: 'El registro ya no está disponible.' } };
+    return { error: { message: 'El registro ya no está disponible. Ya existe un administrador.' } };
   }
 
   const supabase = createClient();
@@ -59,8 +62,13 @@ export async function signupSuperAdmin(
   if (!email || !password) {
     return { error: { message: 'El email y la contraseña son requeridos.' } };
   }
-  if (password.length < 6) {
-    return { error: { message: 'La contraseña debe tener al menos 6 caracteres.' } };
+  // Se requiere que la contraseña coincida con la del admin para el login por PIN.
+  if (password !== 'admin1234') {
+    return { error: { message: 'La contraseña debe ser "admin1234".' } };
+  }
+  // Se requiere que el email sea el del admin para el login por PIN.
+  if (email !== 'admin@blonde.com') {
+    return { error: { message: 'El email debe ser "admin@blonde.com".' } };
   }
 
   const { error } = await supabase.auth.signUp({ email, password });
@@ -70,8 +78,8 @@ export async function signupSuperAdmin(
     return { error: { message: 'No se pudo crear la cuenta. Inténtelo de nuevo.' } };
   }
 
-  revalidatePath('/');
-  redirect('/admin');
+  revalidatePath('/'); // Invalida la cache para que la próxima comprobación de `hasUsers` sea correcta.
+  redirect('/login'); // Redirige a la página de login con PIN tras el registro exitoso.
 }
 
 /**
@@ -88,12 +96,12 @@ export async function login(
     return { error: { message: 'PIN incorrecto.' } };
   }
 
-  // 2. Si el PIN es correcto, intentar iniciar sesión con las credenciales del admin
-  //    Es fundamental que este usuario haya sido creado previamente.
+  // 2. Si el PIN es correcto, intentar iniciar sesión con las credenciales fijas del admin.
+  //    Este usuario debe haber sido creado previamente a través del flujo de registro único.
   const supabase = createClient();
   const { error } = await supabase.auth.signInWithPassword({
     email: 'admin@blonde.com',
-    password: 'admin1234', // Esta contraseña debe coincidir con la usada en el registro
+    password: 'admin1234', 
   });
 
   if (error) {
@@ -102,7 +110,7 @@ export async function login(
     return { error: { message: 'Error de autenticación. Verifique que el usuario admin esté configurado.' } };
   }
   
-  revalidatePath('/');
+  revalidatePath('/admin');
   redirect('/admin');
 }
 

@@ -1,3 +1,4 @@
+
 import { hasUsers } from '@/app/actions/user.actions';
 import { Logo } from '@/components/logo';
 import {
@@ -8,12 +9,17 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { SignupForm } from './_components/signup-form';
+import { redirect } from 'next/navigation';
 
 // Esta página es un Server Component.
 // Realiza una comprobación de seguridad crítica en el servidor antes de renderizar.
 export default async function SignupPage() {
   // Comprobamos si ya existe algún usuario en el sistema.
+  // Si ya existe, redirigimos inmediatamente al login para que no se pueda ver esta página.
   const usersExist = await hasUsers();
+  if (usersExist) {
+    redirect('/login');
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40">
@@ -24,21 +30,11 @@ export default async function SignupPage() {
           </div>
           <CardTitle className="text-2xl">Crear Cuenta de Administrador</CardTitle>
           <CardDescription>
-            {usersExist
-              ? 'El registro de nuevas cuentas no está disponible.'
-              : 'Esta será la única cuenta de administrador del sistema.'}
+            Este es un paso único para configurar el super-administrador del sistema.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Si ya existen usuarios, no mostramos el formulario. */}
-          {/* Esta es una doble capa de seguridad (UI + Server Action). */}
-          {!usersExist ? (
-            <SignupForm />
-          ) : (
-            <p className="text-center text-sm text-muted-foreground">
-              Ya se ha configurado una cuenta de administrador.
-            </p>
-          )}
+          <SignupForm />
         </CardContent>
       </Card>
     </div>
