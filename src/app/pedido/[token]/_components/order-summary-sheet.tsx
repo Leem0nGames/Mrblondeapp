@@ -25,7 +25,7 @@ function formatWhatsAppMessage(
   const itemsText = cartItems
     .map(
       (item) =>
-        `- ${item.product.name} x${item.quantity} = $${(
+        `- ${item.product.name} (x${item.quantity}) = $${(
           item.product.base_price * item.quantity
         ).toLocaleString()}`
     )
@@ -39,7 +39,9 @@ function formatWhatsAppMessage(
 *Productos:*
 ${itemsText}
 
-*Total:* $${totalPrice.toLocaleString()}
+*Total (sin promos):* $${totalPrice.toLocaleString()}
+
+_(Por favor, aplicar promociones correspondientes)_
 
 ¡Gracias!
     `.trim();
@@ -56,7 +58,7 @@ export function OrderSummarySheet({
   onOpenChange: (isOpen: boolean) => void;
   accessToken: AccessToken;
 }) {
-  const { items, totalPrice, totalItems } = useCartStore();
+  const { items, totalPrice } = useCartStore();
   const { toast } = useToast();
   const whatsAppNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '5491123456789';
 
@@ -81,7 +83,7 @@ export function OrderSummarySheet({
         <SheetHeader>
           <SheetTitle>Resumen del Pedido</SheetTitle>
           <SheetDescription>
-            Confirma tu pedido y envíalo por WhatsApp.
+            Confirma tu pedido y envíalo por WhatsApp. Las promociones sugeridas se aplicarán al facturar.
           </SheetDescription>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto pr-6 -mr-6">
@@ -115,7 +117,7 @@ export function OrderSummarySheet({
                         </div>
                         <Separator className="my-4" />
                         <div className="flex justify-between font-bold text-lg">
-                            <span>Total</span>
+                            <span>Total (base)</span>
                             <span>${totalPrice.toLocaleString()}</span>
                         </div>
                     </div>
@@ -123,13 +125,10 @@ export function OrderSummarySheet({
                     <Separator />
 
                     {/* AI Suggestions */}
-                    <IntelligentSuggestions agreement={{
-                        type: accessToken.agreement.client_type,
-                        agreement_id: accessToken.agreement.id,
-                        total_unidades: totalItems,
-                        nombre: accessToken.client_name,
-                        items: items.map(i => ({id: i.product.id, name: i.product.name, quantity: i.quantity}))
-                    }}/>
+                    <IntelligentSuggestions 
+                        agreement={accessToken.agreement}
+                        clientName={accessToken.client_name}
+                    />
 
                 </div>
             </ScrollArea>

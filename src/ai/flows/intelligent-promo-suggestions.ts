@@ -22,9 +22,9 @@ const SuggestPromotionsInputSchema = z.object({
       name: z.string().describe('The name of the product.'),
     })
   ).describe('The items in the user cart.'),
-  type: z.enum(['barberia', 'distribuidor']).describe('The type of the client.'),
+  type: z.enum(['barberia', 'distribuidor', 'especial']).describe('The type of the client.'),
   agreement_id: z.string().optional().describe('The ID of the agreement, if any.'),
-  total_unidades: z.number().int().positive().describe('The total number of units in the cart.'),
+  total_unidades: z.number().int().nonnegative().describe('The total number of units in the cart.'),
   ciudad: z.string().optional().describe('The city of the client, if any.'),
   direccion: z.string().optional().describe('The address of the client, if any.'),
   nombre: z.string().optional().describe('The name of the client, if any.'),
@@ -45,6 +45,10 @@ const SuggestPromotionsOutputSchema = z.object({
 export type SuggestPromotionsOutput = z.infer<typeof SuggestPromotionsOutputSchema>;
 
 export async function suggestPromotions(input: SuggestPromotionsInput): Promise<SuggestPromotionsOutput> {
+  // If there are no items, no need to call the AI.
+  if (input.total_unidades === 0) {
+    return { promotionSuggestions: [] };
+  }
   return suggestPromotionsFlow(input);
 }
 
@@ -52,26 +56,41 @@ const prompt = ai.definePrompt({
   name: 'suggestPromotionsPrompt',
   input: {schema: SuggestPromotionsInputSchema},
   output: {schema: SuggestPromotionsOutputSchema},
-  prompt: `You are an expert in sales promotions and marketing. Based on the items in the user's cart, their client type, and any applicable agreements, suggest the most advantageous promotions or bundled offers for the user.
+  prompt: `You are an expert in sales promotions for a beauty products company. Your goal is to analyze a client's shopping cart and suggest the most advantageous promotions. Be precise and proactive.
 
-  Consider the following promotions:
-  - Barberias: If quantity >=8, applies 8+2 (paga 8, lleva 10). If >=6, 6+1 (paga 6, lleva 7). Envío gratis si total_unidades >12 Y ciudad in ['CABA', 'Córdoba capital', 'Rosario'].
-  - Distribuidores: If total_unidades >100, price_unit -=100; if <100, price_unit +=100 (or use adjustment de convenio). If >100u, 10+1 (agrega 10% extra gratis); si <100 y >=5, 5+1 similar. Convenio override.
+  Here are the configurable rules based on client type:
 
-  Provide a clear explanation of why each promotion is recommended, focusing on how it benefits the user by maximizing savings and benefits the business by maximizing revenue.
+  **RULESET 1: For 'barberia' client type:**
+  - Promotion "Comprá 6, llevá 7": If the cart has 6 or 7 units of a single product, suggest adding units to reach exactly 6 and pay for 6, getting 1 free. They effectively pay for 6 and get 7.
+  - Promotion "Comprá 8, llevá 10": If the cart has 8, 9 or 10 units of a single product, suggest adding units to reach 8 and pay for 8, getting 2 free. This is a better deal than 6+1.
+  - Free Shipping: If 'total_unidades' is greater than 12 AND the 'ciudad' is one of ['CABA', 'Córdoba capital', 'Rosario'], suggest "Envío Gratis".
+  - Always prioritize the best deal. If a user has 7 items, they are close to the 8+2 promo, so you should mention it as a potential upgrade.
 
-  User Cart Items:
+  **RULESET 2: For 'distribuidor' client type:**
+  - Promotion "Promo 5+1": If 'total_unidades' is between 5 and 99, they get a "5+1" deal (for every 5 units, they get 1 free, applied proportionally).
+  - Promotion "Promo 10+1": If 'total_unidades' is 100 or more, they get a "10+1" deal (for every 10 units, they get 1 free, applied proportionally). This also comes with a special unit price reduction of $100 per unit.
+  - An 'agreement' with 'price_adjustment' can override these base prices.
+  
+  **RULESET 3: For 'especial' client type:**
+  - These are special cases. Analyze the cart and offer a custom, appealing suggestion based on the products. For example, if they have multiple units of one product, suggest a bulk discount. If they have different products, suggest a bundle. Be creative.
+
+  **ANALYSIS CONTEXT:**
+  - Client Name: {{nombre}}
+  - Client Type: {{type}}
+  - Total Units in Cart: {{total_unidades}}
+  - Client City: {{ciudad}}
+  - Cart Items:
   {{#each items}}
   - {{name}} (Quantity: {{quantity}})
   {{/each}}
 
-  Client Type: {{type}}
-  Agreement ID: {{agreement_id}}
-  Total Units: {{total_unidades}}
-  City: {{ciudad}}
-
-  Output should be a JSON array of promotion suggestions, each with a name, description, and reason.
-  Ensure the output adheres to the SuggestPromotionsOutputSchema.`, 
+  **YOUR TASK:**
+  Based on the rules for the given client type and their cart, generate a list of promotion suggestions.
+  - For each suggestion, provide a 'name', a 'description' of how it works, and a clear 'reason' explaining why it's a good deal for them.
+  - If the cart is empty or no promotions apply, return an empty array.
+  - Ensure the output strictly adheres to the 'SuggestPromotionsOutputSchema' JSON format.
+  - If multiple promotions apply, list them all.
+  - Your suggestions should be encouraging and guide the user to optimize their order. For example: "Estás a solo 1 unidad de conseguir 2 productos gratis con la promo 8+2!".`, 
 });
 
 const suggestPromotionsFlow = ai.defineFlow(

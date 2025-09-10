@@ -8,7 +8,9 @@ type UpsertProductPayload = Omit<Product, "id" | "created_at"> & {
   id?: string;
 };
 
-type UpsertAgreementPayload = Omit<Agreement, "id" | "created_at"> & {
+// We only allow editing a subset of the agreement fields from the UI for now.
+// The complex rules are managed elsewhere (e.g., AI prompt).
+type UpsertAgreementPayload = Pick<Agreement, "name" | "client_type" | "price_adjustment"> & {
   id?: string;
 };
 
@@ -70,7 +72,9 @@ export async function upsertAgreement(payload: UpsertAgreementPayload) {
   const supabase = await getAuthenticatedClient();
   const { id, ...agreementData } = payload;
 
-  // For now, we are not allowing to edit promo_override from the UI.
+  // The 'promo_override' field is complex and not managed by this simple form.
+  // We set it to null or keep its existing value if we were to extend this logic.
+  // For now, we just upsert the data from the form.
   const payloadToUpsert = { ...agreementData, promo_override: null };
 
   const query = supabase.from("agreements");
@@ -115,7 +119,7 @@ export async function generateOrderLink(agreementId: string, clientName: string)
     return { link: null, error };
   }
   
-  const host = process.env.NEXT_PUBLIC_HOST_URL || process.env.VERCEL_URL || 'localhost:9002';
+  const host = process.env.NEXT_PUBLIC_HOST_URL || `https://${process.env.GITPOD_WORKSPACE_ID}.` || process.env.VERCEL_URL || 'localhost:9002';
   const protocol = host.startsWith('localhost') ? 'http' : 'https';
   const link = `${protocol}://${host}/pedido/${token}`;
 

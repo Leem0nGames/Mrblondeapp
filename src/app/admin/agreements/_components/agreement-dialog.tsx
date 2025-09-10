@@ -37,9 +37,9 @@ import { upsertAgreement } from "@/app/actions/admin.actions";
 import type { Agreement } from "@/types";
 
 const agreementSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
+  name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
   client_type: z.enum(["barberia", "distribuidor", "especial"]),
-  price_adjustment: z.coerce.number(),
+  price_adjustment: z.coerce.number().min(-100).max(100),
 });
 
 type AgreementFormValues = z.infer<typeof agreementSchema>;
@@ -75,8 +75,8 @@ export function AgreementDialog({
         });
       } else {
         toast({
-          title: "Success",
-          description: `Agreement ${agreement ? "updated" : "created"} successfully.`,
+          title: "Éxito",
+          description: `Convenio ${agreement ? "actualizado" : "creado"} correctamente.`,
         });
         setIsOpen(false);
         form.reset();
@@ -89,11 +89,11 @@ export function AgreementDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>{agreement ? "Edit Agreement" : "Add New Agreement"}</DialogTitle>
+          <DialogTitle>{agreement ? "Editar Convenio" : "Nuevo Convenio"}</DialogTitle>
           <DialogDescription>
             {agreement
-              ? "Update the details of this agreement."
-              : "Fill in the details for the new agreement."}
+              ? "Actualiza los detalles de este convenio."
+              : "Completa los detalles para el nuevo convenio."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -103,7 +103,7 @@ export function AgreementDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Agreement Name</FormLabel>
+                  <FormLabel>Nombre del Convenio</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., Distribuidores Premium" {...field} />
                   </FormControl>
@@ -118,11 +118,11 @@ export function AgreementDialog({
                 name="client_type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Client Type</FormLabel>
+                    <FormLabel>Tipo de Cliente</FormLabel>
                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a client type" />
+                            <SelectValue placeholder="Selecciona un tipo" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -140,7 +140,7 @@ export function AgreementDialog({
                 name="price_adjustment"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Price Adjustment (%)</FormLabel>
+                    <FormLabel>Ajuste de Precio (%)</FormLabel>
                     <FormControl>
                       <Input type="number" step="0.1" {...field} />
                     </FormControl>
@@ -153,11 +153,11 @@ export function AgreementDialog({
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="outline" type="button">
-                  Cancel
+                  Cancelar
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={isPending}>
-                {isPending ? "Saving..." : "Save Agreement"}
+                {isPending ? "Guardando..." : "Guardar Convenio"}
               </Button>
             </DialogFooter>
           </form>
