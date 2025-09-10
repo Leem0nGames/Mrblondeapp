@@ -44,12 +44,9 @@ function formatWhatsAppMessage(
 
       if (totalUnits >= buy) {
           const numberOfBonuses = Math.floor(totalUnits / buy) * get;
-          // For simplicity, we state the bonus generically.
-          // A more complex implementation could specify which products.
           bonusText = `Bonificaciones de Regalo:\n- ${numberOfBonuses}x Unidades de regalo (promo ${buy}+${get})`;
       }
   }
-
 
   // 3. Build message
   const messageParts = [
@@ -123,7 +120,7 @@ export function OrderSummarySheet({
                                 alt={item.product.name}
                                 width={48}
                                 height={48}
-                                className="rounded-md"
+                                className="rounded-md object-cover"
                                 data-ai-hint="product image"
                             />
                             <div className="flex-grow">

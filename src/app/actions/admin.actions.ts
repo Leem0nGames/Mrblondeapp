@@ -3,7 +3,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { Product, Agreement, Promotion } from "@/types";
+import type { Product, Agreement, Promotion, DetailedAgreement } from "@/types";
 
 type UpsertProductPayload = Omit<Product, "id" | "created_at"> & {
   id?: string;
@@ -80,7 +80,7 @@ export async function deleteProduct(id: string) {
 
 // --- Agreement Actions ---
 
-export async function getAgreements() {
+export async function getAgreements(): Promise<{ data: Agreement[] | null, error: any }> {
   await checkAuth();
   const supabase = createClient();
   const { data, error } = await supabase
@@ -89,18 +89,19 @@ export async function getAgreements() {
       id,
       agreement_name,
       client_type,
+      created_at,
       agreement_products ( count ),
       agreement_promotions ( count )
     `)
     .order("agreement_name", { ascending: true });
   if (error) {
     console.error("getAgreements error:", error.message);
-    throw error;
+    return { data: null, error };
   };
-  return { data, error };
+  return { data, error: null };
 }
 
-export async function getAgreementById(id: string) {
+export async function getAgreementById(id: string): Promise<{ data: DetailedAgreement | null, error: any }> {
     await checkAuth();
     const supabase = createClient();
     const { data, error } = await supabase
@@ -121,9 +122,9 @@ export async function getAgreementById(id: string) {
         .single();
     if (error) {
         console.error("getAgreementById error:", error.message);
-        throw error;
+        return { data: null, error };
     }
-    return { data, error };
+    return { data, error: null };
 }
 
 
@@ -225,20 +226,13 @@ export async function getUnassignedProducts(agreementId: string) {
 
     const assignedIds = assignedProductIds.map(p => p.product_id);
     
-    if (assignedIds.length === 0) {
-      const { data, error } = await supabase.from('products').select('*').order('name');
-      if (error) {
-        console.error("getUnassignedProducts (all) error:", error.message);
-        throw error;
-      }
-      return { data, error };
+    const query = supabase.from('products').select('*').order('name');
+
+    if (assignedIds.length > 0) {
+      query.not('id', 'in', `(${assignedIds.join(',')})`)
     }
 
-    const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .not('id', 'in', `(${assignedIds.join(',')})`)
-        .order('name');
+    const { data, error } = await query;
     
     if (error) {
         console.error("getUnassignedProducts (filtered) error:", error.message);
@@ -262,20 +256,13 @@ export async function getUnassignedPromotions(agreementId: string) {
 
     const assignedIds = assignedPromotionIds.map(p => p.promotion_id);
 
-    if (assignedIds.length === 0) {
-        const { data, error } = await supabase.from('promotions').select('*').order('name');
-        if (error) {
-            console.error("getUnassignedPromotions (all) error:", error.message);
-            throw error;
-        }
-        return { data, error };
+    const query = supabase.from('promotions').select('*').order('name');
+
+    if (assignedIds.length > 0) {
+        query.not('id', 'in', `(${assignedIds.join(',')})`)
     }
 
-    const { data, error } = await supabase
-        .from('promotions')
-        .select('*')
-        .not('id', 'in', `(${assignedIds.join(',')})`)
-        .order('name');
+    const { data, error } = await query;
     
     if (error) {
         console.error("getUnassignedPromotions (filtered) error:", error.message);

@@ -56,7 +56,7 @@ export function CartWidget({
             </SheetDescription>
           </SheetHeader>
           {!hasMounted ? (
-             <div className="flex-1 space-y-4">
+             <div className="flex-1 space-y-4 py-4">
                 <Skeleton className="h-24 w-full" />
                 <Skeleton className="h-24 w-full" />
                 <Skeleton className="h-24 w-full" />
@@ -110,7 +110,7 @@ function CartItemComponent({ item }: { item: CartItem }) {
           alt={item.product.name}
           width={64}
           height={64}
-          className="rounded-md"
+          className="rounded-md object-cover"
           data-ai-hint="product image"
         />
         <div>

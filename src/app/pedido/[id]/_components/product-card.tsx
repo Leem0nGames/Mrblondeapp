@@ -16,10 +16,10 @@ import { getImageUrl } from "@/lib/placeholder-images";
 export function ProductCard({ product }: { product: ProductWithPrice }) {
   const stockStatus =
     product.stock > 10
-      ? "In Stock"
+      ? "En Stock"
       : product.stock > 0
-      ? "Low Stock"
-      : "Out of Stock";
+      ? "Poco Stock"
+      : "Agotado";
   const badgeVariant =
     product.stock > 10
       ? "outline"

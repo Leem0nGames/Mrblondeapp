@@ -16,7 +16,9 @@ export default async function OrderPage({
   if (error || !data) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
-        <Logo />
+        <div className="mb-8">
+            <Logo />
+        </div>
         <Card className="max-w-md mt-8">
           <CardHeader>
             <CardTitle className="flex items-center justify-center gap-2 text-destructive">
@@ -38,7 +40,7 @@ export default async function OrderPage({
   const { agreement, products } = data;
 
   return (
-    <div className="min-h-screen bg-muted/20">
+    <div className="min-h-screen bg-muted/20 pb-32">
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Logo />
@@ -55,11 +57,22 @@ export default async function OrderPage({
             <p className="mt-2 text-lg text-muted-foreground">Selecciona los productos que deseas ordenar.</p>
         </div>
         
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {products.length > 0 ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+            ))}
+            </div>
+        ) : (
+            <Card className="flex flex-col items-center justify-center py-12 border-dashed">
+                <CardHeader className="text-center">
+                    <CardTitle>No hay productos en este convenio</CardTitle>
+                    <CardContent>
+                        <p className="text-muted-foreground">Aún no se han asignado productos a este convenio.</p>
+                    </CardContent>
+                </CardHeader>
+            </Card>
+        )}
       </main>
 
       <CartWidget 

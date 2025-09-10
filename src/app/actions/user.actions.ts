@@ -7,12 +7,13 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function login(formData: FormData) {
   const pin = formData.get("pin") as string;
-  const adminPin = process.env.ADMIN_PIN || '1234';
+  // This should be in environment variables
+  const adminPin = process.env.ADMIN_PIN || "1234";
 
   if (pin === adminPin) {
     const supabase = createClient();
-    // This is a workaround to create a session for a "dummy" admin user.
-    // In a real application, you'd have a proper user management system.
+    // In a real app, you'd have a proper user management system.
+    // For this MVP, we sign in a "dummy" admin user.
     const { error } = await supabase.auth.signInWithPassword({
       email: process.env.ADMIN_EMAIL!,
       password: process.env.ADMIN_PASSWORD!,
@@ -23,14 +24,6 @@ export async function login(formData: FormData) {
     }
 
     revalidatePath("/", "layout");
-    
-    if (pin === '1234') {
-        // We can't redirect to a dedicated "change PIN" page yet,
-        // as that page doesn't exist. For now, we'll just log in.
-        // This is where you would redirect to a page to force a PIN change.
-        // redirect('/admin/change-pin');
-    }
-
     redirect("/admin");
   }
 
@@ -46,7 +39,6 @@ export async function logout() {
 export async function getOrderPageData(agreementId: string) {
     const supabase = createClient();
 
-    // 1. Verify agreementId and get related agreement with its products
     const { data: agreement, error: agreementError } = await supabase
         .from('agreements')
         .select(`
@@ -67,10 +59,23 @@ export async function getOrderPageData(agreementId: string) {
         return { data: null, error: { message: "El convenio no es válido o ha expirado." } };
     }
     
-    const products = agreement.agreement_products.map(ap => ({
-        ...ap.products,
+    // Filter out any products that might be null
+    const validAgreementProducts = agreement.agreement_products.filter(ap => ap.products);
+
+    const products = validAgreementProducts.map(ap => ({
+        ...ap.products!,
         price: ap.price, // Override base_price with the agreement-specific price
     }));
 
-    return { data: { agreement, products }, error: null };
+    return { 
+        data: { 
+            agreement: {
+                ...agreement,
+                // Ensure promotions are always an array
+                agreement_promotions: agreement.agreement_promotions ?? [],
+            }, 
+            products 
+        }, 
+        error: null 
+    };
 }
