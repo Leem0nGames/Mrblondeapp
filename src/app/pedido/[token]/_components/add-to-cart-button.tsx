@@ -1,1 +1,0 @@
-// This file is deleted. The new path is src/app/pedido/[id]/_components/add-to-cart-button.tsx
