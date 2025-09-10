@@ -3,17 +3,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/shared/page-header";
 
 export default function SettingsPage() {
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
-      <h1 className="text-2xl font-bold">Configuración</h1>
+      <PageHeader
+        title="Configuración"
+        description="Configura los ajustes generales de la aplicación."
+      />
       
       <Card>
         <CardHeader>
           <CardTitle>Ajustes Generales</CardTitle>
           <CardDescription>
-            Configura los ajustes generales de la aplicación.
+            Aquí podrás configurar variables importantes para el funcionamiento de la app.
           </CardDescription>
         </CardHeader>
         <CardContent>
