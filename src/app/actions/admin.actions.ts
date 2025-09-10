@@ -80,8 +80,9 @@ export async function generateOrderLink(clientType: 'barberia' | 'distribuidor',
     return { link: null, error };
   }
   
-  const url = new URL(process.env.VERCEL_URL || 'http://localhost:3000');
-  const link = `${url.origin}/pedido/${token}`;
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+  const host = process.env.VERCEL_URL || 'localhost:9002';
+  const link = `${protocol}://${host}/pedido/${token}`;
 
   return { link, error: null };
 }
