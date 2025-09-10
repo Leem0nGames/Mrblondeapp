@@ -1,20 +1,7 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { supabaseAdmin } from './lib/supabase/admin';
-
-// Helper function to check if users exist in the database.
-// This uses the admin client, so it should be used carefully.
-async function hasUsers(): Promise<boolean> {
-  const { data, error } = await supabaseAdmin.auth.admin.listUsers();
-  if (error) {
-    console.error('Middleware: Error checking for users:', error.message);
-    // In case of an error (e.g., service key not configured),
-    // it's safer to assume users exist to prevent multiple sign-ups.
-    return true; 
-  }
-  return data.users.length > 0;
-}
+import { hasUsers } from './app/actions/user.actions';
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -53,7 +40,7 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // It's crucial to refresh the session in the middleware
+  // Es crucial refrescar la sesión en el middleware
   const { data: { session } } = await supabase.auth.getSession();
   
   const { pathname } = request.nextUrl;
@@ -63,45 +50,45 @@ export async function middleware(request: NextRequest) {
   const isAdminRoute = pathname.startsWith('/admin');
   const isOrderRoute = pathname.startsWith('/pedido');
 
-  // --- 1. Handle First-Time Setup ---
+  // --- 1. Flujo de Primera Vez (Setup) ---
   if (!usersExist) {
-    // If no users exist, the only allowed page is the signup page.
+    // Si no hay usuarios, la única página permitida es la de registro.
     if (pathname !== '/signup') {
       return NextResponse.redirect(new URL('/signup', request.url));
     }
-    // Allow the request to proceed to the signup page.
+    // Permite el acceso a la página de registro.
     return response;
   }
 
-  // --- 2. Handle App After Setup ---
+  // --- 2. Flujo Normal de la Aplicación (Después del Setup) ---
 
-  // If users exist, the signup page is no longer accessible.
+  // Si ya existen usuarios, la página de registro ya no es accesible.
   if (pathname === '/signup') {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Allow public access to order pages
+  // Las páginas de pedido son siempre públicas.
   if (isOrderRoute) {
     return response;
   }
   
-  // If the user is NOT authenticated
+  // Si el usuario NO está autenticado
   if (!session) {
-    // If they try to access a protected admin route, redirect to login.
+    // Si intentan acceder a una ruta protegida (admin) o a la raíz, redirigir a login.
     if (isAdminRoute || pathname === '/') {
       return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 
-  // If the user IS authenticated
+  // Si el usuario SÍ está autenticado
   if (session) {
-    // If they try to access an auth page (login), redirect to the admin dashboard.
+    // Si intentan acceder a una página de autenticación (login) o a la raíz, redirigir al panel de admin.
     if (isAuthRoute || pathname === '/') {
       return NextResponse.redirect(new URL('/admin', request.url));
     }
   }
   
-  // For all other cases, allow the request.
+  // Para todos los demás casos, permitir la petición.
   return response;
 }
 

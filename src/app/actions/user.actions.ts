@@ -19,14 +19,22 @@ export interface AuthState {
 /**
  * Comprueba si existe algún usuario en la base de datos.
  * Utiliza el cliente de servicio para tener los permisos necesarios.
- * @returns {Promise<boolean>} `true` si hay al menos un usuario, `false` si no.
+ * @returns {Promise<boolean>} `true` si hay al menos un usuario, `false` si no o en caso de error.
  */
 export async function hasUsers(): Promise<boolean> {
+  // Asegurarse de que las claves están presentes para evitar errores en tiempo de ejecución.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('Supabase URL or Service Role Key are not configured.');
+    return false;
+  }
+  
   const { data, error } = await supabaseAdmin.auth.admin.listUsers();
+  
   if (error) {
     console.error('Error checking for users:', error.message);
-    // En caso de error, es más seguro asumir que existen usuarios para evitar registros múltiples.
-    return true;
+    // En caso de error (ej: la API no está disponible), es más seguro devolver `false`
+    // para permitir el intento de registro, que podría ser el primer paso necesario.
+    return false;
   }
   return data.users.length > 0;
 }
