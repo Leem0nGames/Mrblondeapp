@@ -70,7 +70,19 @@ export async function deleteProduct(id: string) {
 
 export async function getAgreements() {
   const supabase = await getAuthenticatedClient();
-  const { data, error } = await supabase.from("agreements").select("*").order("name", { ascending: true });
+  const { data, error } = await supabase
+    .from("agreements")
+    .select(`
+      *,
+      agreement_products (
+        price,
+        products ( * )
+      ),
+      agreement_promotions (
+        promotions ( * )
+      )
+    `)
+    .order("name", { ascending: true });
   return { data, error };
 }
 

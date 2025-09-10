@@ -31,12 +31,29 @@ export type Promotion = {
   created_at: string;
 };
 
+// Represents a product specifically assigned to an agreement, with a custom price.
+export type AgreementProduct = {
+  agreement_id: string;
+  product_id: string;
+  price: number; // Custom price for this agreement
+  products: Product; // Joined data from the products table
+};
+
+// Represents a promotion specifically assigned to an agreement.
+export type AgreementPromotion = {
+  agreement_id: string;
+  promotion_id: string;
+  promotions: Promotion; // Joined data from the promotions table
+}
+
 export type Agreement = {
   id: string;
   name: string;
   client_type: "barberia" | "distribuidor" | "especial";
   price_adjustment: number;
   created_at: string;
+  agreement_products: AgreementProduct[]; // Joined data
+  agreement_promotions: AgreementPromotion[]; // Joined data
 };
 
 export type AccessToken = {

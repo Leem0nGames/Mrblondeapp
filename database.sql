@@ -1,130 +1,136 @@
--- ------------------------------------------------------------------------------------------------
--- 1. Create Products Table
--- ------------------------------------------------------------------------------------------------
-create table if not exists products (
-  id uuid default gen_random_uuid() not null,
-  created_at timestamp with time zone default now() not null,
-  name text not null,
-  description text null,
-  base_price double precision default 0 not null,
-  stock integer default 0 not null,
-  category text null,
-  constraint products_pkey primary key (id)
+-- Users table (managed by Supabase Auth)
+-- This is just a reference, do not run this. Supabase handles it.
+-- create table auth.users ( ... );
+
+-- Products table
+CREATE TABLE IF NOT EXISTS products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    description TEXT,
+    base_price NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    stock INT NOT NULL DEFAULT 0,
+    category TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- RLS policies for products
-alter table products enable row level security;
-
-create policy "Allow public read-only access"
-on products for select
-using (true);
-
-create policy "Allow admin full access"
-on products for all
-using (auth.role() = 'service_role')
-with check (auth.role() = 'service_role');
-
-
--- ------------------------------------------------------------------------------------------------
--- 2. Create Clients Table
--- ------------------------------------------------------------------------------------------------
-create table if not exists clients (
-    id uuid default gen_random_uuid() not null,
-    created_at timestamp with time zone default now() not null,
-    name text not null,
-    phone text null,
-    address text null,
-    city text null,
-    constraint clients_pkey primary key (id)
+-- Clients table
+CREATE TABLE IF NOT EXISTS clients (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    phone TEXT,
+    address TEXT,
+    city TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- RLS policies for clients
-alter table clients enable row level security;
-
-create policy "Allow public read-only access"
-on clients for select
-using (true);
-
-create policy "Allow admin full access"
-on clients for all
-using (auth.role() = 'service_role')
-with check (auth.role() = 'service_role');
-
--- ------------------------------------------------------------------------------------------------
--- 3. Create Agreements Table
--- ------------------------------------------------------------------------------------------------
-create table if not exists agreements (
-    id uuid default gen_random_uuid() not null,
-    created_at timestamp with time zone default now() not null,
-    name text not null,
-    client_type public.client_type not null,
-    price_adjustment real default 0 not null,
-    constraint agreements_pkey primary key (id)
-);
--- Note: 'client_type' uses a custom enum type that should be created if it doesn't exist:
--- CREATE TYPE public.client_type AS ENUM ('barberia', 'distribuidor', 'especial');
-
-
--- RLS policies for agreements
-alter table agreements enable row level security;
-
-create policy "Allow public read-only access"
-on agreements for select
-using (true);
-
-create policy "Allow admin full access"
-on agreements for all
-using (auth.role() = 'service_role')
-with check (auth.role() = 'service_role');
-
-
--- ------------------------------------------------------------------------------------------------
--- 4. Create Promotions Table
--- ------------------------------------------------------------------------------------------------
-create table if not exists promotions (
-    id uuid default gen_random_uuid() not null,
-    created_at timestamp with time zone default now() not null,
-    name text not null,
-    description text null,
-    rules jsonb null,
-    constraint promotions_pkey primary key (id)
+-- Promotions table
+CREATE TABLE IF NOT EXISTS promotions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    description TEXT,
+    rules JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- RLS policies for promotions
-alter table promotions enable row level security;
-
-create policy "Allow public read-only access"
-on promotions for select
-using (true);
-
-create policy "Allow admin full access"
-on promotions for all
-using (auth.role() = 'service_role')
-with check (auth.role() = 'service_role');
-
-
--- ------------------------------------------------------------------------------------------------
--- 5. Create Access Tokens Table
--- ------------------------------------------------------------------------------------------------
-create table if not exists access_tokens (
-    id uuid default gen_random_uuid() not null,
-    created_at timestamp with time zone default now() not null,
-    agreement_id uuid not null,
-    client_name text not null,
-    token text not null,
-    expires_at timestamp with time zone not null,
-    constraint access_tokens_pkey primary key (id),
-    constraint access_tokens_agreement_id_fkey foreign key (agreement_id) references agreements (id) on delete cascade
+-- Agreements table
+CREATE TABLE IF NOT EXISTS agreements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    client_type TEXT NOT NULL CHECK (client_type IN ('barberia', 'distribuidor', 'especial')),
+    price_adjustment NUMERIC(5, 2) NOT NULL DEFAULT 0, -- e.g., -10.5 for a 10.5% discount
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- RLS policies for access_tokens
-alter table access_tokens enable row level security;
+-- Agreement-Products join table (for custom pricing)
+CREATE TABLE IF NOT EXISTS agreement_products (
+    agreement_id UUID NOT NULL REFERENCES agreements(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    price NUMERIC(10, 2) NOT NULL,
+    PRIMARY KEY (agreement_id, product_id)
+);
 
-create policy "Allow public read-only access"
-on access_tokens for select
-using (true);
+-- Agreement-Promotions join table
+CREATE TABLE IF NOT EXISTS agreement_promotions (
+    agreement_id UUID NOT NULL REFERENCES agreements(id) ON DELETE CASCADE,
+    promotion_id UUID NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+    PRIMARY KEY (agreement_id, promotion_id)
+);
 
-create policy "Allow admin full access"
-on access_tokens for all
-using (auth.role() = 'service_role')
-with check (auth.role() = 'service_role');
+
+-- Access Tokens table
+CREATE TABLE IF NOT EXISTS access_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    agreement_id UUID NOT NULL REFERENCES agreements(id) ON DELETE CASCADE,
+    client_name TEXT NOT NULL,
+    token TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Order Logs table
+CREATE TABLE IF NOT EXISTS order_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    agreement_id UUID REFERENCES agreements(id),
+    order_data JSONB,
+    sent_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+
+-- Enable RLS for all tables
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE promotions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE agreements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE agreement_products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE agreement_promotions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE access_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_logs ENABLE ROW LEVEL SECURITY;
+
+-- Policies for authenticated users (admins) to manage data
+DROP POLICY IF EXISTS "Allow full access to authenticated users" ON products;
+CREATE POLICY "Allow full access to authenticated users" ON products
+FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Allow full access to authenticated users" ON clients;
+CREATE POLICY "Allow full access to authenticated users" ON clients
+FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Allow full access to authenticated users" ON promotions;
+CREATE POLICY "Allow full access to authenticated users" ON promotions
+FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Allow full access to authenticated users" ON agreements;
+CREATE POLICY "Allow full access to authenticated users" ON agreements
+FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Allow full access to authenticated users" ON agreement_products;
+CREATE POLICY "Allow full access to authenticated users" ON agreement_products
+FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Allow full access to authenticated users" ON agreement_promotions;
+CREATE POLICY "Allow full access to authenticated users" ON agreement_promotions
+FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Allow full access to authenticated users" ON access_tokens;
+CREATE POLICY "Allow full access to authenticated users" ON access_tokens
+FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Allow full access to authenticated users" ON order_logs;
+CREATE POLICY "Allow full access to authenticated users" ON order_logs
+FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+-- Policies for public access (for order pages)
+-- Public can read products
+DROP POLICY IF EXISTS "Allow public read access" ON products;
+CREATE POLICY "Allow public read access" ON products
+FOR SELECT USING (true);
+
+-- Public can read specific access tokens
+DROP POLICY IF EXISTS "Allow public read access" ON access_tokens;
+CREATE POLICY "Allow public read access" ON access_tokens
+FOR SELECT USING (true);
+
+-- Public can read agreements via access tokens
+DROP POLICY IF EXISTS "Allow public read access" ON agreements;
+CREATE POLICY "Allow public read access" ON agreements
+FOR SELECT USING (true);
