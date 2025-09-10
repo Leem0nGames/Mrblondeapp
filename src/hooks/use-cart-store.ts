@@ -106,7 +106,8 @@ if (typeof window !== 'undefined') {
   if (savedState) {
     try {
       // Ensure that parsed items is an array, default to empty array if not
-      items = JSON.parse(savedState)?.items || [];
+      const parsed = JSON.parse(savedState);
+      items = Array.isArray(parsed?.items) ? parsed.items : [];
     } catch (e) {
       console.error("Could not rehydrate cart from localStorage", e);
       // If parsing fails, items will remain an empty array
