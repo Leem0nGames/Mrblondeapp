@@ -102,9 +102,11 @@ export function OrderSummary({
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5491123456789";
 
   useEffect(() => {
+    // Si el ID del convenio actual es diferente al guardado en el carrito, se limpia.
     if (storedAgreementId && storedAgreementId !== agreementId) {
       clearCart();
     }
+    // Siempre se establece el ID del convenio actual en el store.
     setAgreementId(agreementId);
   }, [agreementId, storedAgreementId, clearCart, setAgreementId]);
 
