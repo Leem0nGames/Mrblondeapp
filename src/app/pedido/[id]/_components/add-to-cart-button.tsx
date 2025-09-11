@@ -3,20 +3,47 @@
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/hooks/use-cart-store";
 import type { ProductWithPrice } from "@/types";
-import { Plus } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 
-export function AddToCartButton({ product }: { product: ProductWithPrice }) {
-  const add = useCartStore((s) => s.addItem);
+export function QuantitySelector({ product }: { product: ProductWithPrice }) {
+  const { items, addItem, removeItem } = useCartStore();
+  const itemInCart = items.find((item) => item.product.id === product.id);
+  const quantity = itemInCart ? itemInCart.quantity : 0;
+
+  if (quantity === 0) {
+    return (
+      <Button
+        size="sm"
+        className="w-full"
+        onClick={() => addItem(product, 1)}
+        disabled={product.stock === 0}
+      >
+        <Plus className="mr-2 h-4 w-4" />
+        Agregar
+      </Button>
+    );
+  }
 
   return (
-    <Button
-      size="sm"
-      className="w-full"
-      onClick={() => add(product, 1)}
-      disabled={product.stock === 0}
-    >
-      <Plus className="mr-2 h-4 w-4" />
-      Agregar
-    </Button>
+    <div className="flex items-center justify-center gap-2">
+      <Button
+        variant="outline"
+        size="icon"
+        className="h-8 w-8"
+        onClick={() => removeItem(product.id)}
+      >
+        <Minus className="h-4 w-4" />
+      </Button>
+      <span className="w-10 text-center font-bold text-lg">{quantity}</span>
+      <Button
+        variant="outline"
+        size="icon"
+        className="h-8 w-8"
+        onClick={() => addItem(product, 1)}
+        disabled={product.stock > 0 && quantity >= product.stock}
+      >
+        <Plus className="h-4 w-4" />
+      </Button>
+    </div>
   );
 }

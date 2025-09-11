@@ -6,7 +6,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import type { ProductWithPrice } from "@/types";
 import Image from "next/image";
-import { AddToCartButton } from "./add-to-cart-button";
+import { QuantitySelector } from "./add-to-cart-button";
 import { getImageUrl } from "@/lib/placeholder-images";
 
 export function ProductCard({ product }: { product: ProductWithPrice }) {
@@ -51,8 +51,8 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
               <p className="text-lg font-bold">
                 ${product.price.toLocaleString()}
               </p>
-              <div className="w-28 flex-shrink-0">
-                 <AddToCartButton product={product} />
+              <div className="w-32 flex-shrink-0">
+                 <QuantitySelector product={product} />
               </div>
             </div>
         </div>

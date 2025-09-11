@@ -59,9 +59,22 @@ export const useCartStore = create<CartState>()(
       },
 
       removeItem: (productId: string) => {
-        const updatedItems = get().items.filter(
-          (item) => item.product.id !== productId
-        );
+        const { items } = get();
+        const existingItem = items.find(item => item.product.id === productId);
+
+        if (!existingItem) return;
+
+        let updatedItems;
+        if (existingItem.quantity > 1) {
+            updatedItems = items.map(item => 
+                item.product.id === productId 
+                    ? { ...item, quantity: item.quantity - 1 } 
+                    : item
+            );
+        } else {
+            updatedItems = items.filter(item => item.product.id !== productId);
+        }
+
         set({ items: updatedItems, ...calculateTotals(updatedItems) });
       },
 

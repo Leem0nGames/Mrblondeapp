@@ -4,13 +4,13 @@ import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/components/logo";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AlertTriangle, Package2 } from "lucide-react";
-import { CartWidget } from "./_components/cart-widget";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { OrderSummary } from "./_components/order-summary";
 
 
 export default async function OrderPage({
@@ -48,7 +48,7 @@ export default async function OrderPage({
   const categories = Object.keys(productsByCategory);
 
   return (
-    <div className="min-h-screen bg-muted/20 pb-32">
+    <div className="min-h-screen bg-muted/20">
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Logo showText={true}/>
@@ -60,13 +60,18 @@ export default async function OrderPage({
       </header>
 
       <main className="container mx-auto p-4 lg:p-8">
-        <div className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Realizar Pedido</h1>
-            <p className="mt-2 text-lg text-muted-foreground">Selecciona los productos que deseas ordenar.</p>
+        <OrderSummary 
+          clientName={agreement.agreement_name}
+          availablePromotions={agreement.agreement_promotions}
+        />
+
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Productos</h2>
+          <p className="mt-1 text-lg text-muted-foreground">Ajusta las cantidades que deseas ordenar.</p>
         </div>
         
         {categories.length > 0 ? (
-           <Accordion type="multiple" defaultValue={categories} className="w-full space-y-4">
+           <Accordion type="multiple" defaultValue={categories} className="w-full space-y-4 mt-6">
               {categories.map((category) => (
                 <AccordionItem key={category} value={category} className="border-none">
                    <Card>
@@ -87,7 +92,7 @@ export default async function OrderPage({
               ))}
             </Accordion>
         ) : (
-            <Card className="flex flex-col items-center justify-center py-16 border-dashed">
+            <Card className="mt-6 flex flex-col items-center justify-center py-16 border-dashed">
                 <CardHeader className="text-center">
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
                         <Package2 className="h-6 w-6 text-muted-foreground" />
@@ -100,11 +105,6 @@ export default async function OrderPage({
             </Card>
         )}
       </main>
-
-      <CartWidget 
-        clientName={agreement.agreement_name}
-        availablePromotions={agreement.agreement_promotions}
-      />
     </div>
   );
 }
