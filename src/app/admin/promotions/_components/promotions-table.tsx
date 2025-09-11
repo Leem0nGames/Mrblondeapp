@@ -42,6 +42,22 @@ import { deletePromotion } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
 
+const formatRule = (rules: any): string => {
+  if (!rules || typeof rules !== 'object') {
+    return 'Regla no definida';
+  }
+
+  switch (rules.type) {
+    case 'buy_x_get_y_free':
+      return `Llevando ${rules.buy || 'X'} unidades, obtienes ${rules.get || 'Y'} de regalo.`;
+    case 'free_shipping':
+      return `Envío gratis con ${rules.min_units || 'X'} unidades o más.`;
+    default:
+      return 'Regla personalizada.';
+  }
+};
+
+
 export default function PromotionsTable({ promotions }: { promotions: Promotion[] }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -72,7 +88,7 @@ export default function PromotionsTable({ promotions }: { promotions: Promotion[
             <TableRow>
               <TableHead>Nombre</TableHead>
               <TableHead>Descripción</TableHead>
-              <TableHead className="hidden md:table-cell">Reglas (JSON)</TableHead>
+              <TableHead className="hidden md:table-cell">Regla</TableHead>
               <TableHead className="hidden md:table-cell">Creada</TableHead>
               <TableHead>
                 <span className="sr-only">Actions</span>
@@ -86,10 +102,8 @@ export default function PromotionsTable({ promotions }: { promotions: Promotion[
                 <TableCell>
                   {promotion.description}
                 </TableCell>
-                 <TableCell className="hidden md:table-cell">
-                  <pre className="text-xs bg-muted p-2 rounded-md font-code max-w-xs overflow-x-auto">
-                    <code>{JSON.stringify(promotion.rules, null, 2)}</code>
-                  </pre>
+                 <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                    {formatRule(promotion.rules)}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {formatDate(promotion.created_at)}

@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useTransition } from "react";
@@ -19,6 +20,20 @@ import { unassignPromotionFromAgreement } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { X } from "lucide-react";
 
+const formatRule = (rules: any): string => {
+  if (!rules || typeof rules !== 'object') {
+    return 'Regla no definida';
+  }
+
+  switch (rules.type) {
+    case 'buy_x_get_y_free':
+      return `Llevando ${rules.buy || 'X'} unidades, obtienes ${rules.get || 'Y'} de regalo.`;
+    case 'free_shipping':
+      return `Envío gratis con ${rules.min_units || 'X'} unidades o más.`;
+    default:
+      return 'Regla personalizada.';
+  }
+};
 
 export default function AgreementPromotionsList({ promotions, agreementId }: { promotions: AgreementPromotion[], agreementId: string }) {
   const [isPending, startTransition] = useTransition();
@@ -48,11 +63,16 @@ export default function AgreementPromotionsList({ promotions, agreementId }: { p
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {promotions.map(item => (
             <Card key={item.promotions.id}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">{item.promotions.name}</CardTitle>
+                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+                    <div className="flex-grow">
+                        <CardTitle className="text-base font-medium">{item.promotions.name}</CardTitle>
+                        <CardDescription className="text-xs pt-1">
+                            {item.promotions.description}
+                        </CardDescription>
+                    </div>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive">
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0">
                             <X className="h-4 w-4" />
                             <span className="sr-only">Desasignar</span>
                         </Button>
@@ -78,12 +98,10 @@ export default function AgreementPromotionsList({ promotions, agreementId }: { p
                     </AlertDialog>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-xs text-muted-foreground">
-                        {item.promotions.description}
-                    </p>
-                    <pre className="mt-2 text-xs bg-muted/50 p-2 rounded-md font-code overflow-x-auto">
-                        <code>{JSON.stringify(item.promotions.rules, null, 2)}</code>
-                    </pre>
+                    <div className="mt-2 text-sm bg-muted/50 p-3 rounded-md text-muted-foreground">
+                        <p className="font-semibold text-foreground">Regla Aplicada:</p>
+                        <p>{formatRule(item.promotions.rules)}</p>
+                    </div>
                 </CardContent>
             </Card>
         ))}
