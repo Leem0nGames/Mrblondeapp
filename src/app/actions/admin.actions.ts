@@ -106,11 +106,9 @@ export async function getAgreementById(id: string): Promise<{ data: DetailedAgre
             *,
             agreement_products (
                 price,
-                product_id,
                 products ( * )
             ),
             agreement_promotions (
-                promotion_id,
                 promotions ( * )
             )
         `)
@@ -370,3 +368,5 @@ export async function unassignPromotionFromAgreement(payload: { agreement_id: st
     revalidatePath(`/admin/agreements/${payload.agreement_id}`);
     return { error: null };
 }
+
+    

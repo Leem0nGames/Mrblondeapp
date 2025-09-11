@@ -6,24 +6,13 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
-// --- Tipos de Estado para los Formularios ---
-
 export interface AuthState {
   error: {
     message: string;
   } | null;
 }
 
-// --- Lógica de Autenticación ---
-
-/**
- * Comprueba si existe algún usuario en la base de datos.
- * Utiliza el cliente de servicio para tener los permisos necesarios.
- * Es crucial que esta función sea robusta y maneje errores de configuración.
- * @returns {Promise<boolean>} `true` si hay al menos un usuario, `false` si no o en caso de error.
- */
 export async function hasUsers(): Promise<boolean> {
-  // Si el cliente de admin no se pudo inicializar (faltan env vars), no hay usuarios.
   if (!supabaseAdmin) {
     console.warn('Supabase admin client is not configured. Assuming no users exist.');
     return false;
@@ -32,10 +21,8 @@ export async function hasUsers(): Promise<boolean> {
   try {
     const { data, error } = await supabaseAdmin.auth.admin.listUsers();
     
-    // Si la API key es inválida o hay otro error de Supabase, lo capturamos.
     if (error) {
       console.error('Error checking for users:', error.message);
-      // Es más seguro devolver false para no bloquear el setup en caso de un error de configuración.
       return false;
     }
     
@@ -46,15 +33,10 @@ export async function hasUsers(): Promise<boolean> {
   }
 }
 
-/**
- * Acción de registro para el primer super administrador.
- * Falla si ya existe un usuario en el sistema.
- */
 export async function signupSuperAdmin(
   prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
-  // Medida de seguridad: volver a comprobar si ya hay usuarios antes de intentar crear uno.
   if (await hasUsers()) {
     return { error: { message: 'El registro ya no está disponible. Ya existe un administrador.' } };
   }
@@ -67,7 +49,6 @@ export async function signupSuperAdmin(
     return { error: { message: 'El email y la contraseña son requeridos.' } };
   }
 
-  // 1. Intentar registrar al nuevo usuario.
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -78,33 +59,24 @@ export async function signupSuperAdmin(
     return { error: { message: 'No se pudo crear la cuenta. ' + error.message } };
   }
 
-  // 2. Si el registro es exitoso, no intentamos iniciar sesión aquí.
-  // En su lugar, invalidamos la cache y redirigimos al login con PIN.
-  // El usuario ha sido creado y el próximo paso natural es que inicie sesión.
   if (data.user) {
-    revalidatePath('/'); // Invalida la cache para que la próxima comprobación de `hasUsers` sea correcta.
-    redirect('/login'); // Redirige a la página de login con PIN.
+    revalidatePath('/'); 
+    redirect('/login');
   }
 
   return { error: { message: 'Ocurrió un error inesperado durante el registro.' }};
 }
 
-/**
- * Acción de inicio de sesión con un PIN estático.
- */
 export async function login(
   prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
   const pin = formData.get('pin') as string;
 
-  // 1. Validar el PIN
   if (pin !== '1234') {
     return { error: { message: 'PIN incorrecto.' } };
   }
 
-  // 2. Si el PIN es correcto, intentar iniciar sesión con las credenciales fijas del admin.
-  //    Este usuario debe haber sido creado previamente a través del flujo de registro único.
   const supabase = createClient();
   const { error } = await supabase.auth.signInWithPassword({
     email: 'admin@blonde.com',
@@ -113,7 +85,6 @@ export async function login(
 
   if (error) {
     console.error('Supabase admin login error:', error.message);
-    // Este error puede ocurrir si el admin todavia no fue creado con las credenciales correctas.
     if(error.message.includes('Invalid login credentials')) {
         return { error: { message: 'El usuario admin no existe o la contraseña es incorrecta. Regístrelo primero.'}};
     }
@@ -131,7 +102,6 @@ export async function logout() {
   redirect('/login');
 }
 
-// --- Lógica de Datos ---
 export async function getOrderPageData(agreementId: string) {
     const supabase = createClient();
 
@@ -151,7 +121,6 @@ export async function getOrderPageData(agreementId: string) {
         return { data: null, error: { message: "El convenio no es válido o ha expirado." } };
     }
 
-    // Ahora, obtenemos los productos asignados con sus precios específicos
     const { data: agreementProducts, error: productsError } = await supabase
         .from('agreement_products')
         .select(`
@@ -166,13 +135,11 @@ export async function getOrderPageData(agreementId: string) {
         return { data: null, error: { message: "No se pudieron cargar los productos del convenio." } };
     }
 
-    // Mapeamos los productos para incluir el precio del convenio
     const products = agreementProducts.map(ap => ({
         ...ap.products!,
-        price: ap.price, // Este es el precio específico del convenio
+        price: ap.price,
     }));
     
-    // Agrupamos por categoría para el Accordion en el frontend
     const productsByCategory = products.reduce((acc, product) => {
         const category = product.category || 'Sin Categoría';
         if (!acc[category]) {
@@ -195,3 +162,5 @@ export async function getOrderPageData(agreementId: string) {
         error: null 
     };
 }
+
+    
