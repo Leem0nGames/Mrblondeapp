@@ -84,17 +84,28 @@ export async function getAgreements(): Promise<{ data: AgreementWithCount[] | nu
     await checkAuth();
     const supabase = createClient();
     
-    // We now use a VIEW to get the counts, which is more efficient.
     const { data, error } = await supabase
-        .from("agreements_with_counts")
-        .select(`*`)
+        .from("agreements")
+        .select(`
+            *,
+            agreement_products(count),
+            agreement_promotions(count)
+        `)
         .order("agreement_name", { ascending: true });
 
     if (error) {
         console.error("getAgreements error:", error.message);
         return { data: null, error };
     }
-    return { data, error: null };
+
+    // Manually map the data to the expected shape
+    const agreementsWithCounts = data.map(agreement => ({
+        ...agreement,
+        product_count: agreement.agreement_products[0]?.count ?? 0,
+        promotion_count: agreement.agreement_promotions[0]?.count ?? 0,
+    }));
+    
+    return { data: agreementsWithCounts, error: null };
 }
 
 export async function getAgreementById(id: string): Promise<{ data: DetailedAgreement | null, error: any }> {
@@ -368,5 +379,3 @@ export async function unassignPromotionFromAgreement(payload: { agreement_id: st
     revalidatePath(`/admin/agreements/${payload.agreement_id}`);
     return { error: null };
 }
-
-    
