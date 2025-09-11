@@ -1,17 +1,13 @@
 
 "use client";
 
-import { useEffect, useMemo } from "react";
 import { useCartStore, type CartItem } from "@/hooks/use-cart-store";
-import type { AgreementPromotion, SuggestPromotionsInput } from "@/types";
+import type { AgreementPromotion } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { AlertCircle, ArrowRight, ShoppingCart } from "lucide-react";
-import { suggestPromotions } from "@/ai/flows/intelligent-promo-suggestions";
-import { useActionState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowRight, ShoppingCart } from "lucide-react";
 
 function formatWhatsAppMessage(
   clientName: string,
@@ -64,21 +60,6 @@ function formatWhatsAppMessage(
   return encodeURIComponent(message);
 }
 
-async function getSuggestions(
-  prevState: any,
-  formData: SuggestPromotionsInput
-) {
-  try {
-    const result = await suggestPromotions(formData);
-    return { suggestions: result.promotionSuggestions, error: null };
-  } catch (e: any) {
-    console.error("Error fetching suggestions:", e.message);
-    return {
-      suggestions: [],
-      error: "No se pudieron cargar las sugerencias de la IA.",
-    };
-  }
-}
 
 export function OrderSummary({
   clientName,
@@ -91,36 +72,6 @@ export function OrderSummary({
   const { toast } = useToast();
   const whatsAppNumber =
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5491123456789";
-
-  const [state, formAction, isPending] = useActionState(getSuggestions, {
-    suggestions: [],
-    error: null,
-  });
-
-  const intelligentSuggestionsInput = useMemo<SuggestPromotionsInput>(() => ({
-      items: items.map(item => ({
-          id: item.product.id,
-          quantity: item.quantity,
-          name: item.product.name,
-      })),
-      total_unidades: totalItems,
-      nombre: clientName,
-      availablePromotions: availablePromotions.map(ap => ap.promotions)
-  }), [items, totalItems, clientName, availablePromotions]);
-
-
-  useEffect(() => {
-    // Debounce the call to the AI to avoid too many requests
-    const handler = setTimeout(() => {
-      if (totalItems > 0) {
-        formAction(intelligentSuggestionsInput);
-      }
-    }, 500); // 500ms delay
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [intelligentSuggestionsInput, formAction, totalItems]);
 
 
   const handleSend = () => {
@@ -159,54 +110,26 @@ export function OrderSummary({
                 </CardHeader>
                 <CardContent>
                     {hasItems ? (
-                        <>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="md:col-span-2 space-y-4">
-                                    <h3 className="font-semibold text-lg">Sugerencias Inteligentes</h3>
-                                     {isPending && (
-                                        <div className="space-y-2">
-                                            <Skeleton className="h-4 w-3/4" />
-                                            <Skeleton className="h-4 w-1/2" />
-                                        </div>
-                                    )}
-                                    {state.error && <p className="text-sm text-destructive">{state.error}</p>}
-                                    
-                                    {state.suggestions && state.suggestions.length > 0 ? (
-                                        <ul className="space-y-3 text-sm">
-                                            {state.suggestions.map(sugg => (
-                                                <li key={sugg.name} className="p-3 bg-secondary/50 rounded-lg">
-                                                    <p className="font-semibold">{sugg.name}</p>
-                                                    <p className="text-muted-foreground">{sugg.reason}</p>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    ) : !isPending && (
-                                        <p className="text-sm text-muted-foreground">No hay sugerencias por el momento.</p>
-                                    )}
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="flex items-baseline gap-6">
+                                <div className="text-center">
+                                    <p className="text-2xl font-bold">{totalItems}</p>
+                                    <p className="text-sm text-muted-foreground">Unidades</p>
                                 </div>
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Total de Unidades:</span>
-                                            <span className="font-bold">{totalItems}</span>
-                                        </div>
-                                        <Separator />
-                                        <div className="flex justify-between text-xl">
-                                            <span className="font-semibold">Total a Pagar:</span>
-                                            <span className="font-bold">${totalPrice.toLocaleString()}</span>
-                                        </div>
-                                    </div>
-                                     <Button
-                                        onClick={handleSend}
-                                        size="lg"
-                                        className="w-full"
-                                    >
-                                        <span>Enviar Pedido por WhatsApp</span>
-                                        <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Button>
+                                <div className="text-center">
+                                    <p className="text-2xl font-bold">${totalPrice.toLocaleString()}</p>
+                                    <p className="text-sm text-muted-foreground">Total</p>
                                 </div>
                             </div>
-                        </>
+                            <Button
+                                onClick={handleSend}
+                                size="lg"
+                                className="w-full sm:w-auto"
+                            >
+                                <span>Enviar Pedido</span>
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </div>
                     ) : (
                          <div className="text-center py-8 text-muted-foreground">
                             <ShoppingCart className="mx-auto h-12 w-12" />
@@ -219,4 +142,3 @@ export function OrderSummary({
     </div>
   );
 }
-
