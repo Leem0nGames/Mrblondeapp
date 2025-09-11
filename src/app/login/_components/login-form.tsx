@@ -26,19 +26,27 @@ export function LoginForm() {
   return (
     <form action={formAction} className="grid gap-4">
       <div className="grid gap-2">
-        <Label htmlFor="pin">PIN de Administrador</Label>
+        <Label htmlFor="email">Email</Label>
         <Input 
-            id="pin" 
-            type="password" 
-            name="pin" 
+            id="email" 
+            type="email" 
+            name="email"
+            placeholder="admin@ejemplo.com" 
             required 
-            maxLength={4}
-            className="text-center text-lg tracking-[1em]"
         />
-        {state?.error?.message && (
-          <p className="text-sm text-destructive">{state.error.message}</p>
-        )}
       </div>
+      <div className="grid gap-2">
+        <Label htmlFor="password">Contraseña</Label>
+        <Input 
+            id="password" 
+            type="password" 
+            name="password" 
+            required 
+        />
+      </div>
+        {state?.error?.message && (
+          <p className="text-sm text-destructive text-center pt-2">{state.error.message}</p>
+        )}
       <SubmitButton />
     </form>
   );

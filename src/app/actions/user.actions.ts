@@ -48,6 +48,10 @@ export async function signupSuperAdmin(
   if (!email || !password) {
     return { error: { message: 'El email y la contraseña son requeridos.' } };
   }
+   if (password.length < 6) {
+    return { error: { message: 'La contraseña debe tener al menos 6 caracteres.' } };
+  }
+
 
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -56,6 +60,9 @@ export async function signupSuperAdmin(
 
   if (error) {
     console.error('Supabase signup error:', error.message);
+    if (error.message.includes('User already registered')) {
+        return { error: { message: 'Este correo electrónico ya está registrado.' } };
+    }
     return { error: { message: 'No se pudo crear la cuenta. ' + error.message } };
   }
 
@@ -71,22 +78,23 @@ export async function login(
   prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
-  const pin = formData.get('pin') as string;
+  const supabase = createClient();
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
 
-  if (pin !== '1234') {
-    return { error: { message: 'PIN incorrecto.' } };
+  if (!email || !password) {
+      return { error: { message: 'El email y la contraseña son requeridos.'}};
   }
 
-  const supabase = createClient();
   const { error } = await supabase.auth.signInWithPassword({
-    email: 'admin@blonde.com',
-    password: 'admin1234', 
+    email,
+    password, 
   });
 
   if (error) {
-    console.error('Supabase admin login error:', error.message);
+    console.error('Supabase login error:', error.message);
     if(error.message.includes('Invalid login credentials')) {
-        return { error: { message: 'El usuario admin no existe o la contraseña es incorrecta. Regístrelo primero.'}};
+        return { error: { message: 'Credenciales de acceso inválidas.'}};
     }
     return { error: { message: 'Error de autenticación. Verifique la consola del servidor.' } };
   }
@@ -162,5 +170,3 @@ export async function getOrderPageData(agreementId: string) {
         error: null 
     };
 }
-
-    
