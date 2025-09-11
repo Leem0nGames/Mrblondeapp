@@ -4,10 +4,10 @@ import { useEffect } from "react";
 import { useCartStore, type CartItem } from "@/hooks/use-cart-store";
 import type { AgreementPromotion } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, ShoppingCart } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { PromotionFeedback } from "./promotion-feedback";
 
 // Helper function to parse promotion rules safely
@@ -102,11 +102,9 @@ export function OrderSummary({
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5491123456789";
 
   useEffect(() => {
-    // Si el ID del acuerdo de la página es diferente al del carrito, limpiar el carrito.
     if (storedAgreementId && storedAgreementId !== agreementId) {
       clearCart();
     }
-    // Establecer el ID del acuerdo actual en el store.
     setAgreementId(agreementId);
   }, [agreementId, storedAgreementId, clearCart, setAgreementId]);
 
@@ -135,7 +133,7 @@ export function OrderSummary({
   const hasBuyXGetYPromos = availablePromotions.some(p => p.promotions.rules?.type === 'buy_x_get_y_free');
 
   return (
-    <div className="sticky top-16 z-30 bg-background/90 backdrop-blur-sm -mx-4 -mt-4 lg:-mx-8 lg:-mt-8 mb-8">
+    <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-sm -mx-4 lg:-mx-8 mb-8">
         <div className="container mx-auto p-4">
             <Card>
                  <CardHeader>
