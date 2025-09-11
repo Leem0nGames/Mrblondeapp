@@ -5,15 +5,25 @@ import type { AgreementPromotion } from "@/types";
 import { Progress } from "@/components/ui/progress";
 import { Gift, TrendingUp } from "lucide-react";
 
+// Helper function to parse promotion rules safely
+function parsePromoRules(promo: AgreementPromotion) {
+  const rules = promo.promotions.rules;
+  if (rules?.type === 'buy_x_get_y_free') {
+    const buy = Number(rules.buy);
+    const get = Number(rules.get);
+    if (!isNaN(buy) && buy > 0 && !isNaN(get)) {
+      return { ...promo, buy, get };
+    }
+  }
+  return null;
+}
+
+
 // Función para obtener la próxima promoción objetivo
 function getNextPromoGoal(promos: AgreementPromotion[], totalItems: number) {
   const sortedPromos = promos
-    .filter(p => p.promotions.rules?.type === 'buy_x_get_y_free' && Number(p.promotions.rules.buy) > 0)
-    .map(p => ({
-        ...p,
-        buy: Number(p.promotions.rules.buy),
-        get: Number(p.promotions.rules.get)
-    }))
+    .map(parsePromoRules)
+    .filter((p): p is NonNullable<typeof p> => p !== null)
     .sort((a, b) => a.buy - b.buy);
 
   // Encontrar la promoción más cercana que el usuario aún no ha alcanzado
@@ -27,11 +37,8 @@ function getNextPromoGoal(promos: AgreementPromotion[], totalItems: number) {
 // Función para calcular el total de bonificaciones
 function calculateTotalBonuses(promos: AgreementPromotion[], totalItems: number) {
     const sortedPromos = promos
-      .filter(p => p.promotions.rules?.type === 'buy_x_get_y_free' && Number(p.promotions.rules.buy) > 0)
-      .map(p => ({
-          buy: Number(p.promotions.rules.buy),
-          get: Number(p.promotions.rules.get)
-      }))
+      .map(parsePromoRules)
+      .filter((p): p is NonNullable<typeof p> => p !== null)
       .sort((a, b) => b.buy - a.buy); // Ordenar de mayor a menor requisito
 
     let remainingItems = totalItems;
@@ -41,7 +48,7 @@ function calculateTotalBonuses(promos: AgreementPromotion[], totalItems: number)
         if (remainingItems >= promo.buy) {
             const times = Math.floor(remainingItems / promo.buy);
             totalBonuses += times * promo.get;
-            remainingItems %= promo.buy;
+            remainingItems %= promo.buy; // Actualizar los items restantes para la siguiente promo
         }
     }
     return totalBonuses;
@@ -55,7 +62,7 @@ export function PromotionFeedback({
   totalItems: number;
 }) {
   const validPromos = useMemo(() => 
-    promotions.filter(p => p.promotions.rules?.type === 'buy_x_get_y_free' && Number(p.promotions.rules.buy) > 0), 
+    promotions.filter(p => p.promotions.rules?.type === 'buy_x_get_y_free'), 
   [promotions]);
 
   const totalBonuses = useMemo(() => calculateTotalBonuses(validPromos, totalItems), [validPromos, totalItems]);
@@ -65,14 +72,13 @@ export function PromotionFeedback({
     return null;
   }
 
-  const { buy, get } = nextPromoGoal.promotions.rules;
-  const numBuy = Number(buy);
+  const { buy, get } = nextPromoGoal;
   
   const isAnyPromoActive = totalBonuses > 0;
-  const itemsRemaining = numBuy - totalItems;
-  const progress = totalItems < numBuy ? Math.max(0, (totalItems / numBuy) * 100) : 100;
+  const itemsRemaining = buy - totalItems;
+  const progress = totalItems < buy ? Math.max(0, (totalItems / buy) * 100) : 100;
   
-  const showProgressBar = itemsRemaining > 0 && totalItems < numBuy;
+  const showProgressBar = itemsRemaining > 0 && totalItems < buy;
 
   return (
     <div className="space-y-2">
@@ -95,7 +101,7 @@ export function PromotionFeedback({
             <Progress value={progress} className="h-2" />
             <p className="text-xs text-muted-foreground">
                 Agrega <strong>{itemsRemaining}</strong> unidad(es) más para activar la promo{" "}
-                <strong>{nextPromoGoal.promotions.name} ({numBuy} + {Number(get)})</strong>.
+                <strong>{nextPromoGoal.promotions.name} ({buy} + {get})</strong>.
             </p>
         </>
       )}

@@ -9,15 +9,26 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import { PromotionFeedback } from "./promotion-feedback";
 
-// Función para calcular el total de bonificaciones (debe ser la misma que en PromotionFeedback)
+// Helper function to parse promotion rules safely
+function parsePromoRules(promo: AgreementPromotion) {
+  const rules = promo.promotions.rules;
+  if (rules?.type === 'buy_x_get_y_free') {
+    const buy = Number(rules.buy);
+    const get = Number(rules.get);
+    if (!isNaN(buy) && buy > 0 && !isNaN(get)) {
+      return { buy, get };
+    }
+  }
+  return null;
+}
+
+
+// Función para calcular el total de bonificaciones de forma inteligente
 function calculateTotalBonuses(promos: AgreementPromotion[], totalItems: number) {
     const sortedPromos = promos
-      .filter(p => p.promotions.rules?.type === 'buy_x_get_y_free' && Number(p.promotions.rules.buy) > 0)
-      .map(p => ({
-          buy: Number(p.promotions.rules.buy),
-          get: Number(p.promotions.rules.get)
-      }))
-      .sort((a, b) => b.buy - a.buy); // Ordenar de mayor a menor requisito
+      .map(p => parsePromoRules(p))
+      .filter((p): p is NonNullable<typeof p> => p !== null)
+      .sort((a, b) => b.buy - a.buy); // Ordenar de mayor a menor requisito (importante)
 
     let remainingItems = totalItems;
     let totalBonuses = 0;
@@ -26,7 +37,7 @@ function calculateTotalBonuses(promos: AgreementPromotion[], totalItems: number)
         if (remainingItems >= promo.buy) {
             const times = Math.floor(remainingItems / promo.buy);
             totalBonuses += times * promo.get;
-            remainingItems %= promo.buy;
+            remainingItems %= promo.buy; // Actualizar los items restantes para la siguiente promo
         }
     }
     return totalBonuses;
