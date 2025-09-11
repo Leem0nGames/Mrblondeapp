@@ -61,6 +61,7 @@ export default async function OrderPage({
 
       <main className="container mx-auto p-4 lg:p-8">
         <OrderSummary 
+          agreementId={agreement.id}
           clientName={agreement.agreement_name}
           availablePromotions={agreement.agreement_promotions}
         />

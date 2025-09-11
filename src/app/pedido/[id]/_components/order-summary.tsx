@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useCartStore, type CartItem } from "@/hooks/use-cart-store";
 import type { AgreementPromotion } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -87,16 +88,27 @@ function formatWhatsAppMessage(
 
 
 export function OrderSummary({
+  agreementId,
   clientName,
   availablePromotions,
 }: {
+  agreementId: string;
   clientName: string;
   availablePromotions: AgreementPromotion[];
 }) {
-  const { items, totalItems, totalPrice } = useCartStore();
+  const { items, totalItems, totalPrice, clearCart, agreementId: storedAgreementId, setAgreementId } = useCartStore();
   const { toast } = useToast();
   const whatsAppNumber =
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5491123456789";
+
+  useEffect(() => {
+    // Si el ID del acuerdo de la página es diferente al del carrito, limpiar el carrito.
+    if (storedAgreementId && storedAgreementId !== agreementId) {
+      clearCart();
+    }
+    // Establecer el ID del acuerdo actual en el store.
+    setAgreementId(agreementId);
+  }, [agreementId, storedAgreementId, clearCart, setAgreementId]);
 
 
   const handleSend = () => {

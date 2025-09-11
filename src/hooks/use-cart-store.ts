@@ -1,4 +1,3 @@
-
 "use client";
 
 import { create } from "zustand";
@@ -14,6 +13,8 @@ type CartState = {
   items: CartItem[];
   totalItems: number;
   totalPrice: number;
+  agreementId: string | null; // <-- Nuevo campo para el ID del convenio
+  setAgreementId: (id: string) => void;
   addItem: (product: ProductWithPrice, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -36,7 +37,12 @@ export const useCartStore = create<CartState>()(
       items: [],
       totalItems: 0,
       totalPrice: 0,
+      agreementId: null, // <-- Valor inicial
       
+      setAgreementId: (id: string) => {
+        set({ agreementId: id });
+      },
+
       addItem: (product: ProductWithPrice, quantity: number = 1) => {
         const { items } = get();
         const existingItem = items.find(
