@@ -4,6 +4,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { Product, Agreement, Promotion, DetailedAgreement, AgreementWithCount } from "@/types";
+import { randomUUID } from "crypto";
 
 type UpsertProductPayload = Omit<Product, "id" | "created_at"> & {
   id?: string;
@@ -84,6 +85,7 @@ export async function getAgreements(): Promise<{ data: AgreementWithCount[] | nu
     await checkAuth();
     const supabase = createClient();
     
+    // Updated query to manually count related items instead of using a view
     const { data, error } = await supabase
         .from("agreements")
         .select(`
@@ -146,13 +148,30 @@ export async function upsertAgreement(payload: UpsertAgreementPayload) {
 
   const query = supabase.from("agreements");
 
-  const { data, error } = id
-    ? await query.update(agreementData).eq("id", id).select().single()
-    : await query.insert(agreementData).select().single();
+  let data, error;
+  
+  if (id) {
+    // Update existing agreement
+    ({ data, error } = await query
+      .update(agreementData)
+      .eq("id", id)
+      .select()
+      .single());
+  } else {
+    // Create new agreement, adding the required link_token
+    const dataToInsert = {
+      ...agreementData,
+      link_token: randomUUID(),
+    };
+    ({ data, error } = await query
+      .insert(dataToInsert)
+      .select()
+      .single());
+  }
 
   if (error) {
     console.error("upsertAgreement error:", error.message);
-    if (error.code === '23505') {
+    if (error.code === '23505') { // Handle unique constraint violation for agreement_name
         return { data: null, error: { ...error, message: `Error: El nombre del convenio '${agreementData.agreement_name}' ya existe.` } };
     }
     return { data: null, error };
