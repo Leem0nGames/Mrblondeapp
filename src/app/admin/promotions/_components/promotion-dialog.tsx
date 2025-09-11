@@ -53,7 +53,7 @@ const defaultRules = {
   "buy_x_get_y_free": {
     "type": "buy_x_get_y_free",
     "buy": 8,
-    "get": 1
+    "get": 2
   },
   "free_shipping": {
     "type": "free_shipping",
