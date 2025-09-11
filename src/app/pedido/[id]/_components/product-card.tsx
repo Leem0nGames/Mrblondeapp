@@ -2,10 +2,6 @@
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { ProductWithPrice } from "@/types";
@@ -28,35 +24,39 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
       : "destructive";
 
   return (
-    <Card className="flex flex-col">
-       <CardHeader className="p-4">
-         <div className="relative aspect-square w-full mb-4">
+    <Card className="flex flex-col sm:flex-row w-full overflow-hidden">
+      <CardContent className="p-0 flex flex-col sm:flex-row items-center gap-4 p-4 w-full">
+         <div className="relative aspect-square w-full sm:w-24 sm:h-24 flex-shrink-0">
             <Image
                 src={getImageUrl("product_card", { id: product.id, width: 200, height: 200 })}
                 alt={product.name}
                 fill
-                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                sizes="(max-width: 640px) 90vw, 200px"
                 className="rounded-lg object-cover"
                 data-ai-hint="product image"
             />
         </div>
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-base leading-tight">{product.name}</CardTitle>
-          <Badge variant={badgeVariant} className="w-fit shrink-0">
-            {stockStatus}
-          </Badge>
+
+        <div className="flex flex-col justify-between w-full gap-2">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-2">
+              <h3 className="font-semibold text-base leading-tight">{product.name}</h3>
+              <Badge variant={badgeVariant} className="w-fit shrink-0">
+                {stockStatus}
+              </Badge>
+            </div>
+            
+            <p className="text-muted-foreground text-sm line-clamp-2 sm:h-10">{product.description}</p>
+            
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-lg font-bold">
+                ${product.price.toLocaleString()}
+              </p>
+              <div className="w-28 flex-shrink-0">
+                 <AddToCartButton product={product} />
+              </div>
+            </div>
         </div>
-        <p className="text-lg font-semibold">
-          ${product.price.toLocaleString()}
-        </p>
-        <CardDescription className="text-xs line-clamp-2 h-8">{product.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="p-4 pt-0 flex-grow">
-        {/* Content if needed */}
       </CardContent>
-      <CardFooter className="p-4 pt-0">
-        <AddToCartButton product={product} />
-      </CardFooter>
     </Card>
   );
 }

@@ -76,7 +76,7 @@ export default async function OrderPage({
                         </AccordionTrigger>
                       </CardHeader>
                       <AccordionContent className="px-4 pb-4">
-                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                        <div className="flex flex-col gap-4">
                           {productsByCategory[category].map((product) => (
                               <ProductCard key={product.id} product={product} />
                           ))}
