@@ -124,16 +124,16 @@ WITH CHECK (auth.role() = 'authenticated');
 
 ```
 
-## 2. Crear el Usuario Administrador
+## 2. Crear el Usuario Administrador (Opcional)
 
-La aplicación necesita un usuario administrador para funcionar.
+La aplicación ahora te guiará para crear el primer usuario administrador la primera vez que la ejecutes. Sin embargo, si necesitas crear un usuario manualmente, puedes seguir estos pasos:
 
 1.  **Ir a Autenticación**: En el panel de Supabase, ve a la sección **"Authentication"** (el ícono de una persona).
 2.  **Añadir Nuevo Usuario**: Haz clic en el botón **"Add user"**.
 3.  **Rellenar los datos**:
-    *   **Email**: `admin@blonde.com`
-    *   **Password**: `admin1234`
+    *   **Email**: Introduce el email que quieras para el administrador.
+    *   **Password**: Introduce una contraseña segura.
     *   **Importante**: Desactiva la opción "Send confirmation email".
 4.  Haz clic en **"Create user"**.
 
-Con esto, tu aplicación estará lista para usarse. Puedes acceder al panel de administrador con el PIN por defecto: `1234`.
+Con esto, tu aplicación estará lista para usarse.

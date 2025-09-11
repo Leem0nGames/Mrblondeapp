@@ -47,30 +47,11 @@ cd blonde-orders
 npm install
 ```
 
-**C. Set Up Supabase**
+**C. Set Up Supabase & Environment**
 
-1.  Create a new project on [Supabase](https://supabase.com/).
-2.  Navigate to the **SQL Editor** in your Supabase dashboard.
-3.  Open the `database.sql` file from this project, copy its content, and run it in the SQL Editor to create the necessary tables.
-4.  Go to **Project Settings > API**. Find your Project URL and `anon` public key.
-5.  Go to **Project Settings > Database > Connection string**. Find your Service Role Key (secret).
+1.  **Crucial Step**: Follow the complete database and environment setup guide in the `INSTRUCCIONES.md` file located in the root of this project. It contains the necessary SQL script and instructions for environment variables.
 
-**D. Configure Environment Variables**
-
-Create a `.env.local` file in the root of the project by copying the example file:
-
-```bash
-cp .env.example .env.local
-```
-
-Now, fill in the values with your Supabase credentials and your business WhatsApp number:
-
-```
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-NEXT_PUBLIC_WHATSAPP_NUMBER=5491123456789
-```
+2.  Create a `.env.local` file in the root of the project and fill in the values as described in `INSTRUCCIONES.md`.
 
 ### 3. Running the Development Server
 
@@ -81,7 +62,7 @@ npm run dev
 ```
 
 - The application will be available at `http://localhost:3000`.
-- The admin panel is at `http://localhost:3000/admin`. You can create an admin user through your Supabase dashboard's Authentication section and use those credentials to log in.
+- The first time you run the app, you will be redirected to `/signup` to create the main administrator account.
 
 ## Deployment
 
