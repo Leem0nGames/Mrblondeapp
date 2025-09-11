@@ -370,17 +370,27 @@ export async function updateAgreementProductPrice(payload: { agreement_id: strin
     return { error: null };
 }
 
+export async function assignMultiplePromotionsToAgreement(payload: {
+  agreement_id: string;
+  promotion_ids: string[];
+}) {
+  await checkAuth();
+  const supabase = createClient();
 
-export async function assignPromotionToAgreement(payload: { agreement_id: string; promotion_id: string; }) {
-    await checkAuth();
-    const supabase = createClient();
-    const { error } = await supabase.from('agreement_promotions').insert(payload);
-    if (error) {
-      console.error("assignPromotionToAgreement error:", error.message);
-      return { error };
-    }
-    revalidatePath(`/admin/agreements/${payload.agreement_id}`);
-    return { error: null };
+  const promotionsToInsert = payload.promotion_ids.map(promoId => ({
+    agreement_id: payload.agreement_id,
+    promotion_id: promoId,
+  }));
+
+  const { error } = await supabase.from('agreement_promotions').insert(promotionsToInsert);
+
+  if (error) {
+    console.error("assignMultiplePromotionsToAgreement error:", error.message);
+    return { error };
+  }
+
+  revalidatePath(`/admin/agreements/${payload.agreement_id}`);
+  return { error: null };
 }
 
 export async function unassignPromotionFromAgreement(payload: { agreement_id: string; promotion_id: string; }) {

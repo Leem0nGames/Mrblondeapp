@@ -26,12 +26,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { getUnassignedPromotions, assignPromotionToAgreement } from "@/app/actions/admin.actions";
+import { getUnassignedPromotions, assignMultiplePromotionsToAgreement } from "@/app/actions/admin.actions";
 import type { Promotion } from "@/types";
-import { Check, PlusCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const assignSchema = z.object({
-  promotion_id: z.string().min(1, "Debes seleccionar una promoción."),
+  promotion_ids: z.array(z.string()).nonempty("Debes seleccionar al menos una promoción."),
 });
 
 type AssignFormValues = z.infer<typeof assignSchema>;
@@ -52,9 +52,12 @@ export function AssignPromotionDialog({
   const form = useForm<AssignFormValues>({
     resolver: zodResolver(assignSchema),
     defaultValues: {
-      promotion_id: "",
+      promotion_ids: [],
     },
   });
+  
+  const selectedPromotionIds = form.watch("promotion_ids");
+
 
   useEffect(() => {
     if (isOpen) {
@@ -72,11 +75,11 @@ export function AssignPromotionDialog({
 
   const onSubmit = (values: AssignFormValues) => {
     startTransition(async () => {
-      const result = await assignPromotionToAgreement({ ...values, agreement_id: agreementId });
+      const result = await assignMultiplePromotionsToAgreement({ ...values, agreement_id: agreementId });
       if (result.error) {
         toast({ title: "Error", description: result.error.message, variant: "destructive" });
       } else {
-        toast({ title: "Éxito", description: `Promoción asignada correctamente.` });
+        toast({ title: "Éxito", description: `${values.promotion_ids.length} promocion(es) asignada(s) correctamente.` });
         setIsOpen(false);
         form.reset();
       }
@@ -84,13 +87,18 @@ export function AssignPromotionDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open);
+      if (!open) {
+        form.reset();
+      }
+    }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Asignar Promoción</DialogTitle>
+          <DialogTitle>Asignar Promociones</DialogTitle>
           <DialogDescription>
-            Selecciona una promoción para aplicar a los clientes de este convenio.
+            Selecciona una o más promociones para aplicar a los clientes de este convenio.
           </DialogDescription>
         </DialogHeader>
         {isLoading ? <div className="space-y-4 py-4">
@@ -104,25 +112,47 @@ export function AssignPromotionDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="promotion_id"
-              render={({ field }) => (
+              name="promotion_ids"
+              render={() => (
                 <FormItem>
                   <FormLabel>Promociones Disponibles</FormLabel>
                    <ScrollArea className="h-60 border rounded-md">
-                     <div className="p-2 space-y-1">
+                     <div className="p-1">
                       {promotions.length > 0 ? promotions.map(promo => (
-                          <button
-                            type="button"
-                            key={promo.id}
-                            onClick={() => field.onChange(promo.id)}
-                            className={`w-full flex items-start gap-4 p-3 rounded-md text-left transition-colors ${field.value === promo.id ? 'bg-secondary' : 'hover:bg-muted/50'}`}
-                          >
-                              <div className="flex-grow">
-                                <p className="font-medium">{promo.name}</p>
-                                <p className="text-sm text-muted-foreground">{promo.description}</p>
-                              </div>
-                              {field.value === promo.id && <Check className="h-5 w-5 text-primary" />}
-                          </button>
+                           <FormField
+                              key={promo.id}
+                              control={form.control}
+                              name="promotion_ids"
+                              render={({ field }) => (
+                                <FormItem
+                                  key={promo.id}
+                                  className="flex flex-row items-center space-x-3 space-y-0 p-3 rounded-md hover:bg-muted/50 data-[state=checked]:bg-secondary"
+                                  data-state={field.value?.includes(promo.id) ? "checked" : "unchecked"}
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(promo.id)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([...field.value, promo.id])
+                                          : field.onChange(
+                                              field.value?.filter(
+                                                (value) => value !== promo.id
+                                              )
+                                            );
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <label
+                                    htmlFor={`checkbox-${promo.id}`}
+                                    className="w-full flex flex-col font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                  >
+                                      <p>{promo.name}</p>
+                                      <p className="text-sm font-normal text-muted-foreground">{promo.description}</p>
+                                  </label>
+                                </FormItem>
+                              )}
+                            />
                       )) : <p className="p-4 text-center text-sm text-muted-foreground">No hay más promociones para asignar.</p>}
                       </div>
                     </ScrollArea>
@@ -132,12 +162,12 @@ export function AssignPromotionDialog({
             />
             <DialogFooter>
               <DialogClose asChild>
-                <Button variant="outline" type="button" onClick={() => form.reset()}>
+                <Button variant="outline" type="button">
                   Cancelar
                 </Button>
               </DialogClose>
-              <Button type="submit" disabled={isPending || !form.getValues("promotion_id")}>
-                {isPending ? "Asignando..." : "Asignar Promoción"}
+              <Button type="submit" disabled={isPending || selectedPromotionIds.length === 0}>
+                {isPending ? "Asignando..." : `Asignar ${selectedPromotionIds.length} Promocion(es)`}
               </Button>
             </DialogFooter>
           </form>
