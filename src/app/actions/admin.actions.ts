@@ -3,7 +3,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { Product, Agreement, Promotion, DetailedAgreement } from "@/types";
+import type { Product, Agreement, Promotion, DetailedAgreement, AgreementWithCount } from "@/types";
 
 type UpsertProductPayload = Omit<Product, "id" | "created_at"> & {
   id?: string;
@@ -80,7 +80,7 @@ export async function deleteProduct(id: string) {
 
 // --- Agreement Actions ---
 
-export async function getAgreements(): Promise<{ data: any[] | null, error: any }> {
+export async function getAgreements(): Promise<{ data: AgreementWithCount[] | null, error: any }> {
     await checkAuth();
     const supabase = createClient();
     
@@ -120,7 +120,13 @@ export async function getAgreementById(id: string): Promise<{ data: DetailedAgre
         console.error("getAgreementById error:", error.message);
         return { data: null, error };
     }
-    return { data, error: null };
+    // Ensure nested arrays are not null
+    const detailedAgreement: DetailedAgreement = {
+        ...data,
+        agreement_products: data.agreement_products ?? [],
+        agreement_promotions: data.agreement_promotions ?? [],
+    };
+    return { data: detailedAgreement, error: null };
 }
 
 
@@ -364,4 +370,3 @@ export async function unassignPromotionFromAgreement(payload: { agreement_id: st
     revalidatePath(`/admin/agreements/${payload.agreement_id}`);
     return { error: null };
 }
-

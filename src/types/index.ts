@@ -45,19 +45,16 @@ export type Agreement = {
   agreement_name: string;
   client_type: "barberia" | "distribuidor" | "especial";
   created_at: string;
-  // These counts will be derived from a view or a more complex query
-  // This part of the type might need adjustment based on the new schema.
-  _count?: {
-    agreement_products: number;
-    agreement_promotions: number;
-  }
 };
 
-export type DetailedAgreement = {
-  id: string;
-  agreement_name: string;
-  client_type: "barberia" | "distribuidor" | "especial";
-  created_at: string;
+// Type for the `agreements_with_counts` view
+export type AgreementWithCount = Agreement & {
+  product_count: number;
+  promotion_count: number;
+}
+
+
+export type DetailedAgreement = Agreement & {
   agreement_products: AgreementProduct[]; // Joined data
   agreement_promotions: AgreementPromotion[]; // Joined data
 }

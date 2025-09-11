@@ -40,15 +40,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { deleteAgreement } from "@/app/actions/admin.actions";
-
-// The data is coming from the `agreements_with_counts` view now
-type AgreementWithCount = {
-  id: string;
-  agreement_name: string;
-  client_type: "barberia" | "distribuidor" | "especial";
-  product_count: number;
-  promotion_count: number;
-}
+import type { AgreementWithCount } from "@/types";
 
 export default function AgreementsTable({ agreements }: { agreements: AgreementWithCount[] }) {
   const [isPending, startTransition] = useTransition();
