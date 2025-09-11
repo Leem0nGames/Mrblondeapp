@@ -1,23 +1,36 @@
+
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useCartStore, type CartItem } from "@/hooks/use-cart-store";
 import type { AgreementPromotion } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight } from "lucide-react";
-import { PromotionFeedback } from "./promotion-feedback";
+import { ArrowRight, Info, Truck } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 // Helper function to parse promotion rules safely
-function parsePromoRules(promo: AgreementPromotion) {
+function parseBuyXGetYPromo(promo: AgreementPromotion) {
   const rules = promo.promotions.rules;
   if (rules?.type === 'buy_x_get_y_free') {
     const buy = Number(rules.buy);
     const get = Number(rules.get);
-    if (!isNaN(buy) && buy > 0 && !isNaN(get)) {
+    if (!isNaN(buy) && buy > 0 && !isNaN(get) && get > 0) {
       return { buy, get };
+    }
+  }
+  return null;
+}
+
+function parseFreeShippingPromo(promo: AgreementPromotion) {
+  const rules = promo.promotions.rules;
+  if (rules?.type === 'free_shipping') {
+    const min_units = Number(rules.min_units);
+    if (!isNaN(min_units) && min_units > 0) {
+      return { min_units };
     }
   }
   return null;
@@ -27,7 +40,7 @@ function parsePromoRules(promo: AgreementPromotion) {
 // Función para calcular el total de bonificaciones de forma inteligente
 function calculateTotalBonuses(promos: AgreementPromotion[], totalItems: number) {
     const sortedPromos = promos
-      .map(p => parsePromoRules(p))
+      .map(p => parseBuyXGetYPromo(p))
       .filter((p): p is NonNullable<typeof p> => p !== null)
       .sort((a, b) => b.buy - a.buy); // Ordenar de mayor a menor requisito (importante)
 
@@ -68,6 +81,12 @@ function formatWhatsAppMessage(
       }
   }
 
+  let shippingText = "";
+  const freeShippingPromo = promotions.map(parseFreeShippingPromo).find(p => p !== null);
+  if (freeShippingPromo && totalUnits >= freeShippingPromo.min_units) {
+    shippingText = `*Envío Bonificado*\n`;
+  }
+
 
   const messageParts = [
     "✨ NUEVO PEDIDO ✨\n",
@@ -77,6 +96,10 @@ function formatWhatsAppMessage(
 
   if (bonusText) {
     messageParts.push(`🎁 ${bonusText}\n`);
+  }
+    
+  if(shippingText) {
+    messageParts.push(`🚚 ${shippingText}\n`);
   }
 
   messageParts.push(`💰 *Total a Pagar:*\n$${totalPrice.toLocaleString('es-AR')}`);
@@ -132,7 +155,15 @@ export function OrderSummary({
   };
 
   const hasItems = items.length > 0;
-  const hasBuyXGetYPromos = availablePromotions.some(p => p.promotions.rules?.type === 'buy_x_get_y_free');
+  
+  const freeShippingPromo = useMemo(() => {
+    const promos = availablePromotions.map(parseFreeShippingPromo).filter((p): p is NonNullable<typeof p> => p !== null);
+    return promos.length > 0 ? promos[0] : null;
+  }, [availablePromotions]);
+  
+  const hasFreeShipping = freeShippingPromo && totalItems >= freeShippingPromo.min_units;
+  const itemsForFreeShipping = freeShippingPromo ? freeShippingPromo.min_units - totalItems : 0;
+
 
   return (
     <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-sm -mx-4 lg:-mx-8 mb-8">
@@ -153,6 +184,23 @@ export function OrderSummary({
                                     <p className="text-2xl font-bold">${totalPrice.toLocaleString()}</p>
                                     <p className="text-sm text-muted-foreground">Total</p>
                                 </div>
+                                {freeShippingPromo && hasItems && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger>
+                                            <Badge variant={hasFreeShipping ? "default" : "secondary"}>
+                                                <Truck className="h-4 w-4 mr-1"/>
+                                                {hasFreeShipping ? "Envío Gratis" : "Envío"}
+                                            </Badge>
+                                        </TooltipTrigger>
+                                        {!hasFreeShipping && itemsForFreeShipping > 0 && (
+                                            <TooltipContent>
+                                                <p>Agrega {itemsForFreeShipping} unidades más para envío gratis.</p>
+                                            </TooltipContent>
+                                        )}
+                                    </Tooltip>
+                                   </TooltipProvider>
+                                )}
                             </div>
                             <Button
                                 onClick={handleSend}
@@ -164,12 +212,6 @@ export function OrderSummary({
                                 <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         </div>
-                        {hasItems && hasBuyXGetYPromos && (
-                            <>
-                                <Separator />
-                                <PromotionFeedback promotions={availablePromotions} totalItems={totalItems} />
-                            </>
-                        )}
                     </div>
                 </CardContent>
             </Card>

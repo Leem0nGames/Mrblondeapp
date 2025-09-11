@@ -11,6 +11,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { OrderSummary } from "./_components/order-summary";
+import { useCartStore } from "@/hooks/use-cart-store";
 
 
 export default async function OrderPage({
@@ -84,7 +85,7 @@ export default async function OrderPage({
                       <AccordionContent className="px-4 pb-4">
                         <div className="flex flex-col gap-4">
                           {productsByCategory[category].map((product) => (
-                              <ProductCard key={product.id} product={product} />
+                              <ProductCard key={product.id} product={product} promotions={agreement.agreement_promotions}/>
                           ))}
                         </div>
                       </AccordionContent>
