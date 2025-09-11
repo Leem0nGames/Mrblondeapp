@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useCartStore, type CartItem } from "@/hooks/use-cart-store";
