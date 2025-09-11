@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/hooks/use-cart-store";
 import type { ProductWithPrice } from "@/types";
-import { PlusCircle } from "lucide-react";
+import { Plus } from "lucide-react";
 
 export function AddToCartButton({ product }: { product: ProductWithPrice }) {
   const add = useCartStore((s) => s.addItem);
@@ -11,11 +11,11 @@ export function AddToCartButton({ product }: { product: ProductWithPrice }) {
   return (
     <Button
       size="sm"
-      variant="outline"
+      className="w-full"
       onClick={() => add(product, 1)}
       disabled={product.stock === 0}
     >
-      <PlusCircle className="mr-2 h-4 w-4" />
+      <Plus className="mr-2 h-4 w-4" />
       Agregar
     </Button>
   );

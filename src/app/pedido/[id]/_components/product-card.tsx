@@ -22,37 +22,39 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
       : "Agotado";
   const badgeVariant =
     product.stock > 10
-      ? "outline"
-      : product.stock > 0
       ? "default"
+      : product.stock > 0
+      ? "secondary"
       : "destructive";
 
   return (
     <Card className="flex flex-col">
-      <CardHeader>
-        <div className="relative aspect-[4/3] w-full mb-4">
+       <CardHeader className="p-4">
+         <div className="relative aspect-square w-full mb-4">
             <Image
-                src={getImageUrl("product_card", { id: product.id, width: 600, height: 400 })}
+                src={getImageUrl("product_card", { id: product.id, width: 200, height: 200 })}
                 alt={product.name}
                 fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="rounded-t-lg object-cover"
+                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                className="rounded-lg object-cover"
                 data-ai-hint="product image"
             />
         </div>
-        <CardTitle className="text-xl">{product.name}</CardTitle>
-        <Badge variant={badgeVariant} className="w-fit">
-          {stockStatus}
-        </Badge>
-        <CardDescription className="line-clamp-2 h-10">{product.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex-grow">
-        {/* Content if needed */}
-      </CardContent>
-      <CardFooter className="flex justify-between items-center mt-auto pt-4">
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-base leading-tight">{product.name}</CardTitle>
+          <Badge variant={badgeVariant} className="w-fit shrink-0">
+            {stockStatus}
+          </Badge>
+        </div>
         <p className="text-lg font-semibold">
           ${product.price.toLocaleString()}
         </p>
+        <CardDescription className="text-xs line-clamp-2 h-8">{product.description}</CardDescription>
+      </CardHeader>
+      <CardContent className="p-4 pt-0 flex-grow">
+        {/* Content if needed */}
+      </CardContent>
+      <CardFooter className="p-4 pt-0">
         <AddToCartButton product={product} />
       </CardFooter>
     </Card>

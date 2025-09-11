@@ -2,9 +2,16 @@
 import { getOrderPageData } from "@/app/actions/user.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/components/logo";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { AlertTriangle, Package2 } from "lucide-react";
 import { CartWidget } from "./_components/cart-widget";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
 
 export default async function OrderPage({
   params,
@@ -37,7 +44,8 @@ export default async function OrderPage({
     );
   }
 
-  const { agreement, products } = data;
+  const { agreement, productsByCategory } = data;
+  const categories = Object.keys(productsByCategory);
 
   return (
     <div className="min-h-screen bg-muted/20 pb-32">
@@ -57,19 +65,37 @@ export default async function OrderPage({
             <p className="mt-2 text-lg text-muted-foreground">Selecciona los productos que deseas ordenar.</p>
         </div>
         
-        {products.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-            ))}
-            </div>
+        {categories.length > 0 ? (
+           <Accordion type="multiple" defaultValue={categories} className="w-full space-y-4">
+              {categories.map((category) => (
+                <AccordionItem key={category} value={category} className="border-none">
+                   <Card>
+                      <CardHeader className="p-4">
+                        <AccordionTrigger className="p-2 -m-2 text-xl font-bold hover:no-underline">
+                            {category}
+                        </AccordionTrigger>
+                      </CardHeader>
+                      <AccordionContent className="px-4 pb-4">
+                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                          {productsByCategory[category].map((product) => (
+                              <ProductCard key={product.id} product={product} />
+                          ))}
+                        </div>
+                      </AccordionContent>
+                   </Card>
+                </AccordionItem>
+              ))}
+            </Accordion>
         ) : (
-            <Card className="flex flex-col items-center justify-center py-12 border-dashed">
+            <Card className="flex flex-col items-center justify-center py-16 border-dashed">
                 <CardHeader className="text-center">
-                    <CardTitle>No hay productos en este convenio</CardTitle>
-                    <CardContent>
-                        <p className="text-muted-foreground">Aún no se han asignado productos a este convenio.</p>
-                    </CardContent>
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
+                        <Package2 className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <CardTitle>No hay productos disponibles</CardTitle>
+                    <CardDescription>
+                        Aún no se han asignado productos a este convenio.
+                    </CardDescription>
                 </CardHeader>
             </Card>
         )}

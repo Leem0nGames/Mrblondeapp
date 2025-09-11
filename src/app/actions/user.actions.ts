@@ -131,7 +131,7 @@ export async function logout() {
   redirect('/login');
 }
 
-// --- Lógica de Datos (sin cambios) ---
+// --- Lógica de Datos ---
 export async function getOrderPageData(agreementId: string) {
     const supabase = createClient();
 
@@ -139,10 +139,6 @@ export async function getOrderPageData(agreementId: string) {
         .from('agreements')
         .select(`
             *,
-            agreement_products(
-                price,
-                products(*)
-            ),
             agreement_promotions(
                 promotions(*)
             )
@@ -154,13 +150,38 @@ export async function getOrderPageData(agreementId: string) {
         console.error("getOrderPageData (agreement) error:", agreementError?.message);
         return { data: null, error: { message: "El convenio no es válido o ha expirado." } };
     }
-    
-    const validAgreementProducts = agreement.agreement_products.filter(ap => ap.products);
 
-    const products = validAgreementProducts.map(ap => ({
+    // Ahora, obtenemos los productos asignados con sus precios específicos
+    const { data: agreementProducts, error: productsError } = await supabase
+        .from('agreement_products')
+        .select(`
+            price,
+            products(*)
+        `)
+        .eq('agreement_id', agreementId)
+        .order('name', { foreignTable: 'products', ascending: true });
+    
+    if (productsError) {
+        console.error("getOrderPageData (products) error:", productsError.message);
+        return { data: null, error: { message: "No se pudieron cargar los productos del convenio." } };
+    }
+
+    // Mapeamos los productos para incluir el precio del convenio
+    const products = agreementProducts.map(ap => ({
         ...ap.products!,
-        price: ap.price,
+        price: ap.price, // Este es el precio específico del convenio
     }));
+    
+    // Agrupamos por categoría para el Accordion en el frontend
+    const productsByCategory = products.reduce((acc, product) => {
+        const category = product.category || 'Sin Categoría';
+        if (!acc[category]) {
+            acc[category] = [];
+        }
+        acc[category].push(product);
+        return acc;
+    }, {} as Record<string, typeof products>);
+
 
     return { 
         data: { 
@@ -168,7 +189,8 @@ export async function getOrderPageData(agreementId: string) {
                 ...agreement,
                 agreement_promotions: agreement.agreement_promotions ?? [],
             }, 
-            products 
+            products,
+            productsByCategory
         }, 
         error: null 
     };
