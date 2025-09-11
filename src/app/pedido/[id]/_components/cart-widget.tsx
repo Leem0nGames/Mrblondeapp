@@ -45,7 +45,7 @@ export function CartWidget({
         <SheetTrigger asChild>
           <Button variant="outline" className="fixed bottom-4 right-4 z-50 h-14 rounded-full shadow-lg">
             <ShoppingCart className="mr-2" />
-            Ver Pedido ({hasMounted ? totalItems : 0})
+            Ver Pedido ({hasMounted ? totalItems : <span className="w-4 h-4 inline-block animate-pulse bg-muted-foreground/50 rounded-full" />})
           </Button>
         </SheetTrigger>
         <SheetContent className="flex flex-col">

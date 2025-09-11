@@ -40,11 +40,15 @@ function formatWhatsAppMessage(
       // Find the most advantageous promotion (the one that requires more items, assuming it gives more)
       buyXgetYFreePromos.sort((a, b) => (b.promotions.rules.buy || 0) - (a.promotions.rules.buy || 0));
       const bestPromo = buyXgetYFreePromos[0];
-      const { buy, get } = bestPromo.promotions.rules;
-
-      if (totalUnits >= buy) {
-          const numberOfBonuses = Math.floor(totalUnits / buy) * get;
-          bonusText = `Bonificaciones de Regalo:\n- ${numberOfBonuses}x Unidades de regalo (promo ${buy}+${get})`;
+      
+      if (bestPromo && bestPromo.promotions.rules.buy > 0) {
+        const { buy, get } = bestPromo.promotions.rules;
+        if (totalUnits >= buy) {
+            const numberOfBonuses = Math.floor(totalUnits / buy) * get;
+            if (numberOfBonuses > 0) {
+              bonusText = `Bonificaciones de Regalo:\n- ${numberOfBonuses}x Unidades de regalo (promo ${buy}+${get})`;
+            }
+        }
       }
   }
 

@@ -12,14 +12,15 @@ export type CartItem = {
 
 type CartState = {
   items: CartItem[];
+  totalItems: number;
+  totalPrice: number;
   addItem: (product: ProductWithPrice, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
-  totalItems: number;
-  totalPrice: number;
 };
 
+// Helper function to compute totals from a given set of items.
 const calculateTotals = (items: CartItem[]) => {
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
   const totalPrice = items.reduce(
@@ -54,16 +55,14 @@ export const useCartStore = create<CartState>()(
         }
 
         updatedItems = updatedItems.filter(item => item.quantity > 0);
-        const totals = calculateTotals(updatedItems);
-        set({ items: updatedItems, ...totals });
+        set({ items: updatedItems, ...calculateTotals(updatedItems) });
       },
 
       removeItem: (productId: string) => {
         const updatedItems = get().items.filter(
           (item) => item.product.id !== productId
         );
-        const totals = calculateTotals(updatedItems);
-        set({ items: updatedItems, ...totals });
+        set({ items: updatedItems, ...calculateTotals(updatedItems) });
       },
 
       updateQuantity: (productId: string, quantity: number) => {
@@ -77,23 +76,22 @@ export const useCartStore = create<CartState>()(
             item.product.id === productId ? { ...item, quantity } : item
           );
         }
-        const totals = calculateTotals(updatedItems);
-        set({ items: updatedItems, ...totals });
+        set({ items: updatedItems, ...calculateTotals(updatedItems) });
       },
 
       clearCart: () => {
-        const totals = calculateTotals([]);
-        set({ items: [], ...totals });
+        set({ items: [], totalItems: 0, totalPrice: 0 });
       },
     }),
     {
-      name: 'cart-storage', // name of the item in the storage (must be unique)
-      storage: createJSONStorage(() => localStorage), // (optional) by default, 'localStorage' is used
+      name: 'cart-storage',
+      storage: createJSONStorage(() => localStorage),
+      // This function runs when the store is rehydrated from localStorage
       onRehydrateStorage: () => (state) => {
         if (state) {
-            const totals = calculateTotals(state.items);
-            state.totalItems = totals.totalItems;
-            state.totalPrice = totals.totalPrice;
+          const { totalItems, totalPrice } = calculateTotals(state.items);
+          state.totalItems = totalItems;
+          state.totalPrice = totalPrice;
         }
       }
     }
