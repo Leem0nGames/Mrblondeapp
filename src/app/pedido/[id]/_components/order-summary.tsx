@@ -9,6 +9,28 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import { PromotionFeedback } from "./promotion-feedback";
 
+// Función para calcular el total de bonificaciones (debe ser la misma que en PromotionFeedback)
+function calculateTotalBonuses(promos: AgreementPromotion[], totalItems: number) {
+    const sortedPromos = promos
+      .filter(p => p.promotions.rules?.type === 'buy_x_get_y_free' && Number(p.promotions.rules.buy) > 0)
+      .map(p => ({
+          buy: Number(p.promotions.rules.buy),
+          get: Number(p.promotions.rules.get)
+      }))
+      .sort((a, b) => b.buy - a.buy); // Ordenar de mayor a menor requisito
+
+    let remainingItems = totalItems;
+    let totalBonuses = 0;
+
+    for (const promo of sortedPromos) {
+        if (remainingItems >= promo.buy) {
+            const times = Math.floor(remainingItems / promo.buy);
+            totalBonuses += times * promo.get;
+            remainingItems %= promo.buy;
+        }
+    }
+    return totalBonuses;
+}
 
 function formatWhatsAppMessage(
   clientName: string,
@@ -22,28 +44,18 @@ function formatWhatsAppMessage(
     .join("\n");
 
   let bonusText = "";
-  const buyXgetYFreePromos = promotions.filter(
-    (p) => p.promotions.rules?.type === "buy_x_get_y_free"
-  );
-  
-  if (buyXgetYFreePromos.length > 0) {
-      buyXgetYFreePromos.sort((a, b) => (b.promotions.rules.buy || 0) - (a.promotions.rules.buy || 0));
-      const bestPromo = buyXgetYFreePromos[0];
+  const totalBonuses = calculateTotalBonuses(promotions, totalUnits);
+
+  if (totalBonuses > 0) {
+      // Regla de negocio: el producto de regalo es el más barato del carrito
+      const sortedItems = [...cartItems].sort((a, b) => a.product.price - b.product.price);
+      const cheapestItem = sortedItems[0];
       
-      if (bestPromo && bestPromo.promotions.rules.buy > 0) {
-        const { buy, get } = bestPromo.promotions.rules;
-        if (totalUnits >= buy) {
-            const numberOfBonuses = Math.floor(totalUnits / buy) * get;
-            // Sort items by price to find the cheapest one for the bonus
-            const sortedItems = [...cartItems].sort((a, b) => a.product.price - b.product.price);
-            const cheapestItem = sortedItems[0];
-            
-            if (numberOfBonuses > 0 && cheapestItem) {
-              bonusText = `Bonificaciones de Regalo:\n- ${numberOfBonuses}x ${cheapestItem.product.name} (promo ${buy}+${get})`;
-            }
-        }
+      if (cheapestItem) {
+        bonusText = `*Bonificaciones de Regalo:*\n- ${totalBonuses}x ${cheapestItem.product.name}`;
       }
   }
+
 
   const messageParts = [
     "✨ NUEVO PEDIDO ✨\n",
@@ -52,7 +64,7 @@ function formatWhatsAppMessage(
   ];
 
   if (bonusText) {
-    messageParts.push(`🎁 *${bonusText}*\n`);
+    messageParts.push(`🎁 ${bonusText}\n`);
   }
 
   messageParts.push(`💰 *Total a Pagar:*\n$${totalPrice.toLocaleString('es-AR')}`);
@@ -97,6 +109,7 @@ export function OrderSummary({
   };
 
   const hasItems = items.length > 0;
+  const hasBuyXGetYPromos = availablePromotions.some(p => p.promotions.rules?.type === 'buy_x_get_y_free');
 
   return (
     <div className="sticky top-16 z-30 bg-background/90 backdrop-blur-sm -mx-4 -mt-4 lg:-mx-8 lg:-mt-8 mb-8">
@@ -128,7 +141,7 @@ export function OrderSummary({
                                 <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         </div>
-                        {hasItems && availablePromotions.length > 0 && (
+                        {hasItems && hasBuyXGetYPromos && (
                             <>
                                 <Separator />
                                 <PromotionFeedback promotions={availablePromotions} totalItems={totalItems} />
