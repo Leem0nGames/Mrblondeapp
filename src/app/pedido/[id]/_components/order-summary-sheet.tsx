@@ -16,7 +16,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import IntelligentSuggestions from "./intelligent-suggestions";
 import { getImageUrl } from "@/lib/placeholder-images";
 
 function formatWhatsAppMessage(
@@ -113,7 +112,7 @@ export function OrderSummarySheet({
         <SheetHeader>
           <SheetTitle>Resumen del Pedido</SheetTitle>
           <SheetDescription>
-            Confirma tu pedido y envíalo por WhatsApp. Las promociones sugeridas se aplicarán al facturar.
+            Confirma tu pedido y envíalo por WhatsApp. Las bonificaciones se aplicarán al facturar.
           </SheetDescription>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto pr-6 -mr-6">
@@ -151,15 +150,6 @@ export function OrderSummarySheet({
                             <span>${totalPrice.toLocaleString()}</span>
                         </div>
                     </div>
-                    
-                    <Separator />
-
-                    {/* AI Suggestions */}
-                    <IntelligentSuggestions 
-                      clientName={clientName} 
-                      availablePromotions={availablePromotions}
-                    />
-
                 </div>
             </ScrollArea>
         </div>
