@@ -80,25 +80,21 @@ export async function deleteProduct(id: string) {
 
 // --- Agreement Actions ---
 
-export async function getAgreements(): Promise<{ data: Agreement[] | null, error: any }> {
-  await checkAuth();
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("agreements")
-    .select(`
-      id,
-      agreement_name,
-      client_type,
-      created_at,
-      agreement_products ( count ),
-      agreement_promotions ( count )
-    `)
-    .order("agreement_name", { ascending: true });
-  if (error) {
-    console.error("getAgreements error:", error.message);
-    return { data: null, error };
-  };
-  return { data, error: null };
+export async function getAgreements(): Promise<{ data: any[] | null, error: any }> {
+    await checkAuth();
+    const supabase = createClient();
+    
+    // We now use a VIEW to get the counts, which is more efficient.
+    const { data, error } = await supabase
+        .from("agreements_with_counts")
+        .select(`*`)
+        .order("agreement_name", { ascending: true });
+
+    if (error) {
+        console.error("getAgreements error:", error.message);
+        return { data: null, error };
+    }
+    return { data, error: null };
 }
 
 export async function getAgreementById(id: string): Promise<{ data: DetailedAgreement | null, error: any }> {
@@ -368,3 +364,4 @@ export async function unassignPromotionFromAgreement(payload: { agreement_id: st
     revalidatePath(`/admin/agreements/${payload.agreement_id}`);
     return { error: null };
 }
+

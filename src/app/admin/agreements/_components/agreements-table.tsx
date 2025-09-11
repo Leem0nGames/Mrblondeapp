@@ -39,10 +39,18 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import type { Agreement } from "@/types";
 import { deleteAgreement } from "@/app/actions/admin.actions";
 
-export default function AgreementsTable({ agreements }: { agreements: Agreement[] }) {
+// The data is coming from the `agreements_with_counts` view now
+type AgreementWithCount = {
+  id: string;
+  agreement_name: string;
+  client_type: "barberia" | "distribuidor" | "especial";
+  product_count: number;
+  promotion_count: number;
+}
+
+export default function AgreementsTable({ agreements }: { agreements: AgreementWithCount[] }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -78,7 +86,7 @@ export default function AgreementsTable({ agreements }: { agreements: Agreement[
   
   return (
     <Card>
-      <CardContent>
+      <CardContent className="p-0">
         <Table>
           <TableHeader>
             <TableRow>
@@ -98,8 +106,8 @@ export default function AgreementsTable({ agreements }: { agreements: Agreement[
                 <TableCell>
                   <Badge variant="outline" className="capitalize">{agreement.client_type}</Badge>
                 </TableCell>
-                <TableCell className="hidden sm:table-cell">{agreement.agreement_products[0]?.count ?? 0}</TableCell>
-                <TableCell className="hidden sm:table-cell">{agreement.agreement_promotions[0]?.count ?? 0}</TableCell>
+                <TableCell className="hidden sm:table-cell">{agreement.product_count ?? 0}</TableCell>
+                <TableCell className="hidden sm:table-cell">{agreement.promotion_count ?? 0}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
                       <Button variant="outline" size="sm" onClick={() => copyToClipboard(agreement.id)}>
