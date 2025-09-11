@@ -98,3 +98,4 @@ export function IntelligentSuggestions({ clientName, availablePromotions }: Inte
     </Alert>
   );
 }
+
