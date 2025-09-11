@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -45,8 +46,13 @@ function formatWhatsAppMessage(
         const { buy, get } = bestPromo.promotions.rules;
         if (totalUnits >= buy) {
             const numberOfBonuses = Math.floor(totalUnits / buy) * get;
-            if (numberOfBonuses > 0) {
-              bonusText = `Bonificaciones de Regalo:\n- ${numberOfBonuses}x Unidades de regalo (promo ${buy}+${get})`;
+            
+            // To specify the product, find the cheapest one in the cart.
+            const sortedItems = [...cartItems].sort((a, b) => a.product.price - b.product.price);
+            const cheapestItem = sortedItems[0];
+
+            if (numberOfBonuses > 0 && cheapestItem) {
+              bonusText = `Bonificaciones de Regalo:\n- ${numberOfBonuses}x ${cheapestItem.product.name} (promo ${buy}+${get})`;
             }
         }
       }
