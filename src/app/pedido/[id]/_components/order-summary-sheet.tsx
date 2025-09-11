@@ -15,7 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { IntelligentSuggestions } from "./intelligent-suggestions";
+import IntelligentSuggestions from "./intelligent-suggestions";
 import { getImageUrl } from "@/lib/placeholder-images";
 
 function formatWhatsAppMessage(

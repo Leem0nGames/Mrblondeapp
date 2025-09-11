@@ -13,7 +13,7 @@ type IntelligentSuggestionsProps = {
     availablePromotions: AgreementPromotion[];
 }
 
-export function IntelligentSuggestions({ clientName, availablePromotions }: IntelligentSuggestionsProps) {
+export default function IntelligentSuggestions({ clientName, availablePromotions }: IntelligentSuggestionsProps) {
   const { items, totalItems } = useCartStore();
   const [suggestions, setSuggestions] = useState<SuggestPromotionsOutput | null>(null);
   const [isPending, startTransition] = useTransition();
