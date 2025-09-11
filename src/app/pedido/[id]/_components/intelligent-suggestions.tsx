@@ -57,7 +57,7 @@ export function IntelligentSuggestions({ clientName, availablePromotions }: Inte
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalItems, isClient, clientName]);
 
-  if (!isClient) {
+  if (!isClient && totalItems > 0) { // Only show skeleton on client if cart has items
     return (
       <div className="space-y-2 rounded-lg border bg-background p-4">
         <Skeleton className="h-5 w-1/3" />
@@ -70,7 +70,10 @@ export function IntelligentSuggestions({ clientName, availablePromotions }: Inte
   if (isPending) {
     return (
         <div className="space-y-2 rounded-lg border bg-background p-4">
-            <Skeleton className="h-5 w-1/3" />
+            <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-5 rounded-full" />
+                <Skeleton className="h-5 w-1/3" />
+            </div>
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-4/5" />
         </div>
@@ -82,15 +85,15 @@ export function IntelligentSuggestions({ clientName, availablePromotions }: Inte
   }
 
   return (
-    <Alert className="bg-primary/10 border-primary/50">
+    <Alert className="bg-primary/10 border-primary/20">
         <Lightbulb className="h-4 w-4 text-primary" />
-        <AlertTitle className="text-primary">¡Sugerencias para tu Pedido!</AlertTitle>
+        <AlertTitle className="text-primary font-bold">¡Sugerencias para tu Pedido!</AlertTitle>
         <AlertDescription>
-            <ul className="list-disc pl-5 space-y-2 mt-2">
-            {suggestions.promotionSuggestions.map((promo) => (
-                <li key={promo.name}>
+            <ul className="list-disc pl-5 mt-2 space-y-3">
+            {suggestions.promotionSuggestions.map((promo, index) => (
+                <li key={index}>
                     <strong className="font-semibold">{promo.name}:</strong> {promo.reason}
-                    <p className="text-xs text-muted-foreground pl-1">{promo.description}</p>
+                    <p className="text-xs text-muted-foreground pl-1 italic">({promo.description})</p>
                 </li>
             ))}
             </ul>
@@ -98,4 +101,3 @@ export function IntelligentSuggestions({ clientName, availablePromotions }: Inte
     </Alert>
   );
 }
-

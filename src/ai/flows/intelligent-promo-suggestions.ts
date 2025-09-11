@@ -78,11 +78,11 @@ const prompt = ai.definePrompt({
   **YOUR TASK:**
   Based on the client's cart and the list of available promotions, generate a list of promotion suggestions.
   - For each suggestion, provide a 'name', a detailed 'description' of how it works and its benefits, and a clear 'reason' explaining why it's a good deal for them.
-  - **BE PROACTIVE:** If the client is close to qualifying for a better promotion (like "buy_x_get_y_free" or "free_shipping"), your 'reason' should explicitly tell them what to do. For example: "Estás a solo 1 unidad de conseguir 2 productos gratis con la promo 8+2!" or "¡Agrega solo 2 unidades más y tu envío a CABA será gratis!".
-  - If a promotion's conditions are met, highlight it as an active benefit.
+  - **BE PROACTIVE AND SPECIFIC:** If the client is close to qualifying for a better promotion (like "buy_x_get_y_free" or "free_shipping"), your 'reason' must explicitly tell them what to do. For example: "Estás a solo 1 unidad de conseguir 2 productos gratis con la promo 8+2!" or "¡Agrega solo 2 unidades más y tu envío a CABA será gratis!".
+  - If a promotion's conditions are already met, highlight it as an active benefit they are already enjoying. For example: "¡Excelente! Ya calificaste para la promo 8+2 y te llevas 2 productos gratis."
   - If no promotions from the list are applicable or beneficial given the cart, return an empty array for 'promotionSuggestions'.
-  - Ensure the output strictly adheres to the 'SuggestPromotionsOutputSchema' JSON format.
-  - Your suggestions should be encouraging and guide the user to optimize their order.`, 
+  - Ensure the output strictly adheres to the 'SuggestPromotionsOutputSchema' JSON format. Do not add any extra text or explanations.
+  - Your suggestions should be encouraging and guide the user to optimize their order. Focus on the most impactful promotions first.`, 
 });
 
 const suggestPromotionsFlow = ai.defineFlow(
@@ -96,4 +96,3 @@ const suggestPromotionsFlow = ai.defineFlow(
     return output!;
   }
 );
-

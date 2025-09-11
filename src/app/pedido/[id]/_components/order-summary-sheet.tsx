@@ -30,7 +30,7 @@ function formatWhatsAppMessage(
     .map((item) => `- ${item.quantity}x ${item.product.name}`)
     .join("\n");
 
-  // 2. Calculate bonuses
+  // 2. Calculate bonuses from "buy x get y" promotions
   let bonusText = "";
   const buyXgetYFreePromos = promotions.filter(
     (p) => p.promotions.rules?.type === "buy_x_get_y_free"
@@ -50,16 +50,16 @@ function formatWhatsAppMessage(
 
   // 3. Build message
   const messageParts = [
-    "NUEVO PEDIDO\n",
-    `Cliente:\n${clientName}\n`,
-    `Productos:\n${itemsText}\n`,
+    "✨ NUEVO PEDIDO ✨\n",
+    `👤 *Cliente:*\n${clientName}\n`,
+    `📦 *Productos:* (${totalUnits} unidades)\n${itemsText}\n`,
   ];
 
   if (bonusText) {
-    messageParts.push(`${bonusText}\n`);
+    messageParts.push(`🎁 *${bonusText}*\n`);
   }
 
-  messageParts.push(`Total a Pagar:\n$${totalPrice.toLocaleString('es-AR')}`);
+  messageParts.push(`💰 *Total a Pagar:*\n$${totalPrice.toLocaleString('es-AR')}`);
 
   const message = messageParts.join("\n").trim();
   
@@ -167,4 +167,3 @@ export function OrderSummarySheet({
     </Sheet>
   );
 }
-
