@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, ShoppingCart } from "lucide-react";
+import { PromotionFeedback } from "./promotion-feedback";
+
 
 function formatWhatsAppMessage(
   clientName: string,
@@ -33,9 +35,10 @@ function formatWhatsAppMessage(
         const { buy, get } = bestPromo.promotions.rules;
         if (totalUnits >= buy) {
             const numberOfBonuses = Math.floor(totalUnits / buy) * get;
+            // Sort items by price to find the cheapest one for the bonus
             const sortedItems = [...cartItems].sort((a, b) => a.product.price - b.product.price);
             const cheapestItem = sortedItems[0];
-
+            
             if (numberOfBonuses > 0 && cheapestItem) {
               bonusText = `Bonificaciones de Regalo:\n- ${numberOfBonuses}x ${cheapestItem.product.name} (promo ${buy}+${get})`;
             }
@@ -102,15 +105,10 @@ export function OrderSummary({
             <Card>
                  <CardHeader>
                     <CardTitle>Resumen de Pedido</CardTitle>
-                    {!hasItems && (
-                        <CardDescription>
-                            Comienza a agregar productos para ver el resumen aquí.
-                        </CardDescription>
-                    )}
                 </CardHeader>
                 <CardContent>
-                    {hasItems ? (
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-wrap items-center justify-between gap-4">
                             <div className="flex items-baseline gap-6">
                                 <div className="text-center">
                                     <p className="text-2xl font-bold">{totalItems}</p>
@@ -125,17 +123,19 @@ export function OrderSummary({
                                 onClick={handleSend}
                                 size="lg"
                                 className="w-full sm:w-auto"
+                                disabled={!hasItems}
                             >
                                 <span>Enviar Pedido</span>
                                 <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         </div>
-                    ) : (
-                         <div className="text-center py-8 text-muted-foreground">
-                            <ShoppingCart className="mx-auto h-12 w-12" />
-                            <p className="mt-4 font-semibold">Tu pedido está vacío</p>
-                        </div>
-                    )}
+                        {hasItems && availablePromotions.length > 0 && (
+                            <>
+                                <Separator />
+                                <PromotionFeedback promotions={availablePromotions} totalItems={totalItems} />
+                            </>
+                        )}
+                    </div>
                 </CardContent>
             </Card>
         </div>
