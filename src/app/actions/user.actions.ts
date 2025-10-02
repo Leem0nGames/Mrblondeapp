@@ -14,22 +14,27 @@ export interface AuthState {
 
 export async function hasUsers(): Promise<boolean> {
   if (!supabaseAdmin) {
-    console.warn('Supabase admin client is not configured. Assuming no users exist.');
-    return false;
+    console.warn('Supabase admin client not configured. Assuming users exist for security.');
+    return true;
   }
   
   try {
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers();
+    const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
     
     if (error) {
       console.error('Error checking for users:', error.message);
+       if (error.message.includes('fetch failed')) {
+        console.warn('Fetch failed, possibly due to missing Supabase ENV VARS. Assuming users exist for security.');
+        return true;
+      }
       return false;
     }
     
-    return data.users.length > 0;
+    return users.length > 0;
   } catch (err: any) {
     console.error('Catastrophic error checking for users:', err.message);
-    return false;
+    // As a security measure, assume users exist if the check fails catastrophically.
+    return true;
   }
 }
 

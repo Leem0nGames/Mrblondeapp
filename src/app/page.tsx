@@ -1,23 +1,19 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { hasUsers } from './actions/user.actions';
 
 export default async function HomePage() {
-  const usersExist = await hasUsers();
-
-  if (!usersExist) {
-    redirect('/signup');
-  }
-
   const supabase = createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session) {
-    redirect('/login');
+  // Si hay una sesión activa, ir directamente al panel de administración.
+  if (session) {
+    redirect('/admin');
   }
 
-  redirect('/admin');
+  // Si no hay sesión, la página de login se encargará de determinar
+  // si debe mostrar el formulario de login o el enlace de registro.
+  redirect('/login');
 }
