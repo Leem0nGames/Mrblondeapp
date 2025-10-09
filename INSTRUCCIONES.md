@@ -18,9 +18,7 @@ Si necesitas empezar de cero, sigue estos pasos para borrar las tablas desde la 
     *   Confirma la acción escribiendo el nombre de la tabla cuando se te pida.
 3.  **Repite el proceso** para todas las tablas de la aplicación. Es posible que necesites seguir un orden específico debido a las relaciones entre ellas. Si recibes un error, prueba a borrar en este orden:
     *   Primero: `agreement_products`, `agreement_promotions`.
-    *   Después: `agreements`, `products`, y `promotions`.
-    *   Finalmente, la tabla `clients`.
-    *   También borra la `VIEW` llamada `agreements_with_counts` si existe.
+    *   Después: `clients`, `agreements`, `products`, y `promotions`.
 
 ### Ejecutar el Script SQL
 
@@ -97,15 +95,18 @@ ALTER TABLE agreement_promotions ENABLE ROW LEVEL SECURITY;
 -- Políticas de Acceso
 
 -- 1. Políticas públicas (lectura)
-CREATE POLICY "Allow public read access to products" ON products FOR SELECT USING (true);
-CREATE POLICY "Allow public read access to promotions" ON promotions FOR SELECT USING (true);
-CREATE POLICY "Allow public read access to agreements" ON agreements FOR SELECT USING (true);
-CREATE POLICY "Allow public read access to agreement_products" ON agreement_products FOR SELECT USING (true);
-CREATE POLICY "Allow public read access to agreement_promotions" ON agreement_promotions FOR SELECT USING (true);
-CREATE POLICY "Allow public read access to client info for onboarding" ON clients FOR SELECT USING (true);
+-- Estas políticas permiten que CUALQUIERA lea la información. 
+-- Es seguro para la página de pedidos públicos.
+CREATE POLICY "Allow public read access" ON products FOR SELECT USING (true);
+CREATE POLICY "Allow public read access" ON promotions FOR SELECT USING (true);
+CREATE POLICY "Allow public read access" ON agreements FOR SELECT USING (true);
+CREATE POLICY "Allow public read access" ON agreement_products FOR SELECT USING (true);
+CREATE POLICY "Allow public read access" ON agreement_promotions FOR SELECT USING (true);
+CREATE POLICY "Allow public read access for onboarding" ON clients FOR SELECT USING (true);
 
 
 -- 2. Políticas para usuarios autenticados (admins)
+-- Permite control total (Crear, Leer, Actualizar, Borrar) a los administradores logueados.
 CREATE POLICY "Allow full access to authenticated users" ON products FOR ALL
 USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
@@ -121,14 +122,17 @@ USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated')
 CREATE POLICY "Allow full access to authenticated users" ON agreement_promotions FOR ALL
 USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY "Allow full access to authenticated users on clients" ON clients FOR ALL
+CREATE POLICY "Allow full access to authenticated users" ON clients FOR ALL
 USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
+
 -- 3. Políticas específicas para clientes (onboarding)
--- Esta política es insegura, pero la corregiremos en el siguiente paso.
--- CREATE POLICY "Allow clients to update their own data during onboarding" ON clients
--- FOR UPDATE USING (onboarding_token::text = (SELECT nullif(current_setting('request.jwt.claims', true)::json->>'onboarding_token', '')) )
--- WITH CHECK (true);
+-- Permite a un cliente (sin estar logueado) actualizar SUS PROPIOS datos 
+-- durante el proceso de onboarding, solo si conoce su token secreto.
+-- Esta es la política más restrictiva y es crucial para la seguridad.
+CREATE POLICY "Allow client to update their own data during onboarding" ON clients
+FOR UPDATE USING (onboarding_token::text = (current_setting('request.jwt.claims', true)::json->>'onboarding_token'))
+WITH CHECK (onboarding_token::text = (current_setting('request.jwt.claims', true)::json->>'onboarding_token'));
 
 ```
 
