@@ -194,7 +194,15 @@ export function OrderSummary({
                           <span>{formatCurrency(totalPrice)}</span>
                       </div>
                         <div className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground">{totalItems} Unidades</span>
+                          <div className="flex items-center gap-2">
+                             <span className="text-muted-foreground">{totalItems} Unidades</span>
+                             {bonusItems.total > 0 && (
+                                <Badge variant="secondary" className="text-primary font-bold">
+                                    <Gift className="h-3 w-3 mr-1" />
+                                    +{bonusItems.total} de Regalo
+                                </Badge>
+                             )}
+                          </div>
                           {freeShippingPromo && (
                             <TooltipProvider>
                               <Tooltip>
@@ -214,27 +222,6 @@ export function OrderSummary({
                           )}
                       </div>
                   </div>
-
-                  {bonusItems.total > 0 && (
-                    <>
-                      <Separator />
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium flex items-center gap-2">
-                            <Gift className="h-4 w-4 text-primary" />
-                            Bonificaciones Obtenidas
-                        </h4>
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                            {bonusItems.appliedPromos.map((promo, index) => (
-                                <div key={index} className="flex justify-between">
-                                    <span>{promo.name} ({promo.productName})</span>
-                                    <span className="font-medium text-foreground">+{promo.units} un. de regalo</span>
-                                </div>
-                            ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
 
                   <Separator />
                   <Button
