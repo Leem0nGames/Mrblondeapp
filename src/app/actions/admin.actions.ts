@@ -316,6 +316,8 @@ export async function getClients(): Promise<{ data: Client[] | null, error: any 
             *,
             agreements ( agreement_name )
         `)
+        .eq('status', 'active')
+        .or('status.eq.pending_agreement,status.eq.pending_onboarding')
         .order("contact_name", { ascending: true });
 
     if (error) {
@@ -370,9 +372,13 @@ export async function assignAgreementToClient(payload: { clientId: string, agree
 export async function deleteClient(id: string) {
   await checkAuth();
   const supabase = createClient();
-  const { error } = await supabase.from("clients").delete().eq("id", id);
+  const { error } = await supabase
+    .from("clients")
+    .update({ status: 'archived' })
+    .eq("id", id);
+    
   if (error) { 
-    console.error("deleteClient error:", error.message);
+    console.error("deleteClient (archive) error:", error.message);
     return { error }; 
   }
   revalidatePath("/admin/clients");

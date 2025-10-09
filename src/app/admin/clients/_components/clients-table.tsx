@@ -2,7 +2,7 @@
 "use client";
 
 import { useTransition, useCallback } from "react";
-import { MoreHorizontal, Trash2, Copy, Link as LinkIcon, UserPlus } from "lucide-react";
+import { MoreHorizontal, Trash2, Copy, Link as LinkIcon, Archive } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,19 +43,20 @@ const statusMap: Record<Client['status'], { label: string; variant: "default" | 
     pending_onboarding: { label: "Pendiente de Alta", variant: "secondary" },
     pending_agreement: { label: "Pendiente de Convenio", variant: "destructive" },
     active: { label: "Activo", variant: "default" },
+    archived: { label: "Archivado", variant: "secondary" },
 };
 
 export function ClientsTable({ clients }: { clients: Client[] }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const handleDelete = (clientId: string) => {
+  const handleArchive = (clientId: string) => {
     startTransition(async () => {
-      const result = await deleteClient(clientId);
+      const result = await deleteClient(clientId); // This action now archives the client
       if (result.error) {
         toast({ title: "Error", description: result.error.message, variant: "destructive" });
       } else {
-        toast({ title: "Éxito", description: "Cliente eliminado correctamente." });
+        toast({ title: "Éxito", description: "Cliente archivado correctamente." });
       }
     });
   };
@@ -134,25 +135,25 @@ export function ClientsTable({ clients }: { clients: Client[] }) {
                                     className="text-destructive"
                                     onSelect={(e) => e.preventDefault()}
                                 >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Eliminar
+                                    <Archive className="mr-2 h-4 w-4" />
+                                    Archivar
                                 </DropdownMenuItem>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                 <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                    <AlertDialogTitle>¿Archivar Cliente?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        Esta acción no se puede deshacer. Esto eliminará permanentemente al cliente.
+                                        Esta acción ocultará al cliente de la lista principal, pero no borrará sus pedidos asociados. Podrás verlo en un futuro desde una sección de archivados.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                     <AlertDialogAction
-                                        onClick={() => handleDelete(client.id)}
+                                        onClick={() => handleArchive(client.id)}
                                         disabled={isPending}
                                         className="bg-destructive hover:bg-destructive/90"
                                     >
-                                        {isPending ? "Eliminando..." : "Eliminar"}
+                                        {isPending ? "Archivando..." : "Confirmar Archivo"}
                                     </AlertDialogAction>
                                 </AlertDialogFooter>
                                 </AlertDialogContent>

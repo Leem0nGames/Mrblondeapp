@@ -88,7 +88,7 @@ export type Client = {
     delivery_window: string | null;
     email: string | null;
     instagram: string | null;
-    status: 'pending_onboarding' | 'pending_agreement' | 'active';
+    status: 'pending_onboarding' | 'pending_agreement' | 'active' | 'archived';
     onboarding_token: string;
     agreement_id: string | null;
     created_at: string;
