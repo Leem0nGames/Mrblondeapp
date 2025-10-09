@@ -1,3 +1,4 @@
+
 "use client";
 
 import { create } from "zustand";
@@ -74,12 +75,11 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, availablePro
 
   if (buyXGetYPromos.length > 0) {
     items.forEach(item => {
-      let itemBonus = 0;
       buyXGetYPromos.forEach(promo => {
         if (item.quantity >= promo.buy) {
           const times = Math.floor(item.quantity / promo.buy);
           const bonusUnits = times * promo.get;
-          itemBonus += bonusUnits;
+          totalBonuses += bonusUnits;
           
           appliedPromos.push({
             name: promo.name,
@@ -88,7 +88,6 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, availablePro
           });
         }
       });
-      totalBonuses += itemBonus;
     });
   }
   
@@ -113,6 +112,7 @@ export const useCartStore = create<CartState>()(
       setAgreement: (id: string, pricesIncludeVat: boolean, promotions: AgreementPromotion[]) => {
         const currentAgreementId = get().agreementId;
         if (id !== currentAgreementId) {
+            // New agreement, reset cart and set new settings
             set({ 
                 agreementId: id, 
                 pricesIncludeVat: pricesIncludeVat, 
@@ -125,6 +125,7 @@ export const useCartStore = create<CartState>()(
                 bonusItems: { total: 0, appliedPromos: [] }
             });
         } else {
+             // Same agreement, just update settings and recalculate
              const { items } = get();
              set({ 
                 agreementId: id, 
