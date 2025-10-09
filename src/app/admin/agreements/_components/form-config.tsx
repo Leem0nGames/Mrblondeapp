@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { z } from "zod";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { upsertAgreement, getPriceLists } from "@/app/actions/admin.actions";
@@ -92,6 +92,7 @@ const renderAgreementFields = (form: any) => {
                   ))}
                 </SelectContent>
               </Select>
+              <FormDescription>La lista que define los precios para este convenio.</FormDescription>
               <FormMessage />
             </FormItem>
           )}

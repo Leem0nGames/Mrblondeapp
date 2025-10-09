@@ -1,7 +1,7 @@
 
 "use client";
 
-import { MoreHorizontal, Trash2 } from "lucide-react";
+import { MoreHorizontal, Trash2, Edit } from "lucide-react";
 import { useTransition } from "react";
 import Image from "next/image";
 import {
@@ -20,7 +20,10 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -82,115 +85,181 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
   }
 
   return (
-    <Card>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="hidden w-[64px] sm:table-cell">
-                <span className="sr-only">Imagen</span>
-              </TableHead>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="hidden md:table-cell">Precio Base</TableHead>
-              <TableHead className="hidden md:table-cell">Stock</TableHead>
-              <TableHead className="hidden md:table-cell">Creado el</TableHead>
-              <TableHead>
-                <span className="sr-only">Acciones</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {products.map((product) => (
-              <TableRow key={product.id}>
-                <TableCell className="hidden sm:table-cell">
-                  <Image
-                    src={getImageUrl("product", { id: product.id, width: 64, height: 64 })}
-                    alt={product.name}
-                    width={48}
-                    height={48}
-                    className="rounded-md aspect-square object-cover"
-                    data-ai-hint="product image"
-                  />
-                </TableCell>
-                <TableCell className="font-medium">{product.name}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={product.stock > 0 ? "outline" : "destructive"}
-                  >
-                    {product.stock > 0 ? "En Stock" : "Agotado"}
+    <>
+      {/* Mobile View */}
+      <div className="grid gap-4 sm:hidden">
+        {products.map((product) => (
+          <Card key={product.id}>
+            <CardHeader className="flex flex-row items-start gap-4">
+              <Image
+                src={getImageUrl("product", { id: product.id, width: 64, height: 64 })}
+                alt={product.name}
+                width={64}
+                height={64}
+                className="rounded-lg aspect-square object-cover"
+                data-ai-hint="product image"
+              />
+              <div className="flex-grow">
+                <CardTitle>{product.name}</CardTitle>
+                <CardDescription>
+                  <Badge variant={product.stock > 0 ? "outline" : "destructive"}>
+                    {product.stock > 0 ? `Stock: ${product.stock}` : "Agotado"}
                   </Badge>
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  {formatCurrency(product.base_price)}
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  {product.stock}
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  {formatDate(product.created_at)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button aria-haspopup="true" size="icon" variant="ghost">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Menú</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                      <EntityDialog formConfig={productFormConfig} entity={product}>
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                          Editar
-                        </DropdownMenuItem>
-                      </EntityDialog>
-                       <DropdownMenuSeparator />
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onSelect={(e) => e.preventDefault()}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Eliminar
-                          </DropdownMenuItem>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              ¿Estás seguro?
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Esta acción no se puede deshacer. Esto eliminará permanentemente el producto.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(product.id)}
-                              disabled={isPending}
-                              className="bg-destructive hover:bg-destructive/90"
-                            >
-                              {isPending ? "Eliminando..." : "Eliminar"}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-lg font-bold">{formatCurrency(product.base_price)}</p>
+            </CardContent>
+             <CardFooter className="flex justify-end gap-2">
+                 <EntityDialog formConfig={productFormConfig} entity={product}>
+                    <Button variant="outline" size="sm">
+                      <Edit className="mr-2 h-4 w-4" /> Editar
+                    </Button>
+                  </EntityDialog>
+                   <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                       <Button variant="destructive" size="sm">
+                          <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          ¿Estás seguro?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta acción no se puede deshacer. Esto eliminará permanentemente el producto.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDelete(product.id)}
+                          disabled={isPending}
+                          className="bg-destructive hover:bg-destructive/90"
+                        >
+                          {isPending ? "Eliminando..." : "Eliminar"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+
+      {/* Desktop View */}
+      <Card className="hidden sm:block">
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[64px]">
+                  <span className="sr-only">Imagen</span>
+                </TableHead>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Precio Base</TableHead>
+                <TableHead>Stock</TableHead>
+                <TableHead>Creado el</TableHead>
+                <TableHead>
+                  <span className="sr-only">Acciones</span>
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-      <CardFooter>
-        <div className="text-xs text-muted-foreground">
-          Mostrando <strong>{products.length}</strong> de{" "}
-          <strong>{products.length}</strong> productos
-        </div>
-      </CardFooter>
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {products.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell>
+                    <Image
+                      src={getImageUrl("product", { id: product.id, width: 64, height: 64 })}
+                      alt={product.name}
+                      width={48}
+                      height={48}
+                      className="rounded-md aspect-square object-cover"
+                      data-ai-hint="product image"
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={product.stock > 0 ? "outline" : "destructive"}
+                    >
+                      {product.stock > 0 ? "En Stock" : "Agotado"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {formatCurrency(product.base_price)}
+                  </TableCell>
+                  <TableCell>
+                    {product.stock}
+                  </TableCell>
+                  <TableCell>
+                    {formatDate(product.created_at)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Menú</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                        <EntityDialog formConfig={productFormConfig} entity={product}>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            Editar
+                          </DropdownMenuItem>
+                        </EntityDialog>
+                        <DropdownMenuSeparator />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onSelect={(e) => e.preventDefault()}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                ¿Estás seguro?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta acción no se puede deshacer. Esto eliminará permanentemente el producto.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(product.id)}
+                                disabled={isPending}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                {isPending ? "Eliminando..." : "Eliminar"}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+        <CardFooter>
+          <div className="text-xs text-muted-foreground">
+            Mostrando <strong>{products.length}</strong> de{" "}
+            <strong>{products.length}</strong> productos
+          </div>
+        </CardFooter>
+      </Card>
+    </>
   );
 }

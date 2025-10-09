@@ -34,13 +34,18 @@ import {
 import {
   Card,
   CardContent,
+  CardDescription,
   CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { deleteAgreement } from "@/app/actions/admin.actions";
 import type { AgreementWithCount } from "@/types";
+import { EntityDialog } from "../../_components/entity-dialog";
+import { agreementFormConfig } from "../_components/form-config";
 
 interface AgreementsTableProps {
     agreements: AgreementWithCount[];
@@ -86,15 +91,81 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
   }
 
   return (
-    <Card>
+    <>
+    {/* Mobile View: Cards */}
+    <div className="grid gap-4 sm:hidden">
+        {agreements.map((agreement) => (
+             <Card key={agreement.id}>
+                <CardHeader>
+                    <CardTitle>{agreement.agreement_name}</CardTitle>
+                    <CardDescription>
+                         <Badge variant="outline" className="capitalize">{agreement.client_type}</Badge>
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <div className="text-sm">
+                        <p className="font-medium">Lista de Precios</p>
+                        <p className="text-muted-foreground">{agreement.price_lists?.name ?? "Ninguna"}</p>
+                    </div>
+                     <div className="text-sm">
+                        <p className="font-medium">Promociones</p>
+                        <p className="text-muted-foreground">{agreement.promotion_count ?? 0}</p>
+                    </div>
+                </CardContent>
+                <CardFooter className="flex flex-col items-stretch gap-2">
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(agreement.id)}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copiar Link de Pedido
+                    </Button>
+                    <Button asChild size="sm">
+                        <Link href={`/admin/agreements/${agreement.id}`}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Gestionar y Editar
+                        </Link>
+                    </Button>
+                     <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                         <Button variant="destructive" size="sm">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Eliminar
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                      <AlertDialogHeader>
+                          <AlertDialogTitle>
+                          ¿Estás seguro?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                          Esta acción no se puede deshacer. Esto eliminará permanentemente el convenio y todas sus asignaciones.
+                          </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                          onClick={() => handleDelete(agreement.id)}
+                          disabled={isPending}
+                          className="bg-destructive hover:bg-destructive/90"
+                          >
+                          {isPending ? "Eliminando..." : "Eliminar"}
+                          </AlertDialogAction>
+                      </AlertDialogFooter>
+                      </AlertDialogContent>
+                  </AlertDialog>
+                </CardFooter>
+            </Card>
+        ))}
+    </div>
+
+    {/* Desktop View: Table */}
+    <Card className="hidden sm:block">
       <CardContent className="p-0">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Nombre del Convenio</TableHead>
               <TableHead>Tipo de Cliente</TableHead>
-              <TableHead className="hidden sm:table-cell">Lista de Precios</TableHead>
-              <TableHead className="hidden sm:table-cell">Promociones</TableHead>
+              <TableHead>Lista de Precios</TableHead>
+              <TableHead>Promociones</TableHead>
               <TableHead>
                 <span className="sr-only">Acciones</span>
               </TableHead>
@@ -107,8 +178,8 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                 <TableCell>
                   <Badge variant="outline" className="capitalize">{agreement.client_type}</Badge>
                 </TableCell>
-                <TableCell className="hidden sm:table-cell">{agreement.price_lists?.name ?? <span className="text-muted-foreground">Ninguna</span>}</TableCell>
-                <TableCell className="hidden sm:table-cell">{agreement.promotion_count ?? 0}</TableCell>
+                <TableCell>{agreement.price_lists?.name ?? <span className="text-muted-foreground">Ninguna</span>}</TableCell>
+                <TableCell>{agreement.promotion_count ?? 0}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
                       <Button variant="outline" size="sm" onClick={() => copyToClipboard(agreement.id)}>
@@ -130,6 +201,9 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                                   Gestionar
                               </Link>
                           </DropdownMenuItem>
+                           <EntityDialog formConfig={agreementFormConfig} entity={agreement}>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Editar</DropdownMenuItem>
+                            </EntityDialog>
                           
                           <DropdownMenuSeparator />
                           <AlertDialog>
@@ -179,5 +253,6 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
           </div>
       </CardFooter>
     </Card>
+    </>
   );
 }
