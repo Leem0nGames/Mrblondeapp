@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useCallback } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +33,9 @@ import { getUnassignedProductsForPriceList, assignProductsToPriceList } from "@/
 import type { Product } from "@/types";
 import { getImageUrl } from "@/lib/placeholder-images";
 import { Badge } from "@/components/ui/badge";
+import { EntityDialog } from "../../../_components/entity-dialog";
+import { productFormConfig } from "../../../products/_components/form-config";
+import type { FormConfig } from "../../../_components/entity-dialog";
 
 const assignSchema = z.object({
   product_ids: z.array(z.string()).nonempty("Debes seleccionar al menos un producto."),
@@ -64,18 +66,22 @@ export function AssignProductToPriceListDialog({
   const { setValue } = form;
   const selectedProductIds = form.watch("product_ids");
 
-  useEffect(() => {
-    if (isOpen) {
-      startLoading(async () => {
+  const fetchUnassignedProducts = useCallback(async () => {
+    startLoading(async () => {
         const { data, error } = await getUnassignedProductsForPriceList(priceListId);
         if (error) {
-          toast({ title: "Error", description: "No se pudieron cargar los productos.", variant: "destructive" });
+            toast({ title: "Error", description: "No se pudieron cargar los productos.", variant: "destructive" });
         } else {
-          setProducts(data ?? []);
+            setProducts(data ?? []);
         }
-      });
+    });
+  }, [priceListId, toast]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchUnassignedProducts();
     }
-  }, [isOpen, priceListId, toast]);
+  }, [isOpen, fetchUnassignedProducts]);
 
   const onSubmit = (values: AssignFormValues) => {
     startTransition(async () => {
@@ -113,6 +119,24 @@ export function AssignProductToPriceListDialog({
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
   }
 
+  const handleNewProductSuccess = useCallback(async (newProduct: Product) => {
+      await fetchUnassignedProducts();
+      setValue('product_ids', [...(form.getValues().product_ids || []), newProduct.id], { shouldValidate: true });
+  }, [fetchUnassignedProducts, form, setValue]);
+
+  const upsertActionWithCallback = useCallback(async (payload: any) => {
+    const result = await productFormConfig.upsertAction(payload);
+    if (!result.error && result.data) {
+        await handleNewProductSuccess(result.data);
+    }
+    return result;
+  }, [handleNewProductSuccess]);
+
+  const newProductDialogConfig: FormConfig<any> = {
+      ...productFormConfig,
+      upsertAction: upsertActionWithCallback,
+  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -141,7 +165,14 @@ export function AssignProductToPriceListDialog({
                 render={() => (
                   <FormItem>
                     <div className="flex items-center justify-between pr-4">
-                        <FormLabel>Productos Disponibles</FormLabel>
+                        <div className="flex items-baseline gap-4">
+                           <FormLabel>Productos Disponibles</FormLabel>
+                            <EntityDialog formConfig={newProductDialogConfig} entity={undefined}>
+                                <Button variant="link" size="sm" type="button" className="p-1 h-auto text-xs">
+                                    Crear Nuevo Producto
+                                </Button>
+                            </EntityDialog>
+                        </div>
                         {products.length > 0 && (
                             <div className="flex items-center space-x-2">
                                 <Checkbox
@@ -175,6 +206,7 @@ export function AssignProductToPriceListDialog({
                                 >
                                   <FormControl>
                                     <Checkbox
+                                      id={`checkbox-${product.id}`}
                                       checked={field.value?.includes(product.id)}
                                       onCheckedChange={(checked) => {
                                         return checked
