@@ -72,7 +72,7 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
             
             {productBonuses > 0 && (
               <div className="mt-2 space-y-1">
-                  <Badge variant="secondary" className="font-normal">
+                  <Badge variant="secondary" className="font-normal text-primary font-semibold">
                     <Gift className="h-3 w-3 mr-1.5" />
                      ¡Este producto tiene +{productBonuses} de regalo!
                   </Badge>
