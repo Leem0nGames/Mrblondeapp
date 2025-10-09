@@ -42,8 +42,7 @@ function parseFreeShippingPromo(promo: AgreementPromotion) {
 function calculateTotalBonuses(promos: AgreementPromotion[], items: CartItem[]): { total: number; cheapestItem: CartItem | null, appliedPromos: { name: string, units: number }[] } {
     const buyXGetYPromos = promos
       .map(parseBuyXGetYPromo)
-      .filter((p): p is NonNullable<ReturnType<typeof parseBuyXGetYPromo>> => p !== null)
-      .sort((a, b) => b.buy - a.buy); // Highest requirement first
+      .filter((p): p is NonNullable<ReturnType<typeof parseBuyXGetYPromo>> => p !== null);
 
     if (buyXGetYPromos.length === 0 || items.length === 0) {
       return { total: 0, cheapestItem: null, appliedPromos: [] };
@@ -54,19 +53,20 @@ function calculateTotalBonuses(promos: AgreementPromotion[], items: CartItem[]):
     
     // Calculate bonuses for each item line
     items.forEach(item => {
-        const applicablePromo = buyXGetYPromos.find(p => item.quantity >= p.buy);
-        if (applicablePromo) {
-            const times = Math.floor(item.quantity / applicablePromo.buy);
-            const bonusUnits = times * applicablePromo.get;
-            totalBonuses += bonusUnits;
+        buyXGetYPromos.forEach(promo => {
+            if (item.quantity >= promo.buy) {
+                const times = Math.floor(item.quantity / promo.buy);
+                const bonusUnits = times * promo.get;
+                totalBonuses += bonusUnits;
 
-            const existingPromo = appliedPromos.find(p => p.name === applicablePromo.name);
-            if (existingPromo) {
-                existingPromo.units += bonusUnits;
-            } else {
-                appliedPromos.push({ name: applicablePromo.name, units: bonusUnits });
+                const existingPromo = appliedPromos.find(p => p.name === promo.name);
+                if (existingPromo) {
+                    existingPromo.units += bonusUnits;
+                } else {
+                    appliedPromos.push({ name: promo.name, units: bonusUnits });
+                }
             }
-        }
+        });
     });
 
     const cheapestItem = [...items].sort((a, b) => a.product.price - b.product.price)[0];

@@ -30,23 +30,24 @@ function parseBuyXGetYPromo(promo: AgreementPromotion) {
 
 // This function calculates total bonuses based on the quantity of a single product
 function calculateBonusesForProduct(promotions: AgreementPromotion[], productQuantity: number): number {
-    const sortedPromos = promotions
+    const buyXGetYPromos = promotions
       .map(parseBuyXGetYPromo)
-      .filter((p): p is NonNullable<typeof p> => p !== null)
-      .sort((a, b) => b.buy - a.buy); // Sort from highest requirement to lowest
+      .filter((p): p is NonNullable<typeof p> => p !== null);
 
-    if (sortedPromos.length === 0 || productQuantity === 0) return 0;
-    
-    // Find the highest-tier promotion that has been met for this product's quantity
-    const applicablePromo = sortedPromos.find(p => productQuantity >= p.buy);
-
-    if (applicablePromo) {
-        // Calculate how many times the promotion is applied
-        const times = Math.floor(productQuantity / applicablePromo.buy);
-        return times * applicablePromo.get;
+    if (buyXGetYPromos.length === 0 || productQuantity === 0) {
+      return 0;
     }
+    
+    let totalBonuses = 0;
+    
+    buyXGetYPromos.forEach(promo => {
+        if (productQuantity >= promo.buy) {
+            const times = Math.floor(productQuantity / promo.buy);
+            totalBonuses += times * promo.get;
+        }
+    });
 
-    return 0;
+    return totalBonuses;
 }
 
 const VOLUME_THRESHOLD = 150;
