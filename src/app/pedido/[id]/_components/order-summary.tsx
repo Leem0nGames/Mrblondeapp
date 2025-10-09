@@ -32,7 +32,7 @@ function formatWhatsAppMessage(
   subtotal: number,
   vatAmount: number,
   totalPrice: number,
-  bonusItems: { total: number; appliedPromos: { name: string, units: number }[] },
+  bonusItems: { total: number; appliedPromos: { name: string, units: number, productName: string }[] },
   availablePromotions: AgreementPromotion[],
   cheapestItem: CartItem | null,
   orderId: string
@@ -43,7 +43,8 @@ function formatWhatsAppMessage(
 
   let bonusText = "";
   if (bonusItems.total > 0 && cheapestItem) {
-      bonusText = `*Bonificaciones de Regalo:*\n- ${bonusItems.total}x ${cheapestItem.product.name}`;
+      const bonusDetails = bonusItems.appliedPromos.map(p => `  - ${p.units}x ${p.productName} (Promo: ${p.name})`).join('\n');
+      bonusText = `*Bonificaciones de Regalo:*\n${bonusDetails}`;
   }
 
   let shippingText = "";
@@ -229,7 +230,7 @@ export function OrderSummary({
                         <div className="space-y-1 text-sm text-muted-foreground">
                             {bonusItems.appliedPromos.map((promo, index) => (
                                 <div key={index} className="flex justify-between">
-                                    <span>{promo.name}</span>
+                                    <span>{promo.name} ({promo.productName})</span>
                                     <span className="font-medium text-foreground">+{promo.units} un. de regalo</span>
                                 </div>
                             ))}

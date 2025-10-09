@@ -31,7 +31,7 @@ type CartState = {
   subtotal: number;
   vatAmount: number;
   totalPrice: number;
-  bonusItems: { total: number; appliedPromos: { name: string, units: number }[] };
+  bonusItems: { total: number; appliedPromos: { name: string, units: number, productName: string }[] };
   agreementId: string | null;
   pricesIncludeVat: boolean;
   setAgreement: (id: string, pricesIncludeVat: boolean, promotions: AgreementPromotion[]) => void;
@@ -67,31 +67,36 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, availablePro
 
   const vatAmount = totalPrice - subtotal;
   
-  // Calculate Bonuses
-    const buyXGetYPromos = availablePromotions
-      .map(p => parseBuyXGetYPromo(p.promotions))
-      .filter((p): p is NonNullable<ReturnType<typeof parseBuyXGetYPromo>> => p !== null);
+  // --- THIS IS THE CORRECTED BONUS CALCULATION LOGIC ---
+  const buyXGetYPromos = availablePromotions
+    .map(p => parseBuyXGetYPromo(p.promotions))
+    .filter((p): p is NonNullable<ReturnType<typeof parseBuyXGetYPromo>> => p !== null);
 
-    let totalBonuses = 0;
-    const appliedPromosMap = new Map<string, number>();
+  let totalBonuses = 0;
+  const appliedPromos: { name: string, units: number, productName: string }[] = [];
 
-    if (buyXGetYPromos.length > 0) {
-      items.forEach(item => {
-        buyXGetYPromos.forEach(promo => {
-          if (item.quantity >= promo.buy) {
-            const times = Math.floor(item.quantity / promo.buy);
-            const bonusUnits = times * promo.get;
-            totalBonuses += bonusUnits;
-
-            const currentUnits = appliedPromosMap.get(promo.name) || 0;
-            appliedPromosMap.set(promo.name, currentUnits + bonusUnits);
-          }
-        });
+  if (buyXGetYPromos.length > 0) {
+    items.forEach(item => { // Iterate over each product in the cart
+      let bonusesForThisItem = 0;
+      buyXGetYPromos.forEach(promo => { // Check every available promotion
+        if (item.quantity >= promo.buy) {
+          const times = Math.floor(item.quantity / promo.buy);
+          const bonusUnits = times * promo.get;
+          bonusesForThisItem += bonusUnits;
+          
+          // Add to the list of applied promos for display
+          appliedPromos.push({
+            name: promo.name,
+            units: bonusUnits,
+            productName: item.product.name
+          });
+        }
       });
-    }
-    
-    const appliedPromos = Array.from(appliedPromosMap.entries()).map(([name, units]) => ({ name, units }));
-    const bonusItems = { total: totalBonuses, appliedPromos };
+      totalBonuses += bonusesForThisItem;
+    });
+  }
+  
+  const bonusItems = { total: totalBonuses, appliedPromos };
 
   return { totalItems, subtotal, vatAmount, totalPrice, bonusItems };
 };

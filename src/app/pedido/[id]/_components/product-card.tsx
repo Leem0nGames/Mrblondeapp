@@ -14,7 +14,6 @@ import { useCartStore } from "@/hooks/use-cart-store";
 import { Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-
 // Helper function to parse promotion rules safely
 function parseBuyXGetYPromo(promo: Promotion) {
   const rules = promo.rules;
