@@ -19,15 +19,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
-// SIMULATED Server Action - In a real app, this would process the Excel file.
-async function importProductsFromExcel(formData: FormData): Promise<{ error?: string, success?: string }> {
-    const file = formData.get('excel-file') as File;
+// SIMULATED Server Action - In a real app, this would process the Excel/CSV file.
+async function importProductsFromFile(formData: FormData): Promise<{ error?: string, success?: string }> {
+    const file = formData.get('import-file') as File;
     if (!file || file.size === 0) {
         return { error: "No se seleccionó ningún archivo." };
     }
-    // Here you would use a library like 'xlsx' to parse the file
+    // Here you would use a library like 'xlsx' or 'papaparse' to parse the file
     // and then call a server action to bulk-insert the products.
-    console.log("Simulating import for file:", file.name);
+    console.log("Simulating import for file:", file.name, "Type:", file.type);
 
     // Simulate a successful import for demonstration
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -48,7 +48,7 @@ export function ImportProductsDialog() {
     const formData = new FormData(event.currentTarget);
     
     startTransition(async () => {
-      const result = await importProductsFromExcel(formData);
+      const result = await importProductsFromFile(formData);
       if (result.error) {
         toast({ title: "Error en la importación", description: result.error, variant: "destructive" });
       } else {
@@ -75,15 +75,15 @@ export function ImportProductsDialog() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Importar Productos desde Excel</DialogTitle>
+          <DialogTitle>Importar Productos desde Archivo</DialogTitle>
           <DialogDescription>
-            Sube un archivo `.xlsx` para agregar o actualizar productos masivamente.
+            Sube un archivo `.xlsx` o `.csv` para agregar o actualizar productos masivamente.
           </DialogDescription>
         </DialogHeader>
         
         <div className="py-4 space-y-4">
             <Alert>
-                <AlertTitle>Formato Esperado del Excel</AlertTitle>
+                <AlertTitle>Formato Esperado del Archivo</AlertTitle>
                 <AlertDescription>
                     <p className="mb-2">El archivo debe tener las siguientes columnas:</p>
                     <ul className="list-disc list-inside text-xs space-y-1">
@@ -96,23 +96,30 @@ export function ImportProductsDialog() {
                 </AlertDescription>
             </Alert>
 
-            <Button variant="link" asChild className="p-0 h-auto">
-                <a href="/plantilla-productos.xlsx" download>
-                    Descargar plantilla de ejemplo
-                </a>
-            </Button>
+            <div className="flex gap-4">
+                <Button variant="link" asChild className="p-0 h-auto">
+                    <a href="/plantilla-productos.xlsx" download>
+                        Descargar plantilla Excel
+                    </a>
+                </Button>
+                 <Button variant="link" asChild className="p-0 h-auto">
+                    <a href="/plantilla-productos.csv" download>
+                        Descargar plantilla CSV
+                    </a>
+                </Button>
+            </div>
         </div>
 
         <Separator />
 
         <form onSubmit={handleSubmit} className="space-y-6 pt-4">
             <div className="grid w-full max-w-sm items-center gap-1.5">
-                <Label htmlFor="excel-file">Archivo Excel (.xlsx)</Label>
+                <Label htmlFor="import-file">Archivo (.xlsx, .csv)</Label>
                 <Input 
-                    id="excel-file" 
-                    name="excel-file"
+                    id="import-file" 
+                    name="import-file"
                     type="file" 
-                    accept=".xlsx"
+                    accept=".xlsx,.csv"
                     onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")} 
                     required
                 />
