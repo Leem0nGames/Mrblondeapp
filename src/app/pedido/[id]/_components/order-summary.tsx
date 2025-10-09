@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Truck } from "lucide-react";
+import { ArrowRight, Truck, Gift } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { submitOrder } from "@/app/actions/user.actions";
@@ -40,30 +40,39 @@ function parseFreeShippingPromo(promo: AgreementPromotion) {
 
 
 // This function calculates total bonuses based on sorted promotions for each item
-function calculateTotalBonuses(promos: AgreementPromotion[], items: CartItem[]): { total: number; cheapestItem: CartItem | null } {
+function calculateTotalBonuses(promos: AgreementPromotion[], items: CartItem[]): { total: number; cheapestItem: CartItem | null, appliedPromos: { name: string, units: number }[] } {
     const buyXGetYPromos = promos
       .map(parseBuyXGetYPromo)
       .filter((p): p is NonNullable<ReturnType<typeof parseBuyXGetYPromo>> => p !== null)
       .sort((a, b) => b.buy - a.buy); // Highest requirement first
 
     if (buyXGetYPromos.length === 0 || items.length === 0) {
-      return { total: 0, cheapestItem: null };
+      return { total: 0, cheapestItem: null, appliedPromos: [] };
     }
 
     let totalBonuses = 0;
+    const appliedPromos: { name: string, units: number }[] = [];
     
     // Calculate bonuses for each item line
     items.forEach(item => {
         const applicablePromo = buyXGetYPromos.find(p => item.quantity >= p.buy);
         if (applicablePromo) {
             const times = Math.floor(item.quantity / applicablePromo.buy);
-            totalBonuses += times * applicablePromo.get;
+            const bonusUnits = times * applicablePromo.get;
+            totalBonuses += bonusUnits;
+
+            const existingPromo = appliedPromos.find(p => p.name === applicablePromo.name);
+            if (existingPromo) {
+                existingPromo.units += bonusUnits;
+            } else {
+                appliedPromos.push({ name: applicablePromo.name, units: bonusUnits });
+            }
         }
     });
 
     const cheapestItem = [...items].sort((a, b) => a.product.price - b.product.price)[0];
 
-    return { total: totalBonuses, cheapestItem };
+    return { total: totalBonuses, cheapestItem, appliedPromos };
 }
 
 function formatWhatsAppMessage(
@@ -206,6 +215,10 @@ export function OrderSummary({
     const promos = availablePromotions.map(parseFreeShippingPromo).filter((p): p is NonNullable<typeof p> => p !== null);
     return promos.length > 0 ? promos[0] : null;
   }, [availablePromotions]);
+
+  const bonuses = useMemo(() => {
+    return calculateTotalBonuses(availablePromotions, items);
+  }, [availablePromotions, items]);
   
   const hasFreeShipping = freeShippingPromo && totalItems >= freeShippingPromo.min_units;
   const itemsForFreeShipping = freeShippingPromo ? freeShippingPromo.min_units - totalItems : 0;
@@ -256,6 +269,28 @@ export function OrderSummary({
                           )}
                       </div>
                   </div>
+
+                  {bonuses.appliedPromos.length > 0 && (
+                    <>
+                      <Separator />
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium flex items-center gap-2">
+                            <Gift className="h-4 w-4 text-primary" />
+                            Bonificaciones Obtenidas
+                        </h4>
+                        <div className="space-y-1 text-sm text-muted-foreground">
+                            {bonuses.appliedPromos.map(promo => (
+                                <div key={promo.name} className="flex justify-between">
+                                    <span>{promo.name}</span>
+                                    <span className="font-medium text-foreground">+{promo.units} un. de regalo</span>
+                                </div>
+                            ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+
                   <Separator />
                   <Button
                       onClick={handleSend}

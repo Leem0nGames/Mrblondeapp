@@ -11,7 +11,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { OrderSummary } from "./_components/order-summary";
-import IntelligentSuggestions from "./_components/intelligent-suggestions";
 
 
 export default async function OrderPage({
@@ -116,12 +115,6 @@ export default async function OrderPage({
             availablePromotions={agreement.agreement_promotions}
             pricesIncludeVat={agreement.price_lists?.prices_include_vat ?? true}
           />
-          {agreement.agreement_promotions.length > 0 && (
-              <IntelligentSuggestions 
-                clientName={agreement.agreement_name}
-                availablePromotions={agreement.agreement_promotions}
-              />
-          )}
         </div>
       </main>
     </div>
