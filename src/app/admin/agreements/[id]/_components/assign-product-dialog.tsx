@@ -60,6 +60,7 @@ export function AssignProductDialog({
     },
   });
 
+  const { setValue } = form;
   const selectedProductIds = form.watch("product_ids");
 
   useEffect(() => {
@@ -97,6 +98,14 @@ export function AssignProductDialog({
       }
     });
   };
+  
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setValue('product_ids', products.map(p => p.id));
+    } else {
+      setValue('product_ids', []);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -124,7 +133,25 @@ export function AssignProductDialog({
                 name="product_ids"
                 render={() => (
                   <FormItem>
-                    <FormLabel>Productos Disponibles</FormLabel>
+                    <div className="flex items-center justify-between pr-4">
+                        <FormLabel>Productos Disponibles</FormLabel>
+                        {products.length > 0 && (
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="select-all"
+                                    checked={selectedProductIds.length === products.length}
+                                    onCheckedChange={handleSelectAll}
+                                    aria-label="Seleccionar todos"
+                                />
+                                <label
+                                    htmlFor="select-all"
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                >
+                                    Seleccionar Todos
+                                </label>
+                            </div>
+                        )}
+                    </div>
                     <ScrollArea className="h-72 border rounded-md">
                       <div className="p-1">
                         {products.length > 0 ? (
@@ -144,7 +171,7 @@ export function AssignProductDialog({
                                       checked={field.value?.includes(product.id)}
                                       onCheckedChange={(checked) => {
                                         return checked
-                                          ? field.onChange([...field.value, product.id])
+                                          ? field.onChange([...(field.value || []), product.id])
                                           : field.onChange(
                                               field.value?.filter(
                                                 (value) => value !== product.id
