@@ -101,11 +101,11 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
               />
               <div className="flex-grow">
                 <CardTitle>{product.name}</CardTitle>
-                <CardDescription>
+                <div className="text-sm text-muted-foreground">
                   <Badge variant={product.stock > 0 ? "outline" : "destructive"}>
                     {product.stock > 0 ? `Stock: ${product.stock}` : "Agotado"}
                   </Badge>
-                </CardDescription>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
