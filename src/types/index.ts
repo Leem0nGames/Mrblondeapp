@@ -74,3 +74,23 @@ export type Client = {
     created_at: string;
     agreements?: { agreement_name: string } | null; // Joined data
 }
+
+// --- Genkit Flow Types ---
+
+export type SuggestPromotionsInput = {
+    items: {
+        id: string;
+        quantity: number;
+        name: string;
+    }[];
+    total_unidades: number;
+    nombre: string;
+    availablePromotions: Promotion[];
+}
+
+export type SuggestPromotionsOutput = {
+    promotionSuggestions: {
+        name: string;
+        reason: string;
+    }[];
+}
