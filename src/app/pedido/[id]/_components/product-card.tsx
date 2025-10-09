@@ -30,8 +30,8 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
       ? "secondary"
       : "destructive";
   
-  const isVolumePriceActiveForThisProduct = isVolumePricingActive && product.volume_price;
-  const displayPrice = isVolumePriceActiveForThisProduct ? product.volume_price : product.price;
+  const isVolumePriceApplicable = isVolumePricingActive && product.volume_price && product.volume_price < product.price;
+  const displayPrice = isVolumePriceApplicable ? product.volume_price : product.price;
   
   const formatCurrency = (num: number) => {
      return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(num);
@@ -65,11 +65,11 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
               <div className="flex items-baseline gap-2">
                  <p className={cn(
                     "text-lg font-bold",
-                    isVolumePriceActiveForThisProduct && "text-primary"
+                    isVolumePriceApplicable && "text-primary"
                   )}>
                     {displayPrice ? formatCurrency(displayPrice) : '$0'}
                  </p>
-                  {isVolumePriceActiveForThisProduct && (
+                  {isVolumePriceApplicable && (
                       <p className="text-sm font-normal text-muted-foreground line-through">
                           {formatCurrency(product.price)}
                       </p>
