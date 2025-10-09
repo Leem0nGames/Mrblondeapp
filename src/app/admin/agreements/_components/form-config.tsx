@@ -9,6 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { upsertAgreement, getPriceLists } from "@/app/actions/admin.actions";
 import type { FormConfig } from "../../_components/entity-dialog";
 import type { PriceList } from "@/types";
+import { Button } from "@/components/ui/button";
+import { EntityDialog } from "../../_components/entity-dialog";
+import { priceListFormConfig } from "../../pricelists/_components/form-config";
+import { PlusCircle } from "lucide-react";
 
 const agreementSchema = z.object({
   agreement_name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
@@ -16,22 +20,47 @@ const agreementSchema = z.object({
   price_list_id: z.string().nullable(),
 });
 
-const getAgreementDefaultValues = (agreement?: any) => ({
-  agreement_name: agreement?.agreement_name ?? "",
-  client_type: agreement?.client_type ?? "barberia",
-  price_list_id: agreement?.price_list_id ?? null,
-});
-
+// We need to wrap the render function to pass the form control to it
 const renderAgreementFields = (form: any) => {
+  return <AgreementFormFields form={form} />;
+};
+
+// We create a new component to handle its own state
+const AgreementFormFields = ({ form }: { form: any }) => {
   const [priceLists, setPriceLists] = useState<PriceList[]>([]);
+  const [isPriceListDialogOpen, setIsPriceListDialogOpen] = useState(false);
   
+  const fetchPriceLists = async () => {
+    const { data } = await getPriceLists();
+    setPriceLists(data ?? []);
+  };
+
   useEffect(() => {
-    async function fetchPriceLists() {
-        const { data } = await getPriceLists();
-        setPriceLists(data ?? []);
-    }
     fetchPriceLists();
   }, []);
+  
+  const handleNewPriceListSuccess = async (newPriceList: PriceList) => {
+      await fetchPriceLists(); // Refreshes the list
+      form.setValue('price_list_id', newPriceList.id, { shouldValidate: true });
+      setIsPriceListDialogOpen(false);
+  };
+  
+  // A wrapper for the original upsert action to include the success callback
+  const upsertPriceListActionWithCallback = async (payload: any) => {
+    const result = await priceListFormConfig.upsertAction(payload);
+    if (!result.error && result.data) {
+        // This assumes the upsert action returns the created/updated entity
+        await handleNewPriceListSuccess(result.data);
+    }
+    return result;
+  };
+  
+  // We need to create a *new* config object for the dialog to override the action
+  const priceListDialogConfig: FormConfig<any> = {
+      ...priceListFormConfig,
+      upsertAction: upsertPriceListActionWithCallback,
+  };
+
 
   return (
     <>
@@ -77,7 +106,7 @@ const renderAgreementFields = (form: any) => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Lista de Precios</FormLabel>
-              <Select onValueChange={(value) => field.onChange(value === 'null' ? null : value)} defaultValue={field.value ?? 'null'}>
+              <Select onValueChange={(value) => field.onChange(value === 'null' ? null : value)} value={field.value ?? 'null'}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecciona una lista..." />
@@ -98,9 +127,26 @@ const renderAgreementFields = (form: any) => {
           )}
         />
       </div>
+      
+       <div className="text-sm">
+        <span>¿La lista que buscas no existe?</span>
+          <EntityDialog formConfig={priceListDialogConfig} entity={undefined}>
+             <Button variant="link" size="sm" type="button" className="p-1 h-auto">
+                o, Crear una nueva lista
+            </Button>
+          </EntityDialog>
+      </div>
     </>
   );
 };
+
+
+const getAgreementDefaultValues = (agreement?: any) => ({
+  agreement_name: agreement?.agreement_name ?? "",
+  client_type: agreement?.client_type ?? "barberia",
+  price_list_id: agreement?.price_list_id ?? null,
+});
+
 
 export const agreementFormConfig: FormConfig<typeof agreementSchema> = {
   entityName: "Convenio",
