@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 
 // This function creates a Supabase client for use in Server Components,
 // Server Actions, and Route Handlers. It ensures that the user's session
-// is correctly handled on the server-side.
+// is correctly handled on the server-side by making cookie operations async.
 export function createClient() {
   const cookieStore = cookies()
 

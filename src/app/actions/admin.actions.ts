@@ -317,7 +317,7 @@ export async function getClients(): Promise<{ data: Client[] | null, error: any 
             agreements ( agreement_name )
         `)
         .in('status', ['active', 'pending_agreement', 'pending_onboarding'])
-        .order("contact_name", { ascending: true });
+        .order("created_at", { ascending: false });
 
     if (error) {
         console.error("getClients error:", error.message);
