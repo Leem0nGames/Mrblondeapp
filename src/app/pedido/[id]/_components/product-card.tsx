@@ -6,7 +6,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { ProductWithPrice, AgreementPromotion, Promotion } from "@/types";
+import type { ProductWithPrice, AgreementPromotion } from "@/types";
 import Image from "next/image";
 import { QuantitySelector } from "./add-to-cart-button";
 import { getImageUrl } from "@/lib/placeholder-images";
@@ -14,45 +14,10 @@ import { useCartStore } from "@/hooks/use-cart-store";
 import { Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Helper function to parse promotion rules safely
-function parseBuyXGetYPromo(promo: Promotion) {
-  const rules = promo.rules;
-  if (rules?.type === 'buy_x_get_y_free') {
-    const buy = Number(rules.buy);
-    const get = Number(rules.get);
-    if (!isNaN(buy) && buy > 0 && !isNaN(get) && get > 0) {
-      return { buy, get, name: promo.name };
-    }
-  }
-  return null;
-}
-
-// This function calculates total bonuses based on the quantity of a single product
-function calculateBonusesForProduct(promotions: AgreementPromotion[], productQuantity: number): number {
-    const buyXGetYPromos = promotions
-      .map(p => parseBuyXGetYPromo(p.promotions))
-      .filter((p): p is NonNullable<typeof p> => p !== null);
-
-    if (buyXGetYPromos.length === 0 || productQuantity === 0) {
-      return 0;
-    }
-    
-    let totalBonuses = 0;
-    
-    buyXGetYPromos.forEach(promo => {
-        if (productQuantity >= promo.buy) {
-            const times = Math.floor(productQuantity / promo.buy);
-            totalBonuses += times * promo.get;
-        }
-    });
-
-    return totalBonuses;
-}
-
 const VOLUME_THRESHOLD = 150;
 
-export function ProductCard({ product, promotions }: { product: ProductWithPrice, promotions: AgreementPromotion[] }) {
-  const { items, totalItems, availablePromotions } = useCartStore();
+export function ProductCard({ product }: { product: ProductWithPrice }) {
+  const { items, totalItems, bonusItems } = useCartStore();
   const itemInCart = items.find(item => item.product.id === product.id);
   const quantity = itemInCart ? itemInCart.quantity : 0;
 
@@ -69,9 +34,12 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
       ? "secondary"
       : "destructive";
   
+  // Get bonuses specifically for this product from the central store
   const productBonuses = useMemo(() => {
-    return calculateBonusesForProduct(availablePromotions, quantity);
-  }, [quantity, availablePromotions]);
+    return bonusItems.appliedPromos
+      .filter(promo => promo.productName === product.name)
+      .reduce((total, promo) => total + promo.units, 0);
+  }, [bonusItems, product.name]);
 
   const isVolumePriceActive = totalItems >= VOLUME_THRESHOLD && product.volume_price;
   const displayPrice = isVolumePriceActive ? product.volume_price : product.price;
@@ -137,3 +105,5 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
     </Card>
   );
 }
+
+    

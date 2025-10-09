@@ -84,7 +84,7 @@ export default async function OrderPage({
                     <AccordionContent className="px-4 pb-4">
                       <div className="flex flex-col gap-4">
                         {productsByCategory[category].map((product) => (
-                          <ProductCard key={product.id} product={product} promotions={agreement.agreement_promotions}/>
+                          <ProductCard key={product.id} product={product} />
                         ))}
                       </div>
                     </AccordionContent>
@@ -123,3 +123,5 @@ export default async function OrderPage({
     </div>
   );
 }
+
+    
