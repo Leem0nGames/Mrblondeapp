@@ -1,4 +1,3 @@
-
 "use client";
 
 import { MoreHorizontal, Trash2, Edit } from "lucide-react";
@@ -46,6 +45,26 @@ import { formatDate } from "@/lib/utils";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { salesConditionFormConfig } from "./form-config";
 
+const formatRule = (rules: any): string => {
+  if (!rules || typeof rules !== 'object') {
+    return 'Regla no definida';
+  }
+
+  const { type, days, percentage, installments } = rules;
+
+  switch (type) {
+    case 'net_days':
+      return `Plazo de pago: ${days || 'N/D'} días netos.`;
+    case 'discount':
+      return `Descuento por pronto pago: ${percentage || 'N/D'}%.`;
+    case 'installments':
+        return `Financiación: ${installments || 'N/D'} cuotas.`;
+    default:
+      return 'Regla personalizada.';
+  }
+};
+
+
 interface SalesConditionsTableProps {
     salesConditions: SalesCondition[];
     emptyState: React.ReactNode;
@@ -88,8 +107,9 @@ export default function SalesConditionsTable({ salesConditions, emptyState }: Sa
               <CardDescription>{condition.description}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-sm bg-muted/50 p-3 rounded-md font-code">
-                  <pre className="whitespace-pre-wrap">{JSON.stringify(condition.rules, null, 2)}</pre>
+              <div className="text-sm bg-muted/50 p-3 rounded-md text-muted-foreground">
+                  <p className="font-semibold text-foreground">Regla Aplicada:</p>
+                  <p>{formatRule(condition.rules)}</p>
               </div>
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
@@ -134,6 +154,7 @@ export default function SalesConditionsTable({ salesConditions, emptyState }: Sa
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Descripción</TableHead>
+                <TableHead>Regla</TableHead>
                 <TableHead>Creada</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
@@ -146,6 +167,9 @@ export default function SalesConditionsTable({ salesConditions, emptyState }: Sa
                   <TableCell className="font-medium">{condition.name}</TableCell>
                   <TableCell>
                     {condition.description}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                      {formatRule(condition.rules)}
                   </TableCell>
                   <TableCell>
                     {formatDate(condition.created_at)}

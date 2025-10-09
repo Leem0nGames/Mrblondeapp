@@ -20,6 +20,25 @@ import { unassignSalesConditionFromAgreement } from "@/app/actions/admin.actions
 import { useToast } from "@/hooks/use-toast";
 import { X } from "lucide-react";
 
+const formatRule = (rules: any): string => {
+  if (!rules || typeof rules !== 'object') {
+    return 'Regla no definida';
+  }
+
+  const { type, days, percentage, installments } = rules;
+
+  switch (type) {
+    case 'net_days':
+      return `Plazo de pago: ${days || 'N/D'} días netos.`;
+    case 'discount':
+      return `Descuento por pronto pago: ${percentage || 'N/D'}%.`;
+    case 'installments':
+        return `Financiación: ${installments || 'N/D'} cuotas.`;
+    default:
+      return 'Regla personalizada.';
+  }
+};
+
 
 export default function AgreementSalesConditionsList({ conditions, agreementId }: { conditions: AgreementSalesCondition[], agreementId: string }) {
   const [isPending, startTransition] = useTransition();
@@ -84,8 +103,9 @@ export default function AgreementSalesConditionsList({ conditions, agreementId }
                     </AlertDialog>
                 </CardHeader>
                 <CardContent>
-                    <div className="mt-2 text-sm bg-muted/50 p-3 rounded-md text-muted-foreground font-code">
-                        <pre className="whitespace-pre-wrap">{JSON.stringify(item.sales_conditions.rules, null, 2)}</pre>
+                    <div className="mt-2 text-sm bg-muted/50 p-3 rounded-md text-muted-foreground">
+                        <p className="font-semibold text-foreground">Regla Aplicada:</p>
+                        <p>{formatRule(item.sales_conditions.rules)}</p>
                     </div>
                 </CardContent>
             </Card>
