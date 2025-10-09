@@ -37,5 +37,4 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { unassignProductFromAgreement } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
-import { PriceEditDialog } from "./price-edit-dialog";
 import { getImageUrl } from "@/lib/placeholder-images";
