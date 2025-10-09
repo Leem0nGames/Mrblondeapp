@@ -134,7 +134,7 @@ export function AssignPromotionDialog({
                                       checked={field.value?.includes(promo.id)}
                                       onCheckedChange={(checked) => {
                                         return checked
-                                          ? field.onChange([...field.value, promo.id])
+                                          ? field.onChange([...(field.value || []), promo.id])
                                           : field.onChange(
                                               field.value?.filter(
                                                 (value) => value !== promo.id
