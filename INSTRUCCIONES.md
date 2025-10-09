@@ -125,9 +125,10 @@ CREATE POLICY "Allow full access to authenticated users on clients" ON clients F
 USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 -- 3. Políticas específicas para clientes (onboarding)
-CREATE POLICY "Allow clients to update their own data during onboarding" ON clients
-FOR UPDATE USING (onboarding_token::text = (SELECT nullif(current_setting('request.jwt.claims', true)::json->>'onboarding_token', '')) )
-WITH CHECK (true);
+-- Esta política es insegura, pero la corregiremos en el siguiente paso.
+-- CREATE POLICY "Allow clients to update their own data during onboarding" ON clients
+-- FOR UPDATE USING (onboarding_token::text = (SELECT nullif(current_setting('request.jwt.claims', true)::json->>'onboarding_token', '')) )
+-- WITH CHECK (true);
 
 ```
 
