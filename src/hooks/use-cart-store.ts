@@ -65,7 +65,6 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, availablePro
   const vatAmount = subtotal * VAT_RATE;
   const totalPrice = subtotal + vatAmount;
   
-  // --- CORRECTED BONUS CALCULATION LOGIC ---
   const buyXGetYPromos = availablePromotions
     .map(p => parseBuyXGetYPromo(p.promotions))
     .filter((p): p is NonNullable<ReturnType<typeof parseBuyXGetYPromo>> => p !== null);
@@ -74,14 +73,14 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, availablePro
   const appliedPromos: { name: string, units: number, productName: string }[] = [];
 
   if (buyXGetYPromos.length > 0) {
-    items.forEach(item => { // Iterate over each product in the cart
-      buyXGetYPromos.forEach(promo => { // Check every available promotion against this item
+    items.forEach(item => {
+      let itemBonus = 0;
+      buyXGetYPromos.forEach(promo => {
         if (item.quantity >= promo.buy) {
           const times = Math.floor(item.quantity / promo.buy);
           const bonusUnits = times * promo.get;
-          totalBonuses += bonusUnits;
+          itemBonus += bonusUnits;
           
-          // Add to the list of applied promos for display
           appliedPromos.push({
             name: promo.name,
             units: bonusUnits,
@@ -89,6 +88,7 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, availablePro
           });
         }
       });
+      totalBonuses += itemBonus;
     });
   }
   
