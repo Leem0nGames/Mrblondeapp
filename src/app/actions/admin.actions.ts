@@ -3,7 +3,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { Product, Agreement, Promotion, DetailedAgreement, AgreementWithCount, Client, PriceList, DetailedPriceList, PriceListItem } from "@/types";
+import type { Product, Agreement, Promotion, DetailedAgreement, AgreementWithCount, Client, PriceList, DetailedPriceList, PriceListItem, DashboardStats, Order } from "@/types";
 
 type UpsertProductPayload = Omit<Product, "id" | "created_at"> & {
   id?: string;
@@ -118,7 +118,8 @@ export async function getAgreementById(id: string): Promise<{ data: DetailedAgre
             agreement_promotions (
                 promotions ( * )
             ),
-            price_lists ( id, name, prices_include_vat )
+            price_lists ( id, name, prices_include_vat ),
+            clients ( id, contact_name )
         `)
         .eq("id", id)
         .single();
@@ -131,6 +132,7 @@ export async function getAgreementById(id: string): Promise<{ data: DetailedAgre
         ...data,
         agreement_promotions: data.agreement_promotions ?? [],
         price_lists: data.price_lists,
+        clients: data.clients ?? [],
     };
     return { data: detailedAgreement, error: null };
 }
@@ -361,6 +363,7 @@ export async function assignAgreementToClient(payload: { clientId: string, agree
     }
     
     revalidatePath("/admin/clients");
+    revalidatePath("/admin");
     return { error: null };
 }
 
@@ -526,5 +529,94 @@ export async function updatePriceListItem(payload: { price_list_id: string; prod
       return { error };
     }
     revalidatePath(`/admin/pricelists/${price_list_id}`);
+    return { error: null };
+}
+
+
+// --- Dashboard Actions ---
+
+export async function getDashboardStats(): Promise<DashboardStats> {
+    await checkAuth();
+    const supabase = createClient();
+    
+    // For simplicity, we are fetching from a pre-aggregated table.
+    // In a real app, you might have a cron job that updates this table.
+    const { data, error } = await supabase.from("dashboard_stats").select("*").single();
+
+    if (error || !data) {
+        console.error("getDashboardStats error:", error?.message);
+        // Return zeroed-out stats on error
+        return {
+            total_revenue: 0,
+            month_revenue: 0,
+            active_clients: 0
+        };
+    }
+    return data;
+}
+
+export async function getPendingOrders(): Promise<Order[]> {
+    await checkAuth();
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+    if (error) {
+        console.error("getPendingOrders error:", error.message);
+        return [];
+    }
+    return data;
+}
+
+export async function getClientsWithPendingAgreements(): Promise<Client[]> {
+    await checkAuth();
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("status", "pending_agreement")
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        console.error("getClientsWithPendingAgreements error:", error.message);
+        return [];
+    }
+    return data;
+}
+
+export async function completeOrder(orderId: string, currentTotalRevenue: number, orderTotal: number) {
+    await checkAuth();
+    const supabase = createClient();
+    
+    const { error: orderUpdateError } = await supabase
+        .from('orders')
+        .update({ status: 'completed' })
+        .eq('id', orderId);
+
+    if (orderUpdateError) {
+        console.error("completeOrder (order) error:", orderUpdateError.message);
+        return { error: orderUpdateError };
+    }
+
+    // In a real app, this logic should be in a database trigger or a more robust
+    // serverless function to prevent race conditions. For this demo, we update it here.
+    const { error: statsUpdateError } = await supabase
+        .from('dashboard_stats')
+        .update({ 
+            total_revenue: currentTotalRevenue + orderTotal,
+         })
+        .eq('id', 1); // Assuming single row for stats
+
+     if (statsUpdateError) {
+        console.error("completeOrder (stats) error:", statsUpdateError.message);
+        // Note: The order is already marked as completed. We should handle this inconsistency.
+        return { error: statsUpdateError };
+    }
+
+    revalidatePath('/admin');
     return { error: null };
 }
