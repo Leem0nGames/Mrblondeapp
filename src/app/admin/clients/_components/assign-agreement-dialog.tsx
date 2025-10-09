@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useCallback } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,7 +33,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { getAgreements, assignAgreementToClient } from "@/app/actions/admin.actions";
-import type { Client, AgreementWithCount } from "@/types";
+import type { Client, AgreementWithCount, Agreement } from "@/types";
+import { EntityDialog } from "../../_components/entity-dialog";
+import { agreementFormConfig } from "../../agreements/_components/form-config";
+import type { FormConfig } from "../../_components/entity-dialog";
+import { PlusCircle } from "lucide-react";
 
 const formSchema = z.object({
   agreementId: z.string().nullable(),
@@ -61,15 +64,19 @@ export function AssignAgreementDialog({
       agreementId: client.agreement_id ?? null,
     },
   });
-
-  useEffect(() => {
-    if (isOpen) {
-      startLoading(async () => {
+  
+  const fetchAgreements = useCallback(async () => {
+     startLoading(async () => {
         const { data } = await getAgreements();
         setAgreements(data ?? []);
       });
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchAgreements();
     }
-  }, [isOpen]);
+  }, [isOpen, fetchAgreements]);
 
   const onSubmit = (values: FormValues) => {
     startTransition(async () => {
@@ -84,6 +91,24 @@ export function AssignAgreementDialog({
         setIsOpen(false);
       }
     });
+  };
+
+  const handleNewAgreementSuccess = useCallback(async (newAgreement: Agreement) => {
+      await fetchAgreements();
+      form.setValue('agreementId', newAgreement.id, { shouldValidate: true });
+  }, [fetchAgreements, form]);
+
+  const upsertActionWithCallback = useCallback(async (payload: any) => {
+    const result = await agreementFormConfig.upsertAction(payload);
+    if (!result.error && result.data) {
+        await handleNewAgreementSuccess(result.data);
+    }
+    return result;
+  }, [handleNewAgreementSuccess]);
+
+  const newAgreementDialogConfig: FormConfig<any> = {
+      ...agreementFormConfig,
+      upsertAction: upsertActionWithCallback,
   };
   
   if (client.status === 'pending_onboarding') {
@@ -146,6 +171,14 @@ export function AssignAgreementDialog({
                 </FormItem>
               )}
             />
+            <div className="text-sm">
+                <span>¿El convenio que buscas no existe?</span>
+                <EntityDialog formConfig={newAgreementDialogConfig} entity={undefined}>
+                    <Button variant="link" size="sm" type="button" className="p-1 h-auto">
+                        o, Crear Nuevo Convenio
+                    </Button>
+                </EntityDialog>
+            </div>
             <DialogFooter className="pt-4">
               <DialogClose asChild>
                 <Button variant="outline" type="button">Cancelar</Button>
