@@ -58,3 +58,19 @@ export type DetailedAgreement = Agreement & {
   agreement_products: AgreementProduct[]; // Joined data
   agreement_promotions: AgreementPromotion[]; // Joined data
 }
+
+export type Client = {
+    id: string;
+    cuit: string | null;
+    contact_name: string | null;
+    contact_dni: string | null;
+    address: string | null;
+    delivery_window: string | null;
+    email: string | null;
+    instagram: string | null;
+    status: 'pending_onboarding' | 'pending_agreement' | 'active';
+    onboarding_token: string;
+    agreement_id: string | null;
+    created_at: string;
+    agreements?: { agreement_name: string } | null; // Joined data
+}

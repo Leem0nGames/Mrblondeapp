@@ -3,8 +3,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { Product, Agreement, Promotion, DetailedAgreement, AgreementWithCount } from "@/types";
-import { randomUUID } from "crypto";
+import type { Product, Agreement, Promotion, DetailedAgreement, AgreementWithCount, Client } from "@/types";
 
 type UpsertProductPayload = Omit<Product, "id" | "created_at"> & {
   id?: string;
@@ -158,13 +157,9 @@ export async function upsertAgreement(payload: UpsertAgreementPayload) {
       .select()
       .single());
   } else {
-    // Create new agreement, adding the required link_token
-    const dataToInsert = {
-      ...agreementData,
-      link_token: randomUUID(),
-    };
+    // Create new agreement
     ({ data, error } = await query
-      .insert(dataToInsert)
+      .insert(agreementData)
       .select()
       .single());
   }
@@ -178,6 +173,7 @@ export async function upsertAgreement(payload: UpsertAgreementPayload) {
   }
 
   revalidatePath("/admin/agreements");
+  revalidatePath("/admin/clients");
   return { data, error: null };
 }
 
@@ -407,4 +403,78 @@ export async function unassignPromotionFromAgreement(payload: { agreement_id: st
     }
     revalidatePath(`/admin/agreements/${payload.agreement_id}`);
     return { error: null };
+}
+
+
+// --- Client Actions ---
+export async function getClients(): Promise<{ data: Client[] | null, error: any }> {
+    await checkAuth();
+    const supabase = createClient();
+    
+    const { data, error } = await supabase
+        .from("clients")
+        .select(`
+            *,
+            agreements ( agreement_name )
+        `)
+        .order("contact_name", { ascending: true });
+
+    if (error) {
+        console.error("getClients error:", error.message);
+        return { data: null, error };
+    }
+    
+    return { data, error: null };
+}
+
+export async function createClientOnboardingLink(): Promise<{ data: { onboarding_token: string } | null, error: any }> {
+    await checkAuth();
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+        .from("clients")
+        .insert({})
+        .select("onboarding_token")
+        .single();
+    
+    if (error) {
+        console.error("createClientOnboardingLink error:", error.message);
+        return { data: null, error };
+    }
+    
+    revalidatePath("/admin/clients");
+    return { data, error: null };
+}
+
+export async function assignAgreementToClient(payload: { clientId: string, agreementId: string | null }): Promise<{ error: any }> {
+    await checkAuth();
+    const supabase = createClient();
+
+    const { error } = await supabase
+        .from("clients")
+        .update({ 
+            agreement_id: payload.agreementId,
+            status: payload.agreementId ? 'active' : 'pending_agreement' 
+        })
+        .eq("id", payload.clientId);
+    
+    if (error) {
+        console.error("assignAgreementToClient error:", error.message);
+        return { error };
+    }
+    
+    revalidatePath("/admin/clients");
+    return { error: null };
+}
+
+export async function deleteClient(id: string) {
+  await checkAuth();
+  const supabase = createClient();
+  const { error } = await supabase.from("clients").delete().eq("id", id);
+  if (error) { 
+    console.error("deleteClient error:", error.message);
+    return { error }; 
+  }
+  revalidatePath("/admin/clients");
+  return { error: null };
 }

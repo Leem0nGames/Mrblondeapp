@@ -40,6 +40,12 @@ export async function middleware(request: NextRequest) {
   
   const { pathname } = request.nextUrl;
 
+  // Rutas de Onboarding de Cliente
+  const isOnboardingRoute = pathname.startsWith('/onboarding');
+  if (isOnboardingRoute) {
+    return response;
+  }
+
   // 1. Lógica de Primer Arranque (Setup)
   const usersExist = await hasUsers();
 

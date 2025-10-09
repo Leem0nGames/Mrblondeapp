@@ -5,7 +5,8 @@ import {
   LogOut,
   FileText,
   Percent,
-  Settings
+  Settings,
+  Users
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,18 @@ export default function AdminLayout({
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">Convenios</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/admin/clients"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                >
+                  <Users className="h-5 w-5" />
+                  <span className="sr-only">Clientes</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Clientes</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -147,6 +160,15 @@ export default function AdminLayout({
                 >
                   <FileText className="h-6 w-6" />
                   <span className="text-xs">Convenios</span>
+                </Link>
+            </li>
+             <li>
+                <Link
+                  href="/admin/clients"
+                  className="flex flex-col items-center text-muted-foreground hover:text-foreground"
+                >
+                  <Users className="h-6 w-6" />
+                  <span className="text-xs">Clientes</span>
                 </Link>
             </li>
              <li>

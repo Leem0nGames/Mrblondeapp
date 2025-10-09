@@ -19,6 +19,7 @@ Si necesitas empezar de cero, sigue estos pasos para borrar las tablas desde la 
 3.  **Repite el proceso** para todas las tablas de la aplicación. Es posible que necesites seguir un orden específico debido a las relaciones entre ellas. Si recibes un error, prueba a borrar en este orden:
     *   Primero: `agreement_products`, `agreement_promotions`.
     *   Después: `agreements`, `products`, y `promotions`.
+    *   Finalmente, la tabla `clients`.
     *   También borra la `VIEW` llamada `agreements_with_counts` si existe.
 
 ### Ejecutar el Script SQL
@@ -54,6 +55,22 @@ CREATE TABLE agreements (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Tabla de Clientes
+CREATE TABLE clients (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    cuit TEXT UNIQUE,
+    contact_name TEXT,
+    contact_dni TEXT,
+    address TEXT,
+    delivery_window TEXT,
+    email TEXT UNIQUE,
+    instagram TEXT,
+    status TEXT NOT NULL DEFAULT 'pending_onboarding' CHECK (status IN ('pending_onboarding', 'pending_agreement', 'active')),
+    onboarding_token UUID DEFAULT gen_random_uuid() NOT NULL UNIQUE,
+    agreement_id UUID REFERENCES agreements(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 -- Tabla de muchos a muchos: Productos en Convenios (con precio específico)
 CREATE TABLE agreement_products (
   agreement_id UUID REFERENCES agreements(id) ON DELETE CASCADE,
@@ -69,58 +86,48 @@ CREATE TABLE agreement_promotions (
   PRIMARY KEY (agreement_id, promotion_id)
 );
 
--- Vista para contar productos y promociones por convenio de forma eficiente
-CREATE OR REPLACE VIEW agreements_with_counts AS
-SELECT
-  a.id,
-  a.agreement_name,
-  a.client_type,
-  a.created_at,
-  (SELECT COUNT(*) FROM agreement_products ap WHERE ap.agreement_id = a.id) AS product_count,
-  (SELECT COUNT(*) FROM agreement_promotions apromo WHERE apromo.agreement_id = a.id) AS promotion_count
-FROM
-  agreements a;
-
 -- Habilitar Row Level Security (RLS) en todas las tablas
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE promotions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE agreements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE agreement_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE agreement_promotions ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de Acceso
--- 1. Permitir acceso público de lectura a productos.
-CREATE POLICY "Allow public read access to products" ON products FOR SELECT USING (true);
 
--- 2. Permitir acceso de lectura a convenios, productos y promociones asociados a un convenio específico (para la página de pedido)
---    Esto se controla en el backend, por lo que no es estrictamente necesaria una policy de lectura pública aquí si las consultas son desde el servidor.
---    No obstante, añadimos políticas para permitir la lectura desde el cliente si fuera necesario en el futuro.
+-- 1. Políticas públicas (lectura)
+CREATE POLICY "Allow public read access to products" ON products FOR SELECT USING (true);
+CREATE POLICY "Allow public read access to promotions" ON promotions FOR SELECT USING (true);
 CREATE POLICY "Allow public read access to agreements" ON agreements FOR SELECT USING (true);
 CREATE POLICY "Allow public read access to agreement_products" ON agreement_products FOR SELECT USING (true);
 CREATE POLICY "Allow public read access to agreement_promotions" ON agreement_promotions FOR SELECT USING (true);
-CREATE POLICY "Allow public read access to promotions" ON promotions FOR SELECT USING (true);
+CREATE POLICY "Allow public read access to client info for onboarding" ON clients FOR SELECT USING (true);
 
 
--- 3. Permitir a los usuarios autenticados (admins) gestionar toda la información
+-- 2. Políticas para usuarios autenticados (admins)
 CREATE POLICY "Allow full access to authenticated users" ON products FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
+USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 CREATE POLICY "Allow full access to authenticated users" ON promotions FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
+USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 CREATE POLICY "Allow full access to authenticated users" ON agreements FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
+USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 CREATE POLICY "Allow full access to authenticated users" ON agreement_products FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
+USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 CREATE POLICY "Allow full access to authenticated users" ON agreement_promotions FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
+USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow full access to authenticated users on clients" ON clients FOR ALL
+USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+-- 3. Políticas específicas para clientes (onboarding)
+CREATE POLICY "Allow clients to update their own data during onboarding" ON clients
+FOR UPDATE USING (onboarding_token::text = (SELECT nullif(current_setting('request.jwt.claims', true)::json->>'onboarding_token', '')) )
+WITH CHECK (true);
 
 ```
 

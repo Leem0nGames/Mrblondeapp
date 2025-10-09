@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import type { Client } from '@/types';
 
 export interface AuthState {
   error: {
@@ -174,4 +175,51 @@ export async function getOrderPageData(agreementId: string) {
         }, 
         error: null 
     };
+}
+
+
+// --- Onboarding Actions ---
+export async function getOnboardingClient(token: string): Promise<{ data: Client | null, error: any }> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('onboarding_token', token)
+        .single();
+
+    if (error) {
+        console.error("getOnboardingClient error:", error.message);
+        return { data: null, error };
+    }
+    return { data, error: null };
+}
+
+export async function submitOnboardingForm(payload: Omit<Client, 'id' | 'created_at' | 'status' | 'agreement_id'>) {
+    const supabase = createClient();
+    
+    const { onboarding_token, ...clientData } = payload;
+    
+    const { error } = await supabase
+        .from('clients')
+        .update({ 
+            ...clientData, 
+            status: 'pending_agreement' 
+        })
+        .eq('onboarding_token', onboarding_token);
+
+    if (error) {
+        console.error("submitOnboardingForm error:", error.message);
+        if (error.code === '23505') { // Unique constraint violation
+             if (error.message.includes('cuit')) {
+                return { error: { message: 'El CUIT ingresado ya está registrado en nuestro sistema.' }};
+            }
+            if (error.message.includes('email')) {
+                return { error: { message: 'El email ingresado ya está registrado en nuestro sistema.' }};
+            }
+        }
+        return { error };
+    }
+
+    revalidatePath('/admin/clients');
+    return { error: null };
 }
