@@ -1,27 +1,24 @@
 
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useCartStore } from "@/hooks/use-cart-store";
-import type { AgreementPromotion, SuggestPromotionsInput } from "@/types";
+import type { AgreementPromotion, SuggestPromotionsInput, SuggestPromotionsOutput } from "@/types";
 import { suggestPromotions } from "@/ai/flows/intelligent-promo-suggestions";
-import { useActionState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Lightbulb } from "lucide-react";
 
+
 async function getSuggestions(
-  prevState: any,
   formData: SuggestPromotionsInput
-) {
+): Promise<SuggestPromotionsOutput> {
   try {
     const result = await suggestPromotions(formData);
-    return { suggestions: result.promotionSuggestions, error: null };
+    return result;
   } catch (e: any) {
     console.error("Error fetching suggestions:", e.message);
-    return {
-      suggestions: [],
-      error: "No se pudieron cargar las sugerencias de la IA.",
-    };
+    // Lanza el error para que pueda ser atrapado y manejado en el componente
+    throw new Error("No se pudieron cargar las sugerencias de la IA.");
   }
 }
 
@@ -34,7 +31,8 @@ export default function IntelligentSuggestions({
 }) {
   const { items, totalItems } = useCartStore();
   
-  const [state, formAction, isPending] = useActionState(getSuggestions, {
+  const [isPending, startTransition] = useTransition();
+  const [state, setState] = useState<{ suggestions: SuggestPromotionsOutput['promotionSuggestions']; error: string | null }>({
     suggestions: [],
     error: null,
   });
@@ -54,17 +52,27 @@ export default function IntelligentSuggestions({
   useEffect(() => {
     const handler = setTimeout(() => {
       if (totalItems > 0) {
-        formAction(intelligentSuggestionsInput);
+        startTransition(async () => {
+          try {
+            const result = await getSuggestions(intelligentSuggestionsInput);
+            setState({ suggestions: result.promotionSuggestions, error: null });
+          } catch(err: any) {
+            setState({ suggestions: [], error: err.message });
+          }
+        });
+      } else {
+        // Limpia las sugerencias si el carrito está vacío
+        setState({ suggestions: [], error: null });
       }
     }, 500);
 
     return () => {
       clearTimeout(handler);
     };
-  }, [intelligentSuggestionsInput, formAction, totalItems]);
+  }, [intelligentSuggestionsInput, totalItems]);
 
 
-  if (totalItems === 0) {
+  if (totalItems === 0 && !isPending) {
     return null;
   }
   
@@ -92,7 +100,11 @@ export default function IntelligentSuggestions({
               ))}
           </ul>
       )}
+       {!isPending && !state.error && state.suggestions.length === 0 && totalItems > 0 && (
+         <div className="text-sm text-center text-muted-foreground p-4 border rounded-lg">
+            No hay sugerencias por ahora. ¡Sigue agregando productos!
+        </div>
+      )}
     </div>
   );
 }
-
