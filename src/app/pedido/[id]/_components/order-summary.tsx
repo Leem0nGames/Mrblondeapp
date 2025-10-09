@@ -14,18 +14,6 @@ import { submitOrder } from "@/app/actions/user.actions";
 
 
 // Helper function to parse promotion rules safely
-function parseBuyXGetYPromo(promo: AgreementPromotion) {
-  const rules = promo.promotions.rules;
-  if (rules?.type === 'buy_x_get_y_free') {
-    const buy = Number(rules.buy);
-    const get = Number(rules.get);
-    if (!isNaN(buy) && buy > 0 && !isNaN(get) && get > 0) {
-      return { buy, get, name: promo.promotions.name };
-    }
-  }
-  return null;
-}
-
 function parseFreeShippingPromo(promo: AgreementPromotion) {
   const rules = promo.promotions.rules;
   if (rules?.type === 'free_shipping') {
@@ -37,43 +25,6 @@ function parseFreeShippingPromo(promo: AgreementPromotion) {
   return null;
 }
 
-
-// This function calculates total bonuses based on sorted promotions for each item
-function calculateTotalBonuses(promos: AgreementPromotion[], items: CartItem[]): { total: number; cheapestItem: CartItem | null, appliedPromos: { name: string, units: number }[] } {
-    const buyXGetYPromos = promos
-      .map(parseBuyXGetYPromo)
-      .filter((p): p is NonNullable<ReturnType<typeof parseBuyXGetYPromo>> => p !== null);
-
-    if (buyXGetYPromos.length === 0 || items.length === 0) {
-      return { total: 0, cheapestItem: null, appliedPromos: [] };
-    }
-
-    let totalBonuses = 0;
-    const appliedPromos: { name: string, units: number }[] = [];
-    
-    // Calculate bonuses for each item line
-    items.forEach(item => {
-        buyXGetYPromos.forEach(promo => {
-            if (item.quantity >= promo.buy) {
-                const times = Math.floor(item.quantity / promo.buy);
-                const bonusUnits = times * promo.get;
-                totalBonuses += bonusUnits;
-
-                const existingPromo = appliedPromos.find(p => p.name === promo.name);
-                if (existingPromo) {
-                    existingPromo.units += bonusUnits;
-                } else {
-                    appliedPromos.push({ name: promo.name, units: bonusUnits });
-                }
-            }
-        });
-    });
-
-    const cheapestItem = [...items].sort((a, b) => a.product.price - b.product.price)[0];
-
-    return { total: totalBonuses, cheapestItem, appliedPromos };
-}
-
 function formatWhatsAppMessage(
   clientName: string,
   cartItems: CartItem[],
@@ -81,7 +32,9 @@ function formatWhatsAppMessage(
   subtotal: number,
   vatAmount: number,
   totalPrice: number,
-  promotions: AgreementPromotion[],
+  bonusItems: { total: number; appliedPromos: { name: string, units: number }[] },
+  availablePromotions: AgreementPromotion[],
+  cheapestItem: CartItem | null,
   orderId: string
 ) {
   const itemsText = cartItems
@@ -89,14 +42,12 @@ function formatWhatsAppMessage(
     .join("\n");
 
   let bonusText = "";
-  const { total: totalBonuses, cheapestItem } = calculateTotalBonuses(promotions, cartItems);
-
-  if (totalBonuses > 0 && cheapestItem) {
-      bonusText = `*Bonificaciones de Regalo:*\n- ${totalBonuses}x ${cheapestItem.product.name}`;
+  if (bonusItems.total > 0 && cheapestItem) {
+      bonusText = `*Bonificaciones de Regalo:*\n- ${bonusItems.total}x ${cheapestItem.product.name}`;
   }
 
   let shippingText = "";
-  const freeShippingPromo = promotions.map(parseFreeShippingPromo).find(p => p !== null);
+  const freeShippingPromo = availablePromotions.map(parseFreeShippingPromo).find(p => p !== null);
   if (freeShippingPromo && totalItems >= freeShippingPromo.min_units) {
     shippingText = `*Envío Bonificado*\n`;
   }
@@ -143,7 +94,7 @@ export function OrderSummary({
   availablePromotions: AgreementPromotion[];
   pricesIncludeVat: boolean;
 }) {
-  const { items, totalItems, subtotal, vatAmount, totalPrice, clearCart, agreementId: storedAgreementId, setAgreement } = useCartStore();
+  const { items, totalItems, subtotal, vatAmount, totalPrice, bonusItems, clearCart, setAgreement } = useCartStore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
@@ -151,11 +102,9 @@ export function OrderSummary({
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5491123456789";
 
   useEffect(() => {
-    if (storedAgreementId !== agreementId) {
-      clearCart();
-    }
-    setAgreement(agreementId, pricesIncludeVat);
-  }, [agreementId, pricesIncludeVat, storedAgreementId, clearCart, setAgreement]);
+    // Set agreement details in the store, which will also trigger a cart reset if the agreement changes.
+    setAgreement(agreementId, pricesIncludeVat, availablePromotions);
+  }, [agreementId, pricesIncludeVat, availablePromotions, setAgreement]);
 
 
   const handleSend = () => {
@@ -185,6 +134,8 @@ export function OrderSummary({
             });
             return;
         }
+        
+        const cheapestItem = [...items].sort((a, b) => a.product.price - b.product.price)[0] ?? null;
 
         const message = formatWhatsAppMessage(
             clientName,
@@ -193,7 +144,9 @@ export function OrderSummary({
             subtotal,
             vatAmount,
             totalPrice,
+            bonusItems,
             availablePromotions,
+            cheapestItem,
             result.data.orderId
         );
         const whatsappUrl = `https://wa.me/${whatsAppNumber}?text=${message}`;
@@ -215,10 +168,6 @@ export function OrderSummary({
     return promos.length > 0 ? promos[0] : null;
   }, [availablePromotions]);
 
-  const bonuses = useMemo(() => {
-    return calculateTotalBonuses(availablePromotions, items);
-  }, [availablePromotions, items]);
-  
   const hasFreeShipping = freeShippingPromo && totalItems >= freeShippingPromo.min_units;
   const itemsForFreeShipping = freeShippingPromo ? freeShippingPromo.min_units - totalItems : 0;
   
@@ -269,7 +218,7 @@ export function OrderSummary({
                       </div>
                   </div>
 
-                  {bonuses.appliedPromos.length > 0 && (
+                  {bonusItems.total > 0 && (
                     <>
                       <Separator />
                       <div className="space-y-2">
@@ -278,8 +227,8 @@ export function OrderSummary({
                             Bonificaciones Obtenidas
                         </h4>
                         <div className="space-y-1 text-sm text-muted-foreground">
-                            {bonuses.appliedPromos.map(promo => (
-                                <div key={promo.name} className="flex justify-between">
+                            {bonusItems.appliedPromos.map((promo, index) => (
+                                <div key={index} className="flex justify-between">
                                     <span>{promo.name}</span>
                                     <span className="font-medium text-foreground">+{promo.units} un. de regalo</span>
                                 </div>

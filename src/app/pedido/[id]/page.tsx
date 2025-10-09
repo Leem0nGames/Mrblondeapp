@@ -11,6 +11,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { OrderSummary } from "./_components/order-summary";
+import { Suspense } from "react";
 
 
 export default async function OrderPage({
@@ -108,13 +109,15 @@ export default async function OrderPage({
         
         {/* Columna Derecha: Resumen y Sugerencias */}
         <div className="lg:col-span-1 lg:sticky lg:top-24 space-y-6">
-          <OrderSummary 
-            agreementId={agreement.id}
-            clientId={client.id}
-            clientName={client.contact_name ?? "Cliente"}
-            availablePromotions={agreement.agreement_promotions}
-            pricesIncludeVat={agreement.price_lists?.prices_include_vat ?? true}
-          />
+          <Suspense fallback={<div>Cargando resumen...</div>}>
+            <OrderSummary 
+              agreementId={agreement.id}
+              clientId={client.id}
+              clientName={client.contact_name ?? "Cliente"}
+              availablePromotions={agreement.agreement_promotions}
+              pricesIncludeVat={agreement.price_lists?.prices_include_vat ?? true}
+            />
+          </Suspense>
         </div>
       </main>
     </div>

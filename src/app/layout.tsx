@@ -25,7 +25,6 @@ const sourceCodePro = Source_Code_Pro({
 export const metadata: Metadata = {
   title: 'Blonde Orders',
   description: 'Modern Order Management',
-  icons: null,
 };
 
 export default function RootLayout({
