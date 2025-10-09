@@ -8,7 +8,6 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { DollarSign, Users, Package, Activity } from "lucide-react";
 import { DashboardStats } from "./_components/dashboard-stats";
 import { RecentOrders } from "./_components/recent-orders";
 import { PendingClients } from "./_components/pending-clients";
