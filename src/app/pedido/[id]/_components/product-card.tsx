@@ -28,17 +28,25 @@ function parsePromoRules(promo: AgreementPromotion) {
   return null;
 }
 
-function calculateBonusesForPromo(
-  promo: NonNullable<ReturnType<typeof parsePromoRules>>,
-  totalItems: number,
-) {
-  if (totalItems >= promo.buy) {
-      const times = Math.floor(totalItems / promo.buy);
-      return times * promo.get;
-  }
-  return 0;
-}
+// This function calculates total bonuses based on sorted promotions
+function calculateTotalBonuses(promos: AgreementPromotion[], totalItems: number) {
+    const sortedPromos = promos
+      .map(parsePromoRules)
+      .filter((p): p is NonNullable<typeof p> => p !== null)
+      .sort((a, b) => b.buy - a.buy); // Sort from highest requirement to lowest
 
+    let remainingItems = totalItems;
+    let totalBonuses = 0;
+
+    for (const promo of sortedPromos) {
+        if (remainingItems >= promo.buy) {
+            const times = Math.floor(remainingItems / promo.buy);
+            totalBonuses += times * promo.get;
+            remainingItems %= promo.buy; // Use remaining items for next smaller promo
+        }
+    }
+    return totalBonuses;
+}
 
 export function ProductCard({ product, promotions }: { product: ProductWithPrice, promotions: AgreementPromotion[] }) {
   const { totalItems } = useCartStore();
@@ -59,22 +67,11 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
   const applicablePromos = useMemo(() => {
     return promotions
       .map(parsePromoRules)
-      .filter((p): p is NonNullable<typeof p> => p !== null)
-      .sort((a, b) => b.buy - a.buy);
+      .filter((p): p is NonNullable<typeof p> => p !== null);
   }, [promotions]);
 
-  const bonusesByPromo = useMemo(() => {
-    let remainingItems = totalItems;
-    const bonuses: { name: string; bonus: number }[] = [];
-
-    for (const promo of applicablePromos) {
-      if (remainingItems >= promo.buy) {
-        const times = Math.floor(remainingItems / promo.buy);
-        bonuses.push({ name: promo.promotions.name, bonus: times * promo.get });
-        remainingItems %= promo.buy;
-      }
-    }
-    return bonuses;
+  const totalBonuses = useMemo(() => {
+    return calculateTotalBonuses(applicablePromos, totalItems);
   }, [totalItems, applicablePromos]);
 
 
@@ -102,14 +99,12 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
             
             <p className="text-muted-foreground text-sm line-clamp-2 sm:h-10">{product.description}</p>
             
-            {bonusesByPromo.length > 0 && (
+            {totalBonuses > 0 && (
               <div className="mt-2 space-y-1">
-                {bonusesByPromo.map(p => (
-                  <Badge variant="secondary" key={p.name} className="font-normal">
+                  <Badge variant="secondary" className="font-normal">
                     <Gift className="h-3 w-3 mr-1.5" />
-                     +{p.bonus} de Regalo ({p.name})
+                     ¡Pedido con +{totalBonuses} de regalo!
                   </Badge>
-                ))}
               </div>
             )}
             

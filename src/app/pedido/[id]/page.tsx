@@ -1,4 +1,3 @@
-
 import { getOrderPageData } from "@/app/actions/user.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/components/logo";
@@ -11,7 +10,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { OrderSummary } from "./_components/order-summary";
-import { useCartStore } from "@/hooks/use-cart-store";
+import IntelligentSuggestions from "./_components/intelligent-suggestions";
 
 
 export default async function OrderPage({
@@ -67,45 +66,59 @@ export default async function OrderPage({
           availablePromotions={agreement.agreement_promotions}
         />
 
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Productos</h2>
-          <p className="mt-1 text-lg text-muted-foreground">Ajusta las cantidades que deseas ordenar.</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+                <div className="mt-8">
+                <h2 className="text-2xl font-bold tracking-tight md:text-3xl">Productos</h2>
+                <p className="mt-1 text-lg text-muted-foreground">Ajusta las cantidades que deseas ordenar.</p>
+                </div>
+                
+                {categories.length > 0 ? (
+                <Accordion type="multiple" defaultValue={categories} className="w-full space-y-4 mt-6">
+                    {categories.map((category) => (
+                        <AccordionItem key={category} value={category} className="border-none">
+                        <Card>
+                            <CardHeader className="p-4">
+                                <AccordionTrigger className="p-2 -m-2 text-xl font-bold hover:no-underline">
+                                    {category}
+                                </AccordionTrigger>
+                            </CardHeader>
+                            <AccordionContent className="px-4 pb-4">
+                                <div className="flex flex-col gap-4">
+                                {productsByCategory[category].map((product) => (
+                                    <ProductCard key={product.id} product={product} promotions={agreement.agreement_promotions}/>
+                                ))}
+                                </div>
+                            </AccordionContent>
+                        </Card>
+                        </AccordionItem>
+                    ))}
+                    </Accordion>
+                ) : (
+                    <Card className="mt-6 flex flex-col items-center justify-center py-16 border-dashed">
+                        <CardHeader className="text-center">
+                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
+                                <Package2 className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                            <CardTitle>No hay productos disponibles</CardTitle>
+                            <CardDescription>
+                                Aún no se han asignado productos a este convenio.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                )}
+            </div>
+            
+            <div className="lg:col-span-1">
+                 {agreement.agreement_promotions.length > 0 && (
+                     <IntelligentSuggestions 
+                        clientName={agreement.agreement_name}
+                        availablePromotions={agreement.agreement_promotions}
+                      />
+                 )}
+            </div>
         </div>
-        
-        {categories.length > 0 ? (
-           <Accordion type="multiple" defaultValue={categories} className="w-full space-y-4 mt-6">
-              {categories.map((category) => (
-                <AccordionItem key={category} value={category} className="border-none">
-                   <Card>
-                      <CardHeader className="p-4">
-                        <AccordionTrigger className="p-2 -m-2 text-xl font-bold hover:no-underline">
-                            {category}
-                        </AccordionTrigger>
-                      </CardHeader>
-                      <AccordionContent className="px-4 pb-4">
-                        <div className="flex flex-col gap-4">
-                          {productsByCategory[category].map((product) => (
-                              <ProductCard key={product.id} product={product} promotions={agreement.agreement_promotions}/>
-                          ))}
-                        </div>
-                      </AccordionContent>
-                   </Card>
-                </AccordionItem>
-              ))}
-            </Accordion>
-        ) : (
-            <Card className="mt-6 flex flex-col items-center justify-center py-16 border-dashed">
-                <CardHeader className="text-center">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-4">
-                        <Package2 className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                    <CardTitle>No hay productos disponibles</CardTitle>
-                    <CardDescription>
-                        Aún no se han asignado productos a este convenio.
-                    </CardDescription>
-                </CardHeader>
-            </Card>
-        )}
+
       </main>
     </div>
   );

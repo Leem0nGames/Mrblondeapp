@@ -7,7 +7,7 @@ import type { AgreementPromotion } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Info, Truck } from "lucide-react";
+import { ArrowRight, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -219,3 +219,4 @@ export function OrderSummary({
     </div>
   );
 }
+

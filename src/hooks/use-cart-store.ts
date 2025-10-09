@@ -13,7 +13,7 @@ type CartState = {
   items: CartItem[];
   totalItems: number;
   totalPrice: number;
-  agreementId: string | null; // <-- Nuevo campo para el ID del convenio
+  agreementId: string | null;
   setAgreementId: (id: string) => void;
   addItem: (product: ProductWithPrice, quantity?: number) => void;
   removeItem: (productId: string) => void;
@@ -37,7 +37,7 @@ export const useCartStore = create<CartState>()(
       items: [],
       totalItems: 0,
       totalPrice: 0,
-      agreementId: null, // <-- Valor inicial
+      agreementId: null,
       
       setAgreementId: (id: string) => {
         set({ agreementId: id });
