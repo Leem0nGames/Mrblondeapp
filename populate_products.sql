@@ -1,5 +1,5 @@
--- Sentencia SQL para insertar únicamente los datos de productos en la tabla existente.
--- Copia y pega este contenido en el Editor SQL de Supabase si ya tienes las tablas creadas.
+-- Este script es solo para popular la tabla 'products' con datos de ejemplo.
+-- Ejecútalo solo si la tabla 'products' ya existe y está vacía.
 
 INSERT INTO products (name, description, base_price, stock, category) VALUES
 ('DesertStyle Pomada efecto mate 50 grs', 'Pomada efecto mate', 14766.67, 0, 'Hairstyle'),
