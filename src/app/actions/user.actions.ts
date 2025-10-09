@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import type { Client } from '@/types';
+import type { Client, CartItem } from '@/types';
 
 export interface AuthState {
   error: {
@@ -135,10 +135,12 @@ export async function getOrderPageData(agreementId: string) {
                     volume_price,
                     products(*)
                 )
-            )
+            ),
+            clients (id, contact_name)
         `)
         .eq('id', agreementId)
         .single();
+        
 
     if (agreementError || !agreement || !agreement.price_lists) {
         console.error("getOrderPageData (agreement) error:", agreementError?.message);
@@ -158,7 +160,7 @@ export async function getOrderPageData(agreementId: string) {
         }
         acc[category].push(product);
         return acc;
-    }, {} as Record<string, typeof products>);
+    }, {} as Record<typeof products>);
 
 
     return { 
@@ -219,4 +221,55 @@ export async function submitOnboardingForm(payload: Omit<Client, 'id' | 'created
 
     revalidatePath('/admin/clients');
     return { error: null };
+}
+
+// --- Order Submission ---
+export async function submitOrder(payload: {
+    cart: CartItem[];
+    total: number;
+    agreementId: string;
+    clientId: string;
+    clientName: string;
+}) {
+    const supabase = createClient();
+
+    // 1. Create the order
+    const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+            client_id: payload.clientId,
+            agreement_id: payload.agreementId,
+            total_amount: payload.total,
+            status: 'pending',
+            client_name_cache: payload.clientName
+        })
+        .select()
+        .single();
+
+    if (orderError || !order) {
+        console.error("submitOrder (order) error:", orderError?.message);
+        return { error: { message: "No se pudo registrar el pedido en la base de datos." } };
+    }
+
+    // 2. Create the order items
+    const orderItems = payload.cart.map(item => ({
+        order_id: order.id,
+        product_id: item.product.id,
+        quantity: item.quantity,
+        price_per_unit: item.product.price,
+    }));
+
+    const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
+
+    if (itemsError) {
+        console.error("submitOrder (items) error:", itemsError?.message);
+        // We should probably delete the order we just created for consistency
+        await supabase.from('orders').delete().eq('id', order.id);
+        return { error: { message: "No se pudieron guardar los productos del pedido." } };
+    }
+
+    // 3. Revalidate paths to update admin dashboard
+    revalidatePath('/admin');
+
+    return { data: { orderId: order.id }, error: null };
 }

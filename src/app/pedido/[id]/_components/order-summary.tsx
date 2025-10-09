@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useTransition } from "react";
 import { useCartStore, type CartItem } from "@/hooks/use-cart-store";
 import type { AgreementPromotion } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { submitOrder } from "@/app/actions/user.actions";
 
 
 // Helper function to parse promotion rules safely
@@ -72,6 +74,7 @@ function formatWhatsAppMessage(
   vatAmount: number,
   totalPrice: number,
   promotions: AgreementPromotion[],
+  orderId: string
 ) {
   const itemsText = cartItems
     .map((item) => `- ${item.quantity}x ${item.product.name}`)
@@ -93,7 +96,7 @@ function formatWhatsAppMessage(
   const formatCurrency = (value: number) => `$${new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`;
 
   const messageParts = [
-    "✨ NUEVO PEDIDO ✨\n",
+    `✨ NUEVO PEDIDO #${orderId.slice(-4)} ✨\n`,
     `👤 *Cliente:*\n${clientName}\n`,
     `📦 *Productos:* (${totalItems} unidades)\n${itemsText}\n`,
   ];
@@ -121,22 +124,26 @@ function formatWhatsAppMessage(
 
 export function OrderSummary({
   agreementId,
+  clientId,
   clientName,
   availablePromotions,
   pricesIncludeVat,
 }: {
   agreementId: string;
+  clientId: string;
   clientName: string;
   availablePromotions: AgreementPromotion[];
   pricesIncludeVat: boolean;
 }) {
   const { items, totalItems, subtotal, vatAmount, totalPrice, clearCart, agreementId: storedAgreementId, setAgreement } = useCartStore();
   const { toast } = useToast();
+  const [isPending, startTransition] = useTransition();
+
   const whatsAppNumber =
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5491123456789";
 
   useEffect(() => {
-    if (storedAgreementId && storedAgreementId !== agreementId) {
+    if (storedAgreementId !== agreementId) {
       clearCart();
     }
     setAgreement(agreementId, pricesIncludeVat);
@@ -152,17 +159,45 @@ export function OrderSummary({
       });
       return;
     }
-    const message = formatWhatsAppMessage(
-      clientName,
-      items,
-      totalItems,
-      subtotal,
-      vatAmount,
-      totalPrice,
-      availablePromotions
-    );
-    const whatsappUrl = `https://wa.me/${whatsAppNumber}?text=${message}`;
-    window.open(whatsappUrl, "_blank");
+
+    startTransition(async () => {
+        const result = await submitOrder({
+            cart: items,
+            total: totalPrice,
+            agreementId,
+            clientId,
+            clientName
+        });
+
+        if (result.error || !result.data) {
+            toast({
+                title: "Error al guardar el pedido",
+                description: result.error.message,
+                variant: "destructive",
+            });
+            return;
+        }
+
+        const message = formatWhatsAppMessage(
+            clientName,
+            items,
+            totalItems,
+            subtotal,
+            vatAmount,
+            totalPrice,
+            availablePromotions,
+            result.data.orderId
+        );
+        const whatsappUrl = `https://wa.me/${whatsAppNumber}?text=${message}`;
+        window.open(whatsappUrl, "_blank");
+
+        // Clear cart on success
+        clearCart();
+        toast({
+            title: "Pedido enviado!",
+            description: "Tu pedido se ha registrado y enviado por WhatsApp.",
+        });
+    });
   };
 
   const hasItems = items.length > 0;
@@ -226,8 +261,9 @@ export function OrderSummary({
                       onClick={handleSend}
                       size="lg"
                       className="w-full"
+                      disabled={isPending}
                   >
-                      <span>Enviar Pedido por WhatsApp</span>
+                      {isPending ? "Procesando..." : "Enviar Pedido por WhatsApp"}
                       <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
               </div>

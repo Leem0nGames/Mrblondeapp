@@ -18,6 +18,11 @@ export type ProductWithPrice = Product & {
   volume_price?: number | null;
 };
 
+export type CartItem = {
+  product: ProductWithPrice;
+  quantity: number;
+};
+
 export type Promotion = {
   id: string;
   name: string;
@@ -70,6 +75,7 @@ export type AgreementWithCount = Agreement & {
 export type DetailedAgreement = Agreement & {
   agreement_promotions: AgreementPromotion[]; // Joined data
   price_lists: { id: string, name: string, prices_include_vat: boolean } | null; // Joined data
+  clients: { id: string, contact_name: string | null }[]; // Joined data
 }
 
 export type Client = {
@@ -86,6 +92,22 @@ export type Client = {
     agreement_id: string | null;
     created_at: string;
     agreements?: { agreement_name: string } | null; // Joined data
+}
+
+export type Order = {
+    id: string;
+    client_id: string;
+    agreement_id: string;
+    created_at: string;
+    total_amount: number;
+    status: 'pending' | 'completed';
+    client_name_cache: string;
+}
+
+export type DashboardStats = {
+    total_revenue: number;
+    month_revenue: number;
+    active_clients: number;
 }
 
 // --- Genkit Flow Types ---

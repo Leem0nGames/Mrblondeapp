@@ -48,14 +48,17 @@ export default async function OrderPage({
   const { agreement, productsByCategory } = data;
   const categories = Object.keys(productsByCategory);
 
+  // El cliente asociado a este convenio (debería ser solo uno)
+  const client = agreement.clients[0];
+
   return (
     <div className="min-h-screen bg-muted/20">
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Logo showText={true}/>
           <div className="text-right">
-            <p className="font-semibold text-foreground">{agreement.agreement_name}</p>
-            <p className="text-sm capitalize text-muted-foreground">{agreement.client_type}</p>
+            <p className="font-semibold text-foreground">{client?.contact_name ?? "Cliente"}</p>
+            <p className="text-sm capitalize text-muted-foreground">{agreement.agreement_name}</p>
           </div>
         </div>
       </header>
@@ -108,7 +111,8 @@ export default async function OrderPage({
         <div className="lg:col-span-1 lg:sticky lg:top-24 space-y-6">
           <OrderSummary 
             agreementId={agreement.id}
-            clientName={agreement.agreement_name}
+            clientId={client.id}
+            clientName={client.contact_name ?? "Cliente"}
             availablePromotions={agreement.agreement_promotions}
             pricesIncludeVat={agreement.price_lists?.prices_include_vat ?? true}
           />

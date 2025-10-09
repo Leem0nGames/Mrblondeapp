@@ -1,6 +1,6 @@
 
 import Link from "next/link";
-import { ArrowLeft, Edit, FileWarning, Package, Percent, PlusCircle } from "lucide-react";
+import { ArrowLeft, Edit, FileWarning, Package, Percent, PlusCircle, Users } from "lucide-react";
 import { getAgreementById } from "@/app/actions/admin.actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +14,7 @@ import { AgreementDialog } from "../_components/agreement-dialog";
 import AgreementPromotionsList from "./_components/agreement-promotions-list";
 import { AssignPromotionDialog } from "./_components/assign-promotion-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default async function AgreementDetailPage({
   params,
@@ -64,8 +65,8 @@ export default async function AgreementDetailPage({
         </div>
       </div>
 
-       <div className="grid gap-4 md:grid-cols-2">
-            <Card>
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+             <Card>
                 <CardHeader>
                     <CardTitle>Lista de Precios</CardTitle>
                     <CardDescription>La lista de precios que rige este convenio.</CardDescription>
@@ -108,6 +109,35 @@ export default async function AgreementDetailPage({
                 </CardHeader>
                 <CardContent>
                     <AgreementPromotionsList promotions={agreement.agreement_promotions} agreementId={agreement.id} />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Clientes Asignados</CardTitle>
+                    <CardDescription>
+                       Clientes que actualmente utilizan este convenio.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {agreement.clients && agreement.clients.length > 0 ? (
+                        <div className="space-y-4">
+                            {agreement.clients.map(client => (
+                                <div key={client.id} className="flex items-center gap-4">
+                                    <Avatar className="h-9 w-9">
+                                        <AvatarImage src={`https://avatar.vercel.sh/${client.id}.png`} alt="Avatar" />
+                                        <AvatarFallback>{client.contact_name?.charAt(0) ?? 'C'}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="grid gap-1">
+                                        <p className="text-sm font-medium leading-none">{client.contact_name}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                         <div className="text-sm text-muted-foreground text-center py-4">
+                            <p>No hay clientes asignados a este convenio.</p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
        </div>

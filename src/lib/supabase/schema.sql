@@ -1,209 +1,201 @@
--- ----------------------------
--- 0. Helper Functions & Types
--- ----------------------------
+-- Drop existing policies if they exist, then recreate them.
+-- This makes the script idempotent.
 
--- Custom types
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'client_type') THEN
-        CREATE TYPE public.client_type AS ENUM ('barberia', 'distribuidor', 'especial');
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'client_status') THEN
-        CREATE TYPE public.client_status AS ENUM ('pending_onboarding', 'pending_agreement', 'active');
-    END IF;
-END$$;
+-- Create custom types if they don't exist
+DO $$ BEGIN
+    CREATE TYPE client_status AS ENUM ('pending_onboarding', 'pending_agreement', 'active');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
+DO $$ BEGIN
+    CREATE TYPE client_type AS ENUM ('barberia', 'distribuidor', 'especial');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
--- ----------------------------
--- 1. Tables
--- ----------------------------
+DO $$ BEGIN
+    CREATE TYPE order_status AS ENUM ('pending', 'completed');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
 
 -- Products Table
-CREATE TABLE IF NOT EXISTS public.products (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    name text NOT NULL,
-    description text NULL,
-    base_price numeric NOT NULL DEFAULT 0,
-    stock integer NOT NULL DEFAULT 0,
-    category text NULL,
-    created_at timestamp with time zone NOT NULL DEFAULT now(),
-    CONSTRAINT products_pkey PRIMARY KEY (id)
+CREATE TABLE IF NOT EXISTS products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    description TEXT,
+    base_price NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    stock INT NOT NULL DEFAULT 0,
+    category TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Price Lists Table
-CREATE TABLE IF NOT EXISTS public.price_lists (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    name text NOT NULL,
-    prices_include_vat boolean NOT NULL DEFAULT true,
-    created_at timestamp with time zone NOT NULL DEFAULT now(),
-    CONSTRAINT price_lists_pkey PRIMARY KEY (id),
-    CONSTRAINT price_lists_name_key UNIQUE (name)
+CREATE TABLE IF NOT EXISTS price_lists (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL UNIQUE,
+    prices_include_vat BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Price List Items Table (Junction table)
-CREATE TABLE IF NOT EXISTS public.price_list_items (
-    price_list_id uuid NOT NULL,
-    product_id uuid NOT NULL,
-    price numeric NOT NULL,
-    volume_price numeric NULL,
-    CONSTRAINT price_list_items_pkey PRIMARY KEY (price_list_id, product_id),
-    CONSTRAINT price_list_items_price_list_id_fkey FOREIGN KEY (price_list_id) REFERENCES public.price_lists(id) ON DELETE CASCADE,
-    CONSTRAINT price_list_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE
+-- Price List Items (Junction Table)
+CREATE TABLE IF NOT EXISTS price_list_items (
+    price_list_id UUID NOT NULL,
+    product_id UUID NOT NULL,
+    price NUMERIC(10, 2) NOT NULL,
+    volume_price NUMERIC(10, 2),
+    PRIMARY KEY (price_list_id, product_id),
+    CONSTRAINT fk_price_list FOREIGN KEY (price_list_id) REFERENCES price_lists(id) ON DELETE CASCADE,
+    CONSTRAINT fk_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
 -- Agreements Table
-CREATE TABLE IF NOT EXISTS public.agreements (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    agreement_name text NOT NULL,
-    client_type public.client_type NOT NULL,
-    price_list_id uuid NULL,
-    created_at timestamp with time zone NOT NULL DEFAULT now(),
-    CONSTRAINT agreements_pkey PRIMARY KEY (id),
-    CONSTRAINT agreements_name_key UNIQUE (agreement_name),
-    CONSTRAINT agreements_price_list_id_fkey FOREIGN KEY (price_list_id) REFERENCES public.price_lists(id) ON DELETE SET NULL
-);
-
--- Promotions Table
-CREATE TABLE IF NOT EXISTS public.promotions (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    name text NOT NULL,
-    description text NULL,
-    rules jsonb NULL,
-    created_at timestamp with time zone NOT NULL DEFAULT now(),
-    CONSTRAINT promotions_pkey PRIMARY KEY (id)
-);
-
--- Agreement Promotions Table (Junction table)
-CREATE TABLE IF NOT EXISTS public.agreement_promotions (
-    agreement_id uuid NOT NULL,
-    promotion_id uuid NOT NULL,
-    CONSTRAINT agreement_promotions_pkey PRIMARY KEY (agreement_id, promotion_id),
-    CONSTRAINT agreement_promotions_agreement_id_fkey FOREIGN KEY (agreement_id) REFERENCES public.agreements(id) ON DELETE CASCADE,
-    CONSTRAINT agreement_promotions_promotion_id_fkey FOREIGN KEY (promotion_id) REFERENCES public.promotions(id) ON DELETE CASCADE
+CREATE TABLE IF NOT EXISTS agreements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    agreement_name TEXT NOT NULL UNIQUE,
+    client_type client_type NOT NULL,
+    price_list_id UUID,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT fk_price_list FOREIGN KEY (price_list_id) REFERENCES price_lists(id) ON DELETE SET NULL
 );
 
 -- Clients Table
-CREATE TABLE IF NOT EXISTS public.clients (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    cuit text NULL,
-    contact_name text NULL,
-    contact_dni text NULL,
-    address text NULL,
-    delivery_window text NULL,
-    email text NULL,
-    instagram text NULL,
-    status public.client_status NOT NULL DEFAULT 'pending_onboarding',
-    onboarding_token uuid NOT NULL DEFAULT gen_random_uuid(),
-    agreement_id uuid NULL,
-    created_at timestamp with time zone NOT NULL DEFAULT now(),
-    CONSTRAINT clients_pkey PRIMARY KEY (id),
-    CONSTRAINT clients_onboarding_token_key UNIQUE (onboarding_token),
-    CONSTRAINT clients_cuit_key UNIQUE (cuit),
-    CONSTRAINT clients_email_key UNIQUE (email),
-    CONSTRAINT clients_agreement_id_fkey FOREIGN KEY (agreement_id) REFERENCES public.agreements(id) ON DELETE SET NULL
+CREATE TABLE IF NOT EXISTS clients (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cuit TEXT UNIQUE,
+    contact_name TEXT,
+    contact_dni TEXT,
+    address TEXT,
+    delivery_window TEXT,
+    email TEXT UNIQUE,
+    instagram TEXT,
+    status client_status NOT NULL DEFAULT 'pending_onboarding',
+    onboarding_token UUID NOT NULL DEFAULT gen_random_uuid(),
+    agreement_id UUID,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT fk_agreement FOREIGN KEY (agreement_id) REFERENCES agreements(id) ON DELETE SET NULL
 );
 
 
--- ----------------------------
--- 2. Row Level Security (RLS)
--- ----------------------------
+-- Promotions Table
+CREATE TABLE IF NOT EXISTS promotions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    description TEXT,
+    rules JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
--- PRODUCTS
-ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow all access to authenticated users" ON public.products;
-CREATE POLICY "Allow all access to authenticated users" ON public.products
-FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
+-- Agreement-Promotions (Junction Table)
+CREATE TABLE IF NOT EXISTS agreement_promotions (
+    agreement_id UUID NOT NULL,
+    promotion_id UUID NOT NULL,
+    PRIMARY KEY (agreement_id, promotion_id),
+    CONSTRAINT fk_agreement FOREIGN KEY (agreement_id) REFERENCES agreements(id) ON DELETE CASCADE,
+    CONSTRAINT fk_promotion FOREIGN KEY (promotion_id) REFERENCES promotions(id) ON DELETE CASCADE
+);
 
--- PRICE LISTS
-ALTER TABLE public.price_lists ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow all access to authenticated users" ON public.price_lists;
-CREATE POLICY "Allow all access to authenticated users" ON public.price_lists
-FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
+-- Orders Table
+CREATE TABLE IF NOT EXISTS orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id UUID NOT NULL,
+    agreement_id UUID NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    total_amount NUMERIC(10, 2) NOT NULL,
+    status order_status NOT NULL DEFAULT 'pending',
+    client_name_cache TEXT, -- Denormalized for easy display
+    CONSTRAINT fk_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_agreement FOREIGN KEY (agreement_id) REFERENCES agreements(id) ON DELETE RESTRICT
+);
 
-DROP POLICY IF EXISTS "Allow public read access" ON public.price_lists;
-CREATE POLICY "Allow public read access" ON public.price_lists
-FOR SELECT USING (true);
+-- Order Items Table
+CREATE TABLE IF NOT EXISTS order_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL,
+    product_id UUID NOT NULL,
+    quantity INT NOT NULL,
+    price_per_unit NUMERIC(10, 2) NOT NULL,
+    CONSTRAINT fk_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    CONSTRAINT fk_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
+);
 
+-- Dashboard Stats Table (for pre-aggregated data)
+CREATE TABLE IF NOT EXISTS dashboard_stats (
+    id INT PRIMARY KEY, -- Only one row
+    total_revenue NUMERIC(15, 2) DEFAULT 0.00,
+    month_revenue NUMERIC(15, 2) DEFAULT 0.00,
+    active_clients INT DEFAULT 0,
+    CONSTRAINT single_row CHECK (id = 1)
+);
 
--- PRICE LIST ITEMS
-ALTER TABLE public.price_list_items ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow all access to authenticated users" ON public.price_list_items;
-CREATE POLICY "Allow all access to authenticated users" ON public.price_list_items
-FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
-
-DROP POLICY IF EXISTS "Allow public read access" ON public.price_list_items;
-CREATE POLICY "Allow public read access" ON public.price_list_items
-FOR SELECT USING (true);
-
-
--- AGREEMENTS
-ALTER TABLE public.agreements ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow all access to authenticated users" ON public.agreements;
-CREATE POLICY "Allow all access to authenticated users" ON public.agreements
-FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
-
-DROP POLICY IF EXISTS "Allow public read access" ON public.agreements;
-CREATE POLICY "Allow public read access" ON public.agreements
-FOR SELECT USING (true);
-
-
--- PROMOTIONS
-ALTER TABLE public.promotions ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow all access to authenticated users" ON public.promotions;
-CREATE POLICY "Allow all access to authenticated users" ON public.promotions
-FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
+-- Insert the single row for dashboard stats if it doesn't exist
+INSERT INTO dashboard_stats (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 
 
--- AGREEMENT PROMOTIONS
-ALTER TABLE public.agreement_promotions ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow all access to authenticated users" ON public.agreement_promotions;
-CREATE POLICY "Allow all access to authenticated users" ON public.agreement_promotions
-FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
+-- Enable Row Level Security for all tables
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE price_lists ENABLE ROW LEVEL SECURITY;
+ALTER TABLE price_list_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE agreements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE promotions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE agreement_promotions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dashboard_stats ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Allow public read access" ON public.agreement_promotions;
-CREATE POLICY "Allow public read access" ON public.agreement_promotions
-FOR SELECT USING (true);
+-- Drop existing policies before creating new ones
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON products;
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON price_lists;
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON price_list_items;
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON agreements;
+DROP POLICY IF EXISTS "Allow client public read access" ON agreements;
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON clients;
+DROP POLICY IF EXISTS "Allow public read for onboarding" ON clients;
+DROP POLICY IF EXISTS "Allow client to update their own data during onboarding" ON clients;
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON promotions;
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON agreement_promotions;
+DROP POLICY IF EXISTS "Allow client public read access" ON agreement_promotions;
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON orders;
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON order_items;
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON dashboard_stats;
+
+-- RLS Policies
+
+-- Full access for authenticated admins on most tables
+CREATE POLICY "Allow all for authenticated users" ON products FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow all for authenticated users" ON price_lists FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow all for authenticated users" ON price_list_items FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow all for authenticated users" ON promotions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow all for authenticated users" ON orders FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow all for authenticated users" ON order_items FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow all for authenticated users" ON dashboard_stats FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 
--- CLIENTS
-ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
+-- Agreements: Admins have full access, any user can read (for order page)
+CREATE POLICY "Allow all for authenticated users" ON agreements FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow client public read access" ON agreements FOR SELECT USING (true);
 
-DROP POLICY IF EXISTS "Allow all access to authenticated admins" ON public.clients;
-CREATE POLICY "Allow all access to authenticated admins" ON public.clients
-FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
 
-DROP POLICY IF EXISTS "Allow anon read for onboarding" ON public.clients;
-CREATE POLICY "Allow anon read for onboarding" ON public.clients
-FOR SELECT
-USING (true);
+-- Clients: Admins have full access.
+CREATE POLICY "Allow all for authenticated users" ON clients FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+-- Allow public read for a client trying to onboard
+CREATE POLICY "Allow public read for onboarding" ON clients FOR SELECT USING (onboarding_token::text = (SELECT nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'onboarding_token'));
+-- Allow a client to update their own data during onboarding
+CREATE POLICY "Allow client to update their own data during onboarding" ON clients FOR UPDATE USING (onboarding_token::text = (SELECT nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'onboarding_token'));
 
-DROP POLICY IF EXISTS "Allow anon update for onboarding" ON public.clients;
-CREATE POLICY "Allow anon update for onboarding" ON public.clients
-FOR UPDATE
-USING (status = 'pending_onboarding')
-WITH CHECK (status = 'pending_onboarding');
 
--- ----------------------------
--- 3. Views
--- ----------------------------
--- This view is a helper to count promotions per agreement easily.
-CREATE OR REPLACE VIEW public.agreements_with_counts AS
+-- Agreement-Promotions: Admins have full access, any user can read (for order page)
+CREATE POLICY "Allow all for authenticated users" ON agreement_promotions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow client public read access" ON agreement_promotions FOR SELECT USING (true);
+
+
+-- Create a view for agreements with promotion counts
+CREATE OR REPLACE VIEW agreements_with_counts AS
 SELECT
     a.*,
-    (SELECT count(*) FROM public.agreement_promotions ap WHERE ap.agreement_id = a.id) AS promotion_count
+    (SELECT count(*) FROM agreement_promotions ap WHERE ap.agreement_id = a.id) as promotion_count
 FROM
-    public.agreements a;
+    agreements a;
