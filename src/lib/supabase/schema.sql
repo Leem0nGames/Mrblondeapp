@@ -1,315 +1,304 @@
--- ------------------------------------------------------------------------------------------------
--- 1. EXTENSIONS
--- ------------------------------------------------------------------------------------------------
-
--- Enable pgcrypto for UUID generation
-create extension if not exists "pgcrypto" with schema "public";
--- Enable citext for case-insensitive text
-create extension if not exists "citext" with schema "public";
--- Enable PostGIS for geographic data
-create extension if not exists "postgis" with schema "public";
+-- -----------------------------------------------------------------------------
+-- 1. Habilitar la extensión requerida
+-- -----------------------------------------------------------------------------
+create extension if not exists "uuid-ossp" with schema extensions;
 
 
--- ------------------------------------------------------------------------------------------------
--- 2. TABLES
--- ------------------------------------------------------------------------------------------------
+-- -----------------------------------------------------------------------------
+-- 2. Crear las tablas de la aplicación
+-- -----------------------------------------------------------------------------
 
--- Products Table
--- Stores the master list of all products available.
-create table if not exists "public"."products" (
-    "id" uuid not null default gen_random_uuid(),
-    "name" text not null,
-    "description" text,
-    "base_price" numeric not null default 0,
-    "stock" integer not null default 0,
-    "category" text,
-    "created_at" timestamp with time zone not null default now(),
-
-    primary key (id),
-    unique (name)
+-- Tabla de Productos
+create table if not exists public.products (
+  id uuid default extensions.uuid_generate_v4 () primary key,
+  name text not null,
+  description text,
+  base_price numeric(10, 2) not null default 0,
+  stock integer not null default 0,
+  category text,
+  created_at timestamp with time zone not null default now()
 );
-alter table "public"."products" enable row level security;
-comment on table "public"."products" is 'Master list of all available products.';
 
--- Price Lists Table
--- Stores different price lists that can be assigned to agreements.
-create table if not exists "public"."price_lists" (
-    "id" uuid not null default gen_random_uuid(),
-    "name" text not null,
-    "prices_include_vat" boolean not null default true,
-    "created_at" timestamp with time zone not null default now(),
-
-    primary key (id),
-    unique (name)
+-- Tabla de Listas de Precios
+create table if not exists public.price_lists (
+  id uuid default extensions.uuid_generate_v4() primary key,
+  name text not null unique,
+  prices_include_vat boolean not null default true,
+  created_at timestamp with time zone not null default now()
 );
-alter table "public"."price_lists" enable row level security;
-comment on table "public"."price_lists" is 'Reusable price lists for different client tiers.';
 
--- Price List Items Table (Join Table)
--- Defines the specific price of a product within a given price list.
-create table if not exists "public"."price_list_items" (
-    "price_list_id" uuid not null,
-    "product_id" uuid not null,
-    "price" numeric not null,
-    "volume_price" numeric,
-    "created_at" timestamp with time zone not null default now(),
-
-    primary key (price_list_id, product_id),
-    foreign key (price_list_id) references public.price_lists(id) on delete cascade,
-    foreign key (product_id) references public.products(id) on delete cascade
+-- Tabla de Items de Listas de Precios (tabla intermedia)
+create table if not exists public.price_list_items (
+  price_list_id uuid not null references public.price_lists(id) on delete cascade,
+  product_id uuid not null references public.products(id) on delete cascade,
+  price numeric(10, 2) not null,
+  volume_price numeric(10, 2),
+  primary key (price_list_id, product_id)
 );
-alter table "public"."price_list_items" enable row level security;
-comment on table "public"."price_list_items" is 'Specific product prices for each price list.';
 
--- Agreements Table
--- Defines commercial agreements for different client types.
-create table if not exists "public"."agreements" (
-    "id" uuid not null default gen_random_uuid(),
-    "agreement_name" text not null,
-    "client_type" text not null,
-    "price_list_id" uuid,
-    "created_at" timestamp with time zone not null default now(),
-
-    primary key (id),
-    unique (agreement_name),
-    foreign key (price_list_id) references public.price_lists(id) on delete set null
+-- Tabla de Convenios
+create table if not exists public.agreements (
+  id uuid default extensions.uuid_generate_v4 () primary key,
+  agreement_name text not null unique,
+  client_type text not null,
+  created_at timestamp with time zone not null default now(),
+  price_list_id uuid references public.price_lists(id) on delete set null
 );
-alter table "public"."agreements" enable row level security;
-comment on table "public"."agreements" is 'Commercial agreements defining pricing and promotions.';
 
--- Promotions Table
--- Stores all available promotions.
-create table if not exists "public"."promotions" (
-    "id" uuid not null default gen_random_uuid(),
-    "name" text not null,
-    "description" text,
-    "rules" jsonb not null,
-    "created_at" timestamp with time zone not null default now(),
-
-    primary key (id),
-    unique (name)
+-- Tabla de Clientes
+create table if not exists public.clients (
+    id uuid default extensions.uuid_generate_v4() primary key,
+    cuit text unique,
+    contact_name text,
+    contact_dni text,
+    address text,
+    delivery_window text,
+    email text unique,
+    instagram text,
+    status text not null default 'pending_onboarding',
+    onboarding_token uuid default extensions.uuid_generate_v4() not null,
+    agreement_id uuid references public.agreements(id) on delete set null,
+    created_at timestamp with time zone not null default now()
 );
-alter table "public"."promotions" enable row level security;
-comment on table "public"."promotions" is 'Defines business rules for special offers.';
 
--- Agreement Promotions Table (Join Table)
--- Assigns promotions to specific agreements.
-create table if not exists "public"."agreement_promotions" (
-    "agreement_id" uuid not null,
-    "promotion_id" uuid not null,
-    "created_at" timestamp with time zone not null default now(),
-
-    primary key (agreement_id, promotion_id),
-    foreign key (agreement_id) references public.agreements(id) on delete cascade,
-    foreign key (promotion_id) references public.promotions(id) on delete cascade
+-- Tabla de Promociones
+create table if not exists public.promotions (
+  id uuid default extensions.uuid_generate_v4 () primary key,
+  name text not null,
+  description text,
+  rules jsonb,
+  created_at timestamp with time zone not null default now()
 );
-alter table "public"."agreement_promotions" enable row level security;
-comment on table "public"."agreement_promotions" is 'Assigns promotions to agreements.';
 
--- Sales Conditions Table
--- Stores all available sales conditions.
-create table if not exists "public"."sales_conditions" (
-    "id" uuid not null default gen_random_uuid(),
-    "name" text not null,
-    "description" text,
-    "rules" jsonb not null,
-    "created_at" timestamp with time zone not null default now(),
-
-    primary key (id),
-    unique (name)
+-- Tabla de Convenios y Promociones (tabla intermedia)
+create table if not exists public.agreement_promotions (
+  agreement_id uuid not null references public.agreements (id) on delete cascade,
+  promotion_id uuid not null references public.promotions (id) on delete cascade,
+  primary key (agreement_id, promotion_id)
 );
-alter table "public"."sales_conditions" enable row level security;
-comment on table "public"."sales_conditions" is 'Defines payment terms, discounts, etc.';
 
-
--- Agreement Sales Conditions Table (Join Table)
--- Assigns sales conditions to specific agreements.
-create table if not exists "public"."agreement_sales_conditions" (
-    "agreement_id" uuid not null,
-    "sales_condition_id" uuid not null,
-    "created_at" timestamp with time zone not null default now(),
-
-    primary key (agreement_id, sales_condition_id),
-    foreign key (agreement_id) references public.agreements(id) on delete cascade,
-    foreign key (sales_condition_id) references public.sales_conditions(id) on delete cascade
+-- Tabla de Condiciones de Venta
+create table if not exists public.sales_conditions (
+  id uuid default extensions.uuid_generate_v4() primary key,
+  name text not null,
+  description text,
+  rules jsonb,
+  created_at timestamp with time zone not null default now()
 );
-alter table "public"."agreement_sales_conditions" enable row level security;
-comment on table "public"."agreement_sales_conditions" is 'Assigns sales conditions to agreements.';
 
-
--- Clients Table
--- Stores client information and their assigned agreement.
-create table if not exists "public"."clients" (
-    "id" uuid not null default gen_random_uuid(),
-    "cuit" text,
-    "contact_name" text,
-    "contact_dni" text,
-    "address" text,
-    "delivery_window" text,
-    "email" citext,
-    "instagram" text,
-    "status" text not null default 'pending_onboarding',
-    "onboarding_token" uuid not null default gen_random_uuid(),
-    "agreement_id" uuid,
-    "created_at" timestamp with time zone not null default now(),
-    
-    primary key (id),
-    unique (onboarding_token),
-    unique (email),
-    unique (cuit),
-    foreign key (agreement_id) references public.agreements(id) on delete set null
+-- Tabla de Convenios y Condiciones de Venta (tabla intermedia)
+create table if not exists public.agreement_sales_conditions (
+  agreement_id uuid not null references public.agreements(id) on delete cascade,
+  sales_condition_id uuid not null references public.sales_conditions(id) on delete cascade,
+  primary key (agreement_id, sales_condition_id)
 );
-alter table "public"."clients" enable row level security;
-comment on table "public"."clients" is 'Client data and their assigned agreement.';
 
--- Orders Table
--- Stores submitted orders.
-create table if not exists "public"."orders" (
-    "id" uuid not null default gen_random_uuid(),
-    "client_id" uuid not null,
-    "agreement_id" uuid not null,
-    "created_at" timestamp with time zone not null default now(),
-    "total_amount" numeric not null,
-    "status" text not null default 'pending',
-    "client_name_cache" text not null,
 
-    primary key (id),
-    foreign key (client_id) references public.clients(id) on delete restrict,
-    foreign key (agreement_id) references public.agreements(id) on delete restrict
+-- Tabla de Pedidos
+create table if not exists public.orders (
+    id uuid default extensions.uuid_generate_v4() primary key,
+    client_id uuid references public.clients(id) on delete set null,
+    agreement_id uuid references public.agreements(id) on delete set null,
+    created_at timestamp with time zone not null default now(),
+    total_amount numeric(10, 2) not null,
+    status text not null default 'pending',
+    client_name_cache text not null
 );
-alter table "public"."orders" enable row level security;
-comment on table "public"."orders" is 'Records of submitted orders.';
 
-
--- Order Items Table
--- Stores the individual products within an order.
-create table if not exists "public"."order_items" (
-    "id" uuid not null default gen_random_uuid(),
-    "order_id" uuid not null,
-    "product_id" uuid not null,
-    "quantity" integer not null,
-    "price_per_unit" numeric not null,
-
-    primary key (id),
-    foreign key (order_id) references public.orders(id) on delete cascade,
-    foreign key (product_id) references public.products(id) on delete restrict
+-- Tabla de Items de Pedido
+create table if not exists public.order_items (
+    id uuid default extensions.uuid_generate_v4() primary key,
+    order_id uuid not null references public.orders(id) on delete cascade,
+    product_id uuid references public.products(id) on delete set null,
+    quantity integer not null,
+    price_per_unit numeric(10, 2) not null
 );
-alter table "public"."order_items" enable row level security;
-comment on table "public"."order_items" is 'Individual items belonging to an order.';
 
--- Dashboard Stats Table (Materialized View or Aggregation Table)
-create table if not exists "public"."dashboard_stats" (
-    "id" bigint primary key generated by default as identity,
-    "total_revenue" numeric not null default 0,
-    "month_revenue" numeric not null default 0,
-    "active_clients" integer not null default 0
+
+-- -----------------------------------------------------------------------------
+-- 3. Crear Vistas (Views) para datos agregados
+-- -----------------------------------------------------------------------------
+
+-- Vista para estadísticas del Dashboard (mock)
+-- En una app real, esto se calcularía con triggers o un cron job.
+create table if not exists public.dashboard_stats (
+  id integer primary key,
+  total_revenue numeric,
+  month_revenue numeric,
+  active_clients integer
 );
-alter table "public"."dashboard_stats" enable row level security;
-comment on table "public"."dashboard_stats" is 'Aggregated stats for the admin dashboard.';
-
--- Insert a default row for dashboard stats if it doesn't exist
+-- Insertar una fila inicial si no existe
 insert into public.dashboard_stats (id, total_revenue, month_revenue, active_clients)
-values (1, 0, 0, 0)
-on conflict (id) do nothing;
+values (1, 125430.50, 48300.00, 7) on conflict (id) do nothing;
 
 
--- ------------------------------------------------------------------------------------------------
--- 3. RLS (Row Level Security)
--- ------------------------------------------------------------------------------------------------
-
--- Public access for products, but only for authenticated users on admin actions
-drop policy if exists "Allow public read-only access." on "public"."products";
-create policy "Allow public read-only access." on "public"."products"
-  for select using (true);
-
-drop policy if exists "Allow authorized users to manage products." on "public"."products";
-create policy "Allow authorized users to manage products." on "public"."products"
-  for all using (auth.role() = 'authenticated');
-
-
--- Similar policies for other tables...
--- Price Lists
-drop policy if exists "Allow public read-only access." on "public"."price_lists";
-create policy "Allow public read-only access." on "public"."price_lists" for select using (true);
-drop policy if exists "Allow authorized users to manage price lists." on "public"."price_lists";
-create policy "Allow authorized users to manage price lists." on "public"."price_lists" for all using (auth.role() = 'authenticated');
-
--- Price List Items
-drop policy if exists "Allow public read-only access." on "public"."price_list_items";
-create policy "Allow public read-only access." on "public"."price_list_items" for select using (true);
-drop policy if exists "Allow authorized users to manage price list items." on "public"."price_list_items";
-create policy "Allow authorized users to manage price list items." on "public"."price_list_items" for all using (auth.role() = 'authenticated');
-
--- Agreements
-drop policy if exists "Allow public read-only access." on "public"."agreements";
-create policy "Allow public read-only access." on "public"."agreements" for select using (true);
-drop policy if exists "Allow authorized users to manage agreements." on "public"."agreements";
-create policy "Allow authorized users to manage agreements." on "public"."agreements" for all using (auth.role() = 'authenticated');
-
--- Promotions
-drop policy if exists "Allow public read-only access." on "public"."promotions";
-create policy "Allow public read-only access." on "public"."promotions" for select using (true);
-drop policy if exists "Allow authorized users to manage promotions." on "public"."promotions";
-create policy "Allow authorized users to manage promotions." on "public"."promotions" for all using (auth.role() = 'authenticated');
-
--- Agreement Promotions
-drop policy if exists "Allow public read-only access." on "public"."agreement_promotions";
-create policy "Allow public read-only access." on "public"."agreement_promotions" for select using (true);
-drop policy if exists "Allow authorized users to manage agreement promotions." on "public"."agreement_promotions";
-create policy "Allow authorized users to manage agreement promotions." on "public"."agreement_promotions" for all using (auth.role() = 'authenticated');
-
--- Sales Conditions
-drop policy if exists "Allow public read-only access." on "public"."sales_conditions";
-create policy "Allow public read-only access." on "public"."sales_conditions" for select using (true);
-drop policy if exists "Allow authorized users to manage sales conditions." on "public"."sales_conditions";
-create policy "Allow authorized users to manage sales conditions." on "public"."sales_conditions" for all using (auth.role() = 'authenticated');
-
--- Agreement Sales Conditions
-drop policy if exists "Allow public read-only access." on "public"."agreement_sales_conditions";
-create policy "Allow public read-only access." on "public"."agreement_sales_conditions" for select using (true);
-drop policy if exists "Allow authorized users to manage agreement sales conditions." on "public"."agreement_sales_conditions";
-create policy "Allow authorized users to manage agreement sales conditions." on "public"."agreement_sales_conditions" for all using (auth.role() = 'authenticated');
-
-
--- Clients
-drop policy if exists "Allow public read-only access." on "public"."clients";
-create policy "Allow public read-only access." on "public"."clients" for select using (true);
-drop policy if exists "Allow authorized users to manage clients." on "public"."clients";
-create policy "Allow authorized users to manage clients." on "public"."clients" for all using (auth.role() = 'authenticated');
-
--- Orders & Order Items (more restrictive)
-drop policy if exists "Allow authorized users to manage orders." on "public"."orders";
-create policy "Allow authorized users to manage orders." on "public"."orders" for all using (auth.role() = 'authenticated');
-drop policy if exists "Allow authorized users to manage order items." on "public"."order_items";
-create policy "Allow authorized users to manage order items." on "public"."order_items" for all using (auth.role() = 'authenticated');
-drop policy if exists "Allow read access for public order submission." on "public"."orders";
-create policy "Allow read access for public order submission." on "public"."orders" for select using (true);
-
-
--- Dashboard Stats
-drop policy if exists "Allow authorized users to read stats." on "public"."dashboard_stats";
-create policy "Allow authorized users to read stats." on "public"."dashboard_stats" for all using (auth.role() = 'authenticated');
-
-
--- ------------------------------------------------------------------------------------------------
--- 4. VIEWS
--- ------------------------------------------------------------------------------------------------
-
--- View to get agreements with their promotion counts
-drop view if exists public.agreements_with_counts;
+-- Vista para convenios con conteos de productos y promociones
 create or replace view public.agreements_with_counts as
 select
   a.*,
-  (select count(*) from public.agreement_promotions ap where ap.agreement_id = a.id) as promotion_count,
-  (select count(*) from public.agreement_sales_conditions asc where asc.agreement_id = a.id) as sales_condition_count
+  (
+    select
+      count(*)
+    from
+      public.agreement_promotions ap
+    where
+      ap.agreement_id = a.id
+  ) as promotion_count,
+  (
+    select
+      count(*)
+    from
+      public.agreement_sales_conditions ascond
+    where
+      ascond.agreement_id = a.id
+  ) as sales_condition_count
 from
   public.agreements a;
+
+
+-- -----------------------------------------------------------------------------
+-- 4. Habilitar Row Level Security (RLS) en las tablas
+-- -----------------------------------------------------------------------------
+-- Por defecto, RLS está habilitado, lo que niega todo acceso.
+-- Las políticas específicas se definen más abajo.
+
+alter table public.products enable row level security;
+alter table public.agreements enable row level security;
+alter table public.promotions enable row level security;
+alter table public.agreement_promotions enable row level security;
+alter table public.clients enable row level security;
+alter table public.orders enable row level security;
+alter table public.order_items enable row level security;
+alter table public.price_lists enable row level security;
+alter table public.price_list_items enable row level security;
+alter table public.sales_conditions enable row level security;
+alter table public.agreement_sales_conditions enable row level security;
+
+
+-- -----------------------------------------------------------------------------
+-- 5. Definir Políticas de Row Level Security (RLS)
+-- -----------------------------------------------------------------------------
+-- Los usuarios no autenticados no pueden hacer NADA, excepto lo que se permita explícitamente.
+-- Los usuarios autenticados ('authenticated') pueden realizar las acciones definidas aquí.
+
+-- --- Políticas para la tabla 'products' ---
+drop policy if exists "Authenticated users can view products" on public.products;
+create policy "Authenticated users can view products" on public.products
+  for select to authenticated using (true);
   
--- ------------------------------------------------------------------------------------------------
--- 5. INITIAL DATA
--- ------------------------------------------------------------------------------------------------
--- You can add any initial data seeding here if needed, for example:
--- INSERT INTO public.products (name, base_price, stock) VALUES ('Initial Product', 99.99, 100);
+drop policy if exists "Admins can manage products" on public.products;
+create policy "Admins can manage products" on public.products
+  for all to authenticated using (true);
+
+-- --- Políticas para la tabla 'price_lists' ---
+drop policy if exists "Authenticated users can view price lists" on public.price_lists;
+create policy "Authenticated users can view price lists" on public.price_lists
+  for select to authenticated using (true);
+
+drop policy if exists "Admins can manage price lists" on public.price_lists;
+create policy "Admins can manage price lists" on public.price_lists
+  for all to authenticated using (true);
+
+-- --- Políticas para la tabla 'price_list_items' ---
+drop policy if exists "Authenticated users can view price list items" on public.price_list_items;
+create policy "Authenticated users can view price list items" on public.price_list_items
+  for select to authenticated using (true);
+
+drop policy if exists "Admins can manage price list items" on public.price_list_items;
+create policy "Admins can manage price list items" on public.price_list_items
+  for all to authenticated using (true);
+
+-- --- Políticas para la tabla 'agreements' ---
+-- Los usuarios públicos pueden ver la data de un convenio específico (para la pág de pedido)
+drop policy if exists "Public user can read specific agreements" on public.agreements;
+create policy "Public user can read specific agreements" on public.agreements
+  for select to anon, authenticated using (true);
+
+-- Los administradores pueden gestionar todos los convenios.
+drop policy if exists "Admins can manage agreements" on public.agreements;
+create policy "Admins can manage agreements" on public.agreements
+  for all to authenticated using (true);
+
+-- --- Políticas para la tabla 'promotions' ---
+drop policy if exists "Authenticated users can view promotions" on public.promotions;
+create policy "Authenticated users can view promotions" on public.promotions
+  for select to authenticated using (true);
+
+drop policy if exists "Admins can manage promotions" on public.promotions;
+create policy "Admins can manage promotions" on public.promotions
+  for all to authenticated using (true);
+
+-- --- Políticas para 'agreement_promotions' ---
+-- Los usuarios públicos pueden ver las relaciones para poder ver las promos de un convenio
+drop policy if exists "Public user can read agreement promotions" on public.agreement_promotions;
+create policy "Public user can read agreement promotions" on public.agreement_promotions
+  for select to anon, authenticated using (true);
+
+drop policy if exists "Admins can manage agreement promotions" on public.agreement_promotions;
+create policy "Admins can manage agreement promotions" on public.agreement_promotions
+  for all to authenticated using (true);
+
+-- --- Políticas para 'sales_conditions' ---
+drop policy if exists "Authenticated users can view sales conditions" on public.sales_conditions;
+create policy "Authenticated users can view sales conditions" on public.sales_conditions
+  for select to authenticated using (true);
+
+drop policy if exists "Admins can manage sales conditions" on public.sales_conditions;
+create policy "Admins can manage sales conditions" on public.sales_conditions
+  for all to authenticated using (true);
+
+-- --- Políticas para 'agreement_sales_conditions' ---
+drop policy if exists "Public user can read agreement sales conditions" on public.agreement_sales_conditions;
+create policy "Public user can read agreement sales conditions" on public.agreement_sales_conditions
+  for select to anon, authenticated using (true);
+
+drop policy if exists "Admins can manage agreement sales conditions" on public.agreement_sales_conditions;
+create policy "Admins can manage agreement sales conditions" on public.agreement_sales_conditions
+  for all to authenticated using (true);
+
+-- --- Políticas para 'clients' ---
+-- El público puede leer un cliente por su token de onboarding
+drop policy if exists "Public can read client by onboarding token" on public.clients;
+create policy "Public can read client by onboarding token" on public.clients
+    for select to anon using (true);
+
+-- El público puede actualizar su propia data durante el onboarding si el token coincide
+drop policy if exists "Public can update client during onboarding" on public.clients;
+create policy "Public can update client during onboarding" on public.clients
+    for update to anon using (true) with check (true);
+    
+-- Los admins pueden gestionar todos los clientes
+drop policy if exists "Admins can manage clients" on public.clients;
+create policy "Admins can manage clients" on public.clients
+  for all to authenticated using (true);
+
+-- --- Políticas para 'orders' y 'order_items' ---
+-- Cualquiera puede crear un pedido (público y autenticado)
+drop policy if exists "Anyone can create orders" on public.orders;
+create policy "Anyone can create orders" on public.orders
+    for insert to anon, authenticated with check (true);
+
+drop policy if exists "Anyone can create order items" on public.order_items;
+create policy "Anyone can create order items" on public.order_items
+    for insert to anon, authenticated with check (true);
+
+-- Solo los admins autenticados pueden ver o modificar pedidos.
+drop policy if exists "Admins can manage orders" on public.orders;
+create policy "Admins can manage orders" on public.orders
+  for all to authenticated using (true);
+
+drop policy if exists "Admins can manage order items" on public.order_items;
+create policy "Admins can manage order items" on public.order_items
+  for all to authenticated using (true);
+
+
+-- -----------------------------------------------------------------------------
+-- Seed de Datos (Opcional, para desarrollo)
+-- -----------------------------------------------------------------------------
+
+-- Vaciar la tabla antes de insertar para evitar duplicados si se corre de nuevo.
+-- CUIDADO: Esto borrará todos los productos existentes.
+-- DELETE FROM public.products;
 
 INSERT INTO public.products (name, description, base_price, stock, category) VALUES
 ('DesertStyle Pomada efecto mate 50 grs', 'Pomada efecto mate', 14766.67, 0, 'Hairstyle'),
@@ -333,5 +322,4 @@ INSERT INTO public.products (name, description, base_price, stock, category) VAL
 ('Caja Exhibidora Mr BLONDE', 'Exhibidor para puntos de venta', 30794.14, 0, 'Merchandising'),
 ('Crystal gel de afeitar 250 grs', 'Gel de afeitar profesional', 7820.18, 0, 'Professional'),
 ('Crème à Raser 400 grs', 'Crema de afeitado tradicional', 14172.71, 0, 'Professional'),
-('Capa Mr Blonde', 'Capa para barbería confeccionada en tela liviana', 12610.35, 0, 'Merchandising')
-ON CONFLICT (name) DO NOTHING;
+('Capa Mr Blonde', 'Capa para barbería confeccionada en tela liviana', 12610.35, 0, 'Merchandising');
