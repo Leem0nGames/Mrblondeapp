@@ -57,8 +57,12 @@ const formatRule = (rules: any): string => {
   }
 };
 
+interface PromotionsTableProps {
+    promotions: Promotion[];
+    emptyState: React.ReactNode;
+}
 
-export default function PromotionsTable({ promotions }: { promotions: Promotion[] }) {
+export default function PromotionsTable({ promotions, emptyState }: PromotionsTableProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -79,6 +83,10 @@ export default function PromotionsTable({ promotions }: { promotions: Promotion[
       }
     });
   };
+
+  if (promotions.length === 0) {
+    return <>{emptyState}</>;
+  }
   
   return (
     <Card>

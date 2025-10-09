@@ -45,7 +45,12 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
 import { getImageUrl } from "@/lib/placeholder-images";
 
-export default function ProductsTable({ products }: { products: Product[] }) {
+interface ProductsTableProps {
+    products: Product[];
+    emptyState: React.ReactNode;
+}
+
+export default function ProductsTable({ products, emptyState }: ProductsTableProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -71,6 +76,10 @@ export default function ProductsTable({ products }: { products: Product[] }) {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
   }
   
+  if (products.length === 0) {
+    return <>{emptyState}</>;
+  }
+
   return (
     <Card>
       <CardContent className="p-0">

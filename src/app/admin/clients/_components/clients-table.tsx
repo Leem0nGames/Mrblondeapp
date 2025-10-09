@@ -46,7 +46,12 @@ const statusMap: Record<Client['status'], { label: string; variant: "default" | 
     archived: { label: "Archivado", variant: "secondary" },
 };
 
-export function ClientsTable({ clients }: { clients: Client[] }) {
+interface ClientsTableProps {
+    clients: Client[];
+    emptyState: React.ReactNode;
+}
+
+export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -72,6 +77,10 @@ export function ClientsTable({ clients }: { clients: Client[] }) {
       const protocol = window.location.protocol;
       return `${protocol}//${host}/pedido/${agreementId}`;
   }, []);
+  
+  if (clients.length === 0) {
+    return <>{emptyState}</>;
+  }
 
   return (
     <Card>

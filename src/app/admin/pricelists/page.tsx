@@ -14,6 +14,21 @@ export default async function PriceListsPage() {
     return <p className="text-destructive">{error.message}</p>;
   }
 
+  const emptyState = (
+    <EmptyState
+        icon={ClipboardList}
+        title="No hay listas de precios"
+        description="Crea tu primera lista para empezar a definir precios para tus productos."
+    >
+        <PriceListDialog>
+            <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Crear Lista de Precios
+            </Button>
+        </PriceListDialog>
+    </EmptyState>
+  );
+
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
       <PageHeader
@@ -30,22 +45,7 @@ export default async function PriceListsPage() {
         </PriceListDialog>
       </PageHeader>
       
-      {priceLists && priceLists.length > 0 ? (
-        <PriceListsTable priceLists={priceLists ?? []} />
-      ) : (
-        <EmptyState
-            icon={ClipboardList}
-            title="No hay listas de precios"
-            description="Crea tu primera lista para empezar a definir precios para tus productos."
-        >
-            <PriceListDialog>
-                <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Crear Lista de Precios
-                </Button>
-            </PriceListDialog>
-        </EmptyState>
-      )}
+      <PriceListsTable priceLists={priceLists ?? []} emptyState={emptyState} />
     </div>
   );
 }

@@ -42,7 +42,12 @@ import { useToast } from "@/hooks/use-toast";
 import { deleteAgreement } from "@/app/actions/admin.actions";
 import type { AgreementWithCount } from "@/types";
 
-export default function AgreementsTable({ agreements }: { agreements: AgreementWithCount[] }) {
+interface AgreementsTableProps {
+    agreements: AgreementWithCount[];
+    emptyState: React.ReactNode;
+}
+
+export default function AgreementsTable({ agreements, emptyState }: AgreementsTableProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -76,6 +81,10 @@ export default function AgreementsTable({ agreements }: { agreements: AgreementW
     toast({ title: "Enlace copiado al portapapeles!" });
   }, [toast]);
   
+  if (agreements.length === 0) {
+    return <>{emptyState}</>;
+  }
+
   return (
     <Card>
       <CardContent className="p-0">

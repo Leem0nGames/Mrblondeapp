@@ -14,6 +14,21 @@ export default async function PromotionsPage() {
     return <p className="text-destructive">{error.message}</p>;
   }
 
+  const emptyState = (
+    <EmptyState
+        icon={Percent}
+        title="No hay promociones"
+        description="Aún no has creado ninguna promoción. ¡Crea la primera para ofrecer beneficios a tus clientes!"
+    >
+        <PromotionDialog>
+            <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Crear Promoción
+            </Button>
+        </PromotionDialog>
+    </EmptyState>
+  );
+
   return (
    <div className="grid flex-1 items-start gap-4 md:gap-8">
       <PageHeader
@@ -30,22 +45,7 @@ export default async function PromotionsPage() {
           </PromotionDialog>
       </PageHeader>
       
-      {promotions && promotions.length > 0 ? (
-        <PromotionsTable promotions={promotions ?? []} />
-      ) : (
-        <EmptyState
-            icon={Percent}
-            title="No hay promociones"
-            description="Aún no has creado ninguna promoción. ¡Crea la primera para ofrecer beneficios a tus clientes!"
-        >
-            <PromotionDialog>
-                <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Crear Promoción
-                </Button>
-            </PromotionDialog>
-        </EmptyState>
-      )}
+      <PromotionsTable promotions={promotions ?? []} emptyState={emptyState} />
     </div>
   );
 }

@@ -43,7 +43,12 @@ import type { PriceList } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { PriceListDialog } from "./pricelist-dialog";
 
-export function PriceListsTable({ priceLists }: { priceLists: PriceList[] }) {
+interface PriceListsTableProps {
+    priceLists: PriceList[];
+    emptyState: React.ReactNode;
+}
+
+export function PriceListsTable({ priceLists, emptyState }: PriceListsTableProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -57,6 +62,10 @@ export function PriceListsTable({ priceLists }: { priceLists: PriceList[] }) {
       }
     });
   };
+
+  if (priceLists.length === 0) {
+    return <>{emptyState}</>;
+  }
 
   return (
     <Card>

@@ -14,6 +14,21 @@ export default async function ProductsPage() {
      return <p className="text-destructive">{error.message}</p>;
   }
 
+  const emptyState = (
+     <EmptyState
+        icon={Package}
+        title="No hay productos"
+        description="Aún no has creado ningún producto. ¡Empieza por añadir el primero!"
+    >
+        <ProductDialog>
+            <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Crear Producto
+            </Button>
+        </ProductDialog>
+    </EmptyState>
+  );
+
   return (
    <div className="grid flex-1 items-start gap-4 md:gap-8">
       <PageHeader
@@ -30,22 +45,7 @@ export default async function ProductsPage() {
           </ProductDialog>
       </PageHeader>
       
-      {products && products.length > 0 ? (
-        <ProductsTable products={products ?? []} />
-      ) : (
-        <EmptyState
-            icon={Package}
-            title="No hay productos"
-            description="Aún no has creado ningún producto. ¡Empieza por añadir el primero!"
-        >
-            <ProductDialog>
-                <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Crear Producto
-                </Button>
-            </ProductDialog>
-        </EmptyState>
-      )}
+      <ProductsTable products={products ?? []} emptyState={emptyState} />
     </div>
   );
 }

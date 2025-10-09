@@ -15,6 +15,21 @@ export default async function ClientsPage() {
     return <p className="text-destructive">{error.message}</p>;
   }
 
+  const emptyState = (
+    <EmptyState
+      icon={Users}
+      title="No hay clientes"
+      description="Aún no tienes clientes. ¡Genera un enlace de invitación para empezar!"
+    >
+        <CreateClientButton>
+            <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Invitar Cliente
+            </Button>
+        </CreateClientButton>
+    </EmptyState>
+  );
+
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
        <PageHeader
@@ -30,22 +45,7 @@ export default async function ClientsPage() {
             </Button>
         </CreateClientButton>
       </PageHeader>
-      {clients && clients.length > 0 ? (
-        <ClientsTable clients={clients ?? []} />
-      ) : (
-        <EmptyState
-          icon={Users}
-          title="No hay clientes"
-          description="Aún no tienes clientes. ¡Genera un enlace de invitación para empezar!"
-        >
-            <CreateClientButton>
-                <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Invitar Cliente
-                </Button>
-            </CreateClientButton>
-        </EmptyState>
-      )}
+      <ClientsTable clients={clients ?? []} emptyState={emptyState} />
     </div>
   );
 }

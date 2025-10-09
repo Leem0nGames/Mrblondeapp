@@ -15,6 +15,21 @@ export default async function AgreementsPage() {
     return <p className="text-destructive">{error.message}</p>;
   }
 
+  const emptyState = (
+     <EmptyState
+        icon={FileText}
+        title="No hay convenios creados"
+        description="Crea tu primer convenio para empezar a definir reglas de precios y promociones para tus clientes."
+    >
+        <AgreementDialog>
+            <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Crear Convenio
+            </Button>
+        </AgreementDialog>
+    </EmptyState>
+  );
+
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
        <PageHeader
@@ -30,22 +45,7 @@ export default async function AgreementsPage() {
             </Button>
         </AgreementDialog>
       </PageHeader>
-      {agreements && agreements.length > 0 ? (
-        <AgreementsTable agreements={agreements ?? []} />
-      ) : (
-        <EmptyState
-          icon={FileText}
-          title="No hay convenios creados"
-          description="Crea tu primer convenio para empezar a definir reglas de precios y promociones para tus clientes."
-        >
-            <AgreementDialog>
-                <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Crear Convenio
-                </Button>
-            </AgreementDialog>
-        </EmptyState>
-      )}
+      <AgreementsTable agreements={agreements ?? []} emptyState={emptyState} />
     </div>
   );
 }
