@@ -73,29 +73,24 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, availablePro
       .filter((p): p is NonNullable<ReturnType<typeof parseBuyXGetYPromo>> => p !== null);
 
     let totalBonuses = 0;
-    const appliedPromos: { name: string, units: number }[] = [];
+    const appliedPromosMap = new Map<string, number>();
 
     if (buyXGetYPromos.length > 0) {
-        items.forEach(item => {
-            let itemBonuses = 0;
-            buyXGetYPromos.forEach(promo => {
-                if (item.quantity >= promo.buy) {
-                    const times = Math.floor(item.quantity / promo.buy);
-                    const bonusUnits = times * promo.get;
-                    itemBonuses += bonusUnits;
+      items.forEach(item => {
+        buyXGetYPromos.forEach(promo => {
+          if (item.quantity >= promo.buy) {
+            const times = Math.floor(item.quantity / promo.buy);
+            const bonusUnits = times * promo.get;
+            totalBonuses += bonusUnits;
 
-                     const existingPromo = appliedPromos.find(p => p.name === promo.name);
-                    if (existingPromo) {
-                        existingPromo.units += bonusUnits;
-                    } else {
-                        appliedPromos.push({ name: promo.name, units: bonusUnits });
-                    }
-                }
-            });
-            totalBonuses += itemBonuses;
+            const currentUnits = appliedPromosMap.get(promo.name) || 0;
+            appliedPromosMap.set(promo.name, currentUnits + bonusUnits);
+          }
         });
+      });
     }
     
+    const appliedPromos = Array.from(appliedPromosMap.entries()).map(([name, units]) => ({ name, units }));
     const bonusItems = { total: totalBonuses, appliedPromos };
 
   return { totalItems, subtotal, vatAmount, totalPrice, bonusItems };
@@ -129,10 +124,12 @@ export const useCartStore = create<CartState>()(
                 bonusItems: { total: 0, appliedPromos: [] }
             });
         } else {
+             const { items } = get();
              set({ 
                 agreementId: id, 
                 pricesIncludeVat: pricesIncludeVat, 
                 availablePromotions: promotions,
+                ...calculateAll(items, pricesIncludeVat, promotions)
             });
         }
       },
