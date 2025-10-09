@@ -10,9 +10,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PriceListDialog } from "../_components/pricelist-dialog";
 import { PriceListProductsTable } from "./_components/pricelist-products-table";
 import { AssignProductToPriceListDialog } from "./_components/assign-product-dialog";
+import { EntityDialog } from "../../_components/entity-dialog";
+import { priceListFormConfig } from "../_components/form-config";
 
 export default async function PriceListDetailPage({
   params,
@@ -53,12 +54,12 @@ export default async function PriceListDetailPage({
             <h1 className="text-2xl font-bold tracking-tight">{priceList.name}</h1>
         </div>
         <div className="ml-auto flex items-center gap-2">
-            <PriceListDialog priceList={priceList}>
+            <EntityDialog formConfig={priceListFormConfig} entity={priceList}>
                 <Button size="sm" variant="outline" className="h-8 gap-1">
                     <Edit className="h-3.5 w-3.5" />
-                    <span>Editar Nombre</span>
+                    <span>Editar Detalles</span>
                 </Button>
-            </PriceListDialog>
+            </EntityDialog>
         </div>
       </div>
         <Card>

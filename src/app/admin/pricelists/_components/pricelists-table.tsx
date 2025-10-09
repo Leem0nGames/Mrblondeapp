@@ -41,7 +41,8 @@ import { useToast } from "@/hooks/use-toast";
 import { deletePriceList } from "@/app/actions/admin.actions";
 import type { PriceList } from "@/types";
 import { formatDate } from "@/lib/utils";
-import { PriceListDialog } from "./pricelist-dialog";
+import { EntityDialog } from "../../_components/entity-dialog";
+import { priceListFormConfig } from "./form-config";
 
 interface PriceListsTableProps {
     priceLists: PriceList[];
@@ -102,9 +103,9 @@ export function PriceListsTable({ priceLists, emptyState }: PriceListsTableProps
                         <DropdownMenuItem asChild>
                             <Link href={`/admin/pricelists/${list.id}`}>Gestionar Productos</Link>
                         </DropdownMenuItem>
-                        <PriceListDialog priceList={list}>
+                        <EntityDialog formConfig={priceListFormConfig} entity={list}>
                             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Editar Nombre</DropdownMenuItem>
-                        </PriceListDialog>
+                        </EntityDialog>
                         <DropdownMenuSeparator />
                         <AlertDialog>
                             <AlertDialogTrigger asChild>

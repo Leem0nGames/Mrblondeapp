@@ -10,11 +10,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { AgreementDialog } from "../_components/agreement-dialog";
 import AgreementPromotionsList from "./_components/agreement-promotions-list";
 import { AssignPromotionDialog } from "./_components/assign-promotion-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { EntityDialog } from "../../_components/entity-dialog";
+import { agreementFormConfig } from "../_components/form-config";
 
 export default async function AgreementDetailPage({
   params,
@@ -56,12 +57,12 @@ export default async function AgreementDetailPage({
             <p className="text-muted-foreground capitalize">{agreement.client_type}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-            <AgreementDialog agreement={agreement}>
+            <EntityDialog formConfig={agreementFormConfig} entity={agreement}>
                 <Button size="sm" variant="outline" className="h-8 gap-1">
                     <Edit className="h-3.5 w-3.5" />
                     <span>Editar Detalles</span>
                 </Button>
-            </AgreementDialog>
+            </EntityDialog>
         </div>
       </div>
 
@@ -85,9 +86,9 @@ export default async function AgreementDetailPage({
                     ) : (
                         <div className="text-sm text-muted-foreground">
                             <p>No hay una lista de precios asignada.</p>
-                            <AgreementDialog agreement={agreement}>
+                             <EntityDialog formConfig={agreementFormConfig} entity={agreement}>
                                 <Button variant="link" className="p-0 h-auto">Asignar una ahora</Button>
-                            </AgreementDialog>
+                            </EntityDialog>
                         </div>
                     )}
                 </CardContent>

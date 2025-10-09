@@ -4,8 +4,9 @@ import { getPriceLists } from "@/app/actions/admin.actions";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { PriceListDialog } from "./_components/pricelist-dialog";
 import { PriceListsTable } from "./_components/pricelists-table";
+import { EntityDialog } from "../_components/entity-dialog";
+import { priceListFormConfig } from "./_components/form-config";
 
 export default async function PriceListsPage() {
   const { data: priceLists, error } = await getPriceLists();
@@ -20,12 +21,12 @@ export default async function PriceListsPage() {
         title="No hay listas de precios"
         description="Crea tu primera lista para empezar a definir precios para tus productos."
     >
-        <PriceListDialog>
+        <EntityDialog formConfig={priceListFormConfig}>
             <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Crear Lista de Precios
             </Button>
-        </PriceListDialog>
+        </EntityDialog>
     </EmptyState>
   );
 
@@ -35,14 +36,14 @@ export default async function PriceListsPage() {
         title="Listas de Precios"
         description="Crea y gestiona listas de precios reutilizables para tus convenios."
       >
-        <PriceListDialog>
+        <EntityDialog formConfig={priceListFormConfig}>
             <Button size="sm" className="h-8 gap-1">
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     Crear Lista de Precios
                 </span>
             </Button>
-        </PriceListDialog>
+        </EntityDialog>
       </PageHeader>
       
       <PriceListsTable priceLists={priceLists ?? []} emptyState={emptyState} />
