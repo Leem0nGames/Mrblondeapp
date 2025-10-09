@@ -39,11 +39,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Product } from "@/types";
-import { ProductDialog } from "./product-dialog";
 import { deleteProduct } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
 import { getImageUrl } from "@/lib/placeholder-images";
+import { EntityDialog } from "../../_components/entity-dialog";
+import { productFormConfig } from "./form-config";
 
 interface ProductsTableProps {
     products: Product[];
@@ -139,11 +140,11 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                      <ProductDialog product={product}>
+                      <EntityDialog formConfig={productFormConfig} entity={product}>
                         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                           Editar
                         </DropdownMenuItem>
-                      </ProductDialog>
+                      </EntityDialog>
                        <DropdownMenuSeparator />
                       <AlertDialog>
                         <AlertDialogTrigger asChild>

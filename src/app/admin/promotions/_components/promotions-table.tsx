@@ -37,10 +37,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Promotion } from "@/types";
-import { PromotionDialog } from "./promotion-dialog";
 import { deletePromotion } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
+import { EntityDialog } from "../../_components/entity-dialog";
+import { promotionFormConfig } from "./form-config";
 
 const formatRule = (rules: any): string => {
   if (!rules || typeof rules !== 'object') {
@@ -126,11 +127,11 @@ export default function PromotionsTable({ promotions, emptyState }: PromotionsTa
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                      <PromotionDialog promotion={promotion}>
+                      <EntityDialog formConfig={promotionFormConfig} entity={promotion}>
                         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                           Editar
                         </DropdownMenuItem>
-                      </PromotionDialog>
+                      </EntityDialog>
                        <DropdownMenuSeparator />
                       <AlertDialog>
                         <AlertDialogTrigger asChild>

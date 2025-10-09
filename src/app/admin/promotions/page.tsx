@@ -2,10 +2,12 @@
 import { Percent, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getPromotions } from "@/app/actions/admin.actions";
-import { PromotionDialog } from "./_components/promotion-dialog";
 import PromotionsTable from "./_components/promotions-table";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
+import { EntityDialog } from "../_components/entity-dialog";
+import { promotionFormConfig } from "./_components/form-config";
+
 
 export default async function PromotionsPage() {
   const { data: promotions, error } = await getPromotions();
@@ -20,12 +22,12 @@ export default async function PromotionsPage() {
         title="No hay promociones"
         description="Aún no has creado ninguna promoción. ¡Crea la primera para ofrecer beneficios a tus clientes!"
     >
-        <PromotionDialog>
+        <EntityDialog formConfig={promotionFormConfig}>
             <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Crear Promoción
             </Button>
-        </PromotionDialog>
+        </EntityDialog>
     </EmptyState>
   );
 
@@ -35,14 +37,14 @@ export default async function PromotionsPage() {
         title="Promociones"
         description="Crea y gestiona las promociones y reglas de negocio de la tienda."
       >
-        <PromotionDialog>
+        <EntityDialog formConfig={promotionFormConfig}>
             <Button size="sm" className="h-8 gap-1">
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                 Agregar Promoción
               </span>
             </Button>
-          </PromotionDialog>
+          </EntityDialog>
       </PageHeader>
       
       <PromotionsTable promotions={promotions ?? []} emptyState={emptyState} />

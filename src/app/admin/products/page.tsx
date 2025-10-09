@@ -3,9 +3,11 @@ import { Package, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getProducts } from "@/app/actions/admin.actions";
 import ProductsTable from "./_components/products-table";
-import { ProductDialog } from "./_components/product-dialog";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
+import { EntityDialog } from "../_components/entity-dialog";
+import { productFormConfig } from "./_components/form-config";
+
 
 export default async function ProductsPage() {
   const { data: products, error } = await getProducts();
@@ -20,12 +22,12 @@ export default async function ProductsPage() {
         title="No hay productos"
         description="Aún no has creado ningún producto. ¡Empieza por añadir el primero!"
     >
-        <ProductDialog>
+        <EntityDialog formConfig={productFormConfig}>
             <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Crear Producto
             </Button>
-        </ProductDialog>
+        </EntityDialog>
     </EmptyState>
   );
 
@@ -35,14 +37,14 @@ export default async function ProductsPage() {
         title="Productos"
         description="Gestiona tu catálogo de productos y su inventario."
       >
-        <ProductDialog>
+        <EntityDialog formConfig={productFormConfig}>
             <Button size="sm" className="h-8 gap-1">
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                 Agregar Producto
               </span>
             </Button>
-          </ProductDialog>
+          </EntityDialog>
       </PageHeader>
       
       <ProductsTable products={products ?? []} emptyState={emptyState} />
