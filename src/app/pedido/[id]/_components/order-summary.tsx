@@ -34,7 +34,6 @@ function formatWhatsAppMessage(
   totalPrice: number,
   bonusItems: { total: number; appliedPromos: { name: string, units: number, productName: string }[] },
   availablePromotions: AgreementPromotion[],
-  cheapestItem: CartItem | null,
   orderId: string
 ) {
   const itemsText = cartItems
@@ -42,7 +41,7 @@ function formatWhatsAppMessage(
     .join("\n");
 
   let bonusText = "";
-  if (bonusItems.total > 0 && cheapestItem) {
+  if (bonusItems.total > 0) {
       const bonusDetails = bonusItems.appliedPromos.map(p => `  - ${p.units}x ${p.productName} (Promo: ${p.name})`).join('\n');
       bonusText = `*Bonificaciones de Regalo:*\n${bonusDetails}`;
   }
@@ -136,8 +135,6 @@ export function OrderSummary({
             return;
         }
         
-        const cheapestItem = [...items].sort((a, b) => a.product.price - b.product.price)[0] ?? null;
-
         const message = formatWhatsAppMessage(
             clientName,
             items,
@@ -147,7 +144,6 @@ export function OrderSummary({
             totalPrice,
             bonusItems,
             availablePromotions,
-            cheapestItem,
             result.data.orderId
         );
         const whatsappUrl = `https://wa.me/${whatsAppNumber}?text=${message}`;

@@ -17,9 +17,7 @@ import { cn } from "@/lib/utils";
 const VOLUME_THRESHOLD = 150;
 
 export function ProductCard({ product }: { product: ProductWithPrice }) {
-  const { items, totalItems, bonusItems } = useCartStore();
-  const itemInCart = items.find(item => item.product.id === product.id);
-  const quantity = itemInCart ? itemInCart.quantity : 0;
+  const { totalItems, bonusItems } = useCartStore();
 
   const stockStatus =
     product.stock > 10
@@ -105,5 +103,3 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
     </Card>
   );
 }
-
-    

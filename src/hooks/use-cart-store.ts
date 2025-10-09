@@ -43,13 +43,12 @@ type CartState = {
 };
 
 
-// Helper function to compute totals and bonuses from a given set of items.
+// The single source of truth for all calculations.
 const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, availablePromotions: AgreementPromotion[]) => {
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
   const isVolumePricing = totalItems >= VOLUME_THRESHOLD;
 
   let subtotal = 0;
-  let totalPrice = 0;
   
   items.forEach(item => {
     const priceWithVat = (isVolumePricing && item.product.volume_price) ? item.product.volume_price : item.product.price;
@@ -57,17 +56,16 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, availablePro
     if (pricesIncludeVat) {
         const singleItemSubtotal = priceWithVat / (1 + VAT_RATE);
         subtotal += singleItemSubtotal * item.quantity;
-        totalPrice += priceWithVat * item.quantity;
     } else {
         const singleItemSubtotal = priceWithVat;
         subtotal += singleItemSubtotal * item.quantity;
-        totalPrice += singleItemSubtotal * (1 + VAT_RATE) * item.quantity;
     }
   });
 
-  const vatAmount = totalPrice - subtotal;
+  const vatAmount = subtotal * VAT_RATE;
+  const totalPrice = subtotal + vatAmount;
   
-  // --- THIS IS THE CORRECTED BONUS CALCULATION LOGIC ---
+  // --- CORRECTED BONUS CALCULATION LOGIC ---
   const buyXGetYPromos = availablePromotions
     .map(p => parseBuyXGetYPromo(p.promotions))
     .filter((p): p is NonNullable<ReturnType<typeof parseBuyXGetYPromo>> => p !== null);
@@ -77,11 +75,12 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, availablePro
 
   if (buyXGetYPromos.length > 0) {
     items.forEach(item => { // Iterate over each product in the cart
+      let bonusesForThisItem = 0;
       buyXGetYPromos.forEach(promo => { // Check every available promotion against this item
         if (item.quantity >= promo.buy) {
           const times = Math.floor(item.quantity / promo.buy);
           const bonusUnits = times * promo.get;
-          totalBonuses += bonusUnits;
+          bonusesForThisItem += bonusUnits;
           
           // Add to the list of applied promos for display
           appliedPromos.push({
@@ -91,6 +90,7 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, availablePro
           });
         }
       });
+      totalBonuses += bonusesForThisItem;
     });
   }
   
@@ -215,5 +215,3 @@ export const useCartStore = create<CartState>()(
     }
   )
 );
-
-    
