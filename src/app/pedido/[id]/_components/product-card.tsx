@@ -11,13 +11,12 @@ import Image from "next/image";
 import { QuantitySelector } from "./add-to-cart-button";
 import { getImageUrl } from "@/lib/placeholder-images";
 import { useCartStore } from "@/hooks/use-cart-store";
-import { Gift } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const VOLUME_THRESHOLD = 150;
 
 export function ProductCard({ product }: { product: ProductWithPrice }) {
-  const { totalItems, bonusItems } = useCartStore();
+  const { totalItems } = useCartStore();
 
   const stockStatus =
     product.stock > 10
@@ -32,13 +31,6 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
       ? "secondary"
       : "destructive";
   
-  // Get bonuses specifically for this product from the central store
-  const productBonuses = useMemo(() => {
-    return bonusItems.appliedPromos
-      .filter(promo => promo.productName === product.name)
-      .reduce((total, promo) => total + promo.units, 0);
-  }, [bonusItems, product.name]);
-
   const isVolumePriceActive = totalItems >= VOLUME_THRESHOLD && product.volume_price;
   const displayPrice = isVolumePriceActive ? product.volume_price : product.price;
   
@@ -69,15 +61,6 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
             </div>
             
             <p className="text-muted-foreground text-sm line-clamp-2 sm:h-10">{product.description}</p>
-            
-            {productBonuses > 0 && (
-              <div className="mt-2 space-y-1">
-                  <Badge variant="secondary" className="font-normal text-primary font-semibold">
-                    <Gift className="h-3 w-3 mr-1.5" />
-                     ¡Este producto tiene +{productBonuses} de regalo!
-                  </Badge>
-              </div>
-            )}
             
             <div className="flex items-center justify-between mt-2">
               <div className="flex items-baseline gap-2">

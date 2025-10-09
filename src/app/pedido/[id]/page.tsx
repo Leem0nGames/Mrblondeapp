@@ -1,4 +1,3 @@
-
 import { getOrderPageData } from "@/app/actions/user.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/components/logo";
@@ -114,7 +113,6 @@ export default async function OrderPage({
               agreementId={agreement.id}
               clientId={client.id}
               clientName={client.contact_name ?? "Cliente"}
-              availablePromotions={agreement.agreement_promotions}
               pricesIncludeVat={agreement.price_lists?.prices_include_vat ?? true}
             />
           </Suspense>
@@ -123,5 +121,3 @@ export default async function OrderPage({
     </div>
   );
 }
-
-    

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { create } from "zustand";
@@ -13,39 +12,24 @@ export type CartItem = {
 const VOLUME_THRESHOLD = 150;
 const VAT_RATE = 0.21; // 21%
 
-// Helper function to parse promotion rules safely
-function parseBuyXGetYPromo(promo: Promotion) {
-  const rules = promo.rules;
-  if (rules?.type === 'buy_x_get_y_free') {
-    const buy = Number(rules.buy);
-    const get = Number(rules.get);
-    if (!isNaN(buy) && buy > 0 && !isNaN(get) && get > 0) {
-      return { buy, get, name: promo.name };
-    }
-  }
-  return null;
-}
-
 type CartState = {
   items: CartItem[];
   totalItems: number;
   subtotal: number;
   vatAmount: number;
   totalPrice: number;
-  bonusItems: { total: number; appliedPromos: { name: string, units: number, productName: string }[] };
   agreementId: string | null;
   pricesIncludeVat: boolean;
-  setAgreement: (id: string, pricesIncludeVat: boolean, promotions: AgreementPromotion[]) => void;
+  setAgreement: (id: string, pricesIncludeVat: boolean) => void;
   addItem: (product: ProductWithPrice, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
-  availablePromotions: AgreementPromotion[];
 };
 
 
 // The single source of truth for all calculations.
-const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, availablePromotions: AgreementPromotion[]) => {
+const calculateAll = (items: CartItem[], pricesIncludeVat: boolean) => {
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
   const isVolumePricing = totalItems >= VOLUME_THRESHOLD;
 
@@ -65,35 +49,8 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, availablePro
 
   const vatAmount = subtotal * VAT_RATE;
   const totalPrice = subtotal + vatAmount;
-  
-  const buyXGetYPromos = availablePromotions
-    .map(p => parseBuyXGetYPromo(p.promotions))
-    .filter((p): p is NonNullable<ReturnType<typeof parseBuyXGetYPromo>> => p !== null);
 
-  let totalBonuses = 0;
-  const appliedPromos: { name: string, units: number, productName: string }[] = [];
-
-  if (buyXGetYPromos.length > 0) {
-    items.forEach(item => {
-      buyXGetYPromos.forEach(promo => {
-        if (item.quantity >= promo.buy) {
-          const times = Math.floor(item.quantity / promo.buy);
-          const bonusUnits = times * promo.get;
-          totalBonuses += bonusUnits;
-          
-          appliedPromos.push({
-            name: promo.name,
-            units: bonusUnits,
-            productName: item.product.name
-          });
-        }
-      });
-    });
-  }
-  
-  const bonusItems = { total: totalBonuses, appliedPromos };
-
-  return { totalItems, subtotal, vatAmount, totalPrice, bonusItems };
+  return { totalItems, subtotal, vatAmount, totalPrice };
 };
 
 export const useCartStore = create<CartState>()(
@@ -104,25 +61,21 @@ export const useCartStore = create<CartState>()(
       subtotal: 0,
       vatAmount: 0,
       totalPrice: 0,
-      bonusItems: { total: 0, appliedPromos: [] },
       agreementId: null,
       pricesIncludeVat: true,
-      availablePromotions: [],
       
-      setAgreement: (id: string, pricesIncludeVat: boolean, promotions: AgreementPromotion[]) => {
+      setAgreement: (id: string, pricesIncludeVat: boolean) => {
         const currentAgreementId = get().agreementId;
         if (id !== currentAgreementId) {
             // New agreement, reset cart and set new settings
             set({ 
                 agreementId: id, 
                 pricesIncludeVat: pricesIncludeVat, 
-                availablePromotions: promotions,
                 items: [], 
                 totalItems: 0, 
                 subtotal: 0, 
                 vatAmount: 0, 
                 totalPrice: 0,
-                bonusItems: { total: 0, appliedPromos: [] }
             });
         } else {
              // Same agreement, just update settings and recalculate
@@ -130,14 +83,13 @@ export const useCartStore = create<CartState>()(
              set({ 
                 agreementId: id, 
                 pricesIncludeVat: pricesIncludeVat, 
-                availablePromotions: promotions,
-                ...calculateAll(items, pricesIncludeVat, promotions)
+                ...calculateAll(items, pricesIncludeVat)
             });
         }
       },
 
       addItem: (product: ProductWithPrice, quantity: number = 1) => {
-        const { items, pricesIncludeVat, availablePromotions } = get();
+        const { items, pricesIncludeVat } = get();
         const existingItem = items.find(
           (item) => item.product.id === product.id
         );
@@ -154,11 +106,11 @@ export const useCartStore = create<CartState>()(
         }
 
         updatedItems = updatedItems.filter(item => item.quantity > 0);
-        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat, availablePromotions) });
+        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat) });
       },
 
       removeItem: (productId: string) => {
-        const { items, pricesIncludeVat, availablePromotions } = get();
+        const { items, pricesIncludeVat } = get();
         const existingItem = items.find(item => item.product.id === productId);
 
         if (!existingItem) return;
@@ -174,11 +126,11 @@ export const useCartStore = create<CartState>()(
             updatedItems = items.filter(item => item.product.id !== productId);
         }
 
-        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat, availablePromotions) });
+        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat) });
       },
 
       updateQuantity: (productId: string, quantity: number) => {
-        const { pricesIncludeVat, availablePromotions } = get();
+        const { pricesIncludeVat } = get();
         let updatedItems;
         if (quantity <= 0) {
           updatedItems = get().items.filter(
@@ -189,11 +141,11 @@ export const useCartStore = create<CartState>()(
             item.product.id === productId ? { ...item, quantity } : item
           );
         }
-        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat, availablePromotions) });
+        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat) });
       },
 
       clearCart: () => {
-        set({ items: [], totalItems: 0, subtotal: 0, vatAmount: 0, totalPrice: 0, bonusItems: { total: 0, appliedPromos: [] } });
+        set({ items: [], totalItems: 0, subtotal: 0, vatAmount: 0, totalPrice: 0 });
       },
     }),
     {
@@ -203,12 +155,11 @@ export const useCartStore = create<CartState>()(
       onRehydrateStorage: () => (state, error) => {
         if (state) {
             // Recalculate everything on rehydration to ensure consistency
-            const { totalItems, subtotal, vatAmount, totalPrice, bonusItems } = calculateAll(state.items, state.pricesIncludeVat, state.availablePromotions);
+            const { totalItems, subtotal, vatAmount, totalPrice } = calculateAll(state.items, state.pricesIncludeVat);
             state.totalItems = totalItems;
             state.subtotal = subtotal;
             state.vatAmount = vatAmount;
             state.totalPrice = totalPrice;
-            state.bonusItems = bonusItems;
         }
       }
     }

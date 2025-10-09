@@ -1,30 +1,13 @@
-
 "use client";
 
-import { useEffect, useMemo, useTransition } from "react";
+import { useEffect, useTransition } from "react";
 import { useCartStore, type CartItem } from "@/hooks/use-cart-store";
-import type { AgreementPromotion } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Truck, Gift } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ArrowRight } from "lucide-react";
 import { submitOrder } from "@/app/actions/user.actions";
-
-
-// Helper function to parse promotion rules safely
-function parseFreeShippingPromo(promo: AgreementPromotion) {
-  const rules = promo.promotions.rules;
-  if (rules?.type === 'free_shipping') {
-    const min_units = Number(rules.min_units);
-    if (!isNaN(min_units) && min_units > 0) {
-      return { min_units };
-    }
-  }
-  return null;
-}
 
 function formatWhatsAppMessage(
   clientName: string,
@@ -33,25 +16,11 @@ function formatWhatsAppMessage(
   subtotal: number,
   vatAmount: number,
   totalPrice: number,
-  bonusItems: { total: number; appliedPromos: { name: string, units: number, productName: string }[] },
-  availablePromotions: AgreementPromotion[],
   orderId: string
 ) {
   const itemsText = cartItems
     .map((item) => `- ${item.quantity}x ${item.product.name}`)
     .join("\n");
-
-  let bonusText = "";
-  if (bonusItems.total > 0) {
-      const bonusDetails = bonusItems.appliedPromos.map(p => `  - ${p.units}x ${p.productName} (Promo: ${p.name})`).join('\n');
-      bonusText = `*Bonificaciones de Regalo:*\n${bonusDetails}`;
-  }
-
-  let shippingText = "";
-  const freeShippingPromo = availablePromotions.map(promo => parseFreeShippingPromo(promo)).find(p => p !== null);
-  if (freeShippingPromo && totalItems >= freeShippingPromo.min_units) {
-    shippingText = `*Envío Bonificado*\n`;
-  }
 
   const formatCurrency = (value: number) => `$${new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`;
 
@@ -60,14 +29,6 @@ function formatWhatsAppMessage(
     `👤 *Cliente:*\n${clientName}\n`,
     `📦 *Productos:* (${totalItems} unidades)\n${itemsText}\n`,
   ];
-
-  if (bonusText) {
-    messageParts.push(`🎁 ${bonusText}\n`);
-  }
-    
-  if(shippingText) {
-    messageParts.push(`🚚 ${shippingText}\n`);
-  }
   
   messageParts.push(
     `*Resumen de Pago:*\n` +
@@ -86,16 +47,14 @@ export function OrderSummary({
   agreementId,
   clientId,
   clientName,
-  availablePromotions,
   pricesIncludeVat,
 }: {
   agreementId: string;
   clientId: string;
   clientName: string;
-  availablePromotions: AgreementPromotion[];
   pricesIncludeVat: boolean;
 }) {
-  const { items, totalItems, subtotal, vatAmount, totalPrice, bonusItems, clearCart, setAgreement } = useCartStore();
+  const { items, totalItems, subtotal, vatAmount, totalPrice, clearCart, setAgreement } = useCartStore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
@@ -104,8 +63,8 @@ export function OrderSummary({
 
   useEffect(() => {
     // Set agreement details in the store, which will also trigger a cart reset if the agreement changes.
-    setAgreement(agreementId, pricesIncludeVat, availablePromotions);
-  }, [agreementId, pricesIncludeVat, availablePromotions, setAgreement]);
+    setAgreement(agreementId, pricesIncludeVat);
+  }, [agreementId, pricesIncludeVat, setAgreement]);
 
 
   const handleSend = () => {
@@ -143,8 +102,6 @@ export function OrderSummary({
             subtotal,
             vatAmount,
             totalPrice,
-            bonusItems,
-            availablePromotions,
             result.data.orderId
         );
         const whatsappUrl = `https://wa.me/${whatsAppNumber}?text=${message}`;
@@ -160,14 +117,6 @@ export function OrderSummary({
   };
 
   const hasItems = items.length > 0;
-  
-  const freeShippingPromo = useMemo(() => {
-    const promos = availablePromotions.map(parseFreeShippingPromo).filter((p): p is NonNullable<typeof p> => p !== null);
-    return promos.length > 0 ? promos[0] : null;
-  }, [availablePromotions]);
-
-  const hasFreeShipping = freeShippingPromo && totalItems >= freeShippingPromo.min_units;
-  const itemsForFreeShipping = freeShippingPromo ? freeShippingPromo.min_units - totalItems : 0;
   
   const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
 
@@ -195,32 +144,7 @@ export function OrderSummary({
                           <span>{formatCurrency(totalPrice)}</span>
                       </div>
                         <div className="flex justify-between items-center text-sm">
-                          <div className="flex items-center gap-2">
-                             <span className="text-muted-foreground">{totalItems} Unidades</span>
-                             {bonusItems.total > 0 && (
-                                <Badge variant="secondary" className="text-primary font-bold">
-                                    <Gift className="h-3 w-3 mr-1" />
-                                    +{bonusItems.total} de Regalo
-                                </Badge>
-                             )}
-                          </div>
-                          {freeShippingPromo && (
-                            <TooltipProvider>
-                              <Tooltip>
-                                  <TooltipTrigger>
-                                      <Badge variant={hasFreeShipping ? "default" : "secondary"}>
-                                          <Truck className="h-4 w-4 mr-1"/>
-                                          {hasFreeShipping ? "Envío Gratis" : "Envío"}
-                                      </Badge>
-                                  </TooltipTrigger>
-                                  {!hasFreeShipping && itemsForFreeShipping > 0 && (
-                                      <TooltipContent>
-                                          <p>Agrega {itemsForFreeShipping} unidades más para envío gratis.</p>
-                                      </TooltipContent>
-                                  )}
-                              </Tooltip>
-                              </TooltipProvider>
-                          )}
+                          <span className="text-muted-foreground">{totalItems} Unidades</span>
                       </div>
                   </div>
 
@@ -242,4 +166,3 @@ export function OrderSummary({
       </Card>
   );
 }
-
