@@ -1,199 +1,138 @@
--- =================================================================
---  SCRIPT DE BASE DE DATOS PARA "BLONDE ORDERS"
---  Versión: 2.0.0
---  Descripción: Script idempotente para crear todas las tablas,
---             tipos, relaciones y políticas de seguridad (RLS).
---             Puede ejecutarse de forma segura en una base de
---             datos existente.
--- =================================================================
+-- Nota: Este script es idempotente. Puedes ejecutarlo múltiples veces sin causar errores.
 
--- ========= EXTENSIONES =============================================
--- Habilitar la extensión para usar UUIDs
-create extension if not exists "uuid-ossp" with schema extensions;
+-- 1. Tipos Enum
+CREATE TYPE client_type AS ENUM ('barberia', 'distribuidor', 'especial');
+CREATE TYPE client_status AS ENUM ('pending_onboarding', 'pending_agreement', 'active');
+CREATE TYPE promotion_type AS ENUM ('buy_x_get_y_free', 'free_shipping');
 
-
--- ========= TIPOS ENUM ================================================
--- Define el tipo para el rol de cliente, si no existe.
-do $$
-begin
-  if not exists (select 1 from pg_type where typname = 'client_type') then
-    create type public.client_type as enum ('barberia', 'distribuidor', 'especial');
-  end if;
-end$$;
-
--- Define el tipo para el estado del cliente, si no existe.
-do $$
-begin
-  if not exists (select 1 from pg_type where typname = 'client_status') then
-    create type public.client_status as enum ('pending_onboarding', 'pending_agreement', 'active');
-  end if;
-end$$;
-
-
--- ========= TABLAS ======================================================
-
--- Tabla de PRODUCTOS
-create table if not exists public.products (
-  id uuid default extensions.uuid_generate_v4() not null,
-  name character varying not null,
-  description text null,
-  base_price numeric(10, 2) not null default 0.00,
-  stock integer not null default 0,
-  category character varying null,
-  created_at timestamp with time zone not null default now(),
-  constraint products_pkey primary key (id)
+-- 2. Tabla de Productos
+CREATE TABLE IF NOT EXISTS public.products (
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    name character varying NOT NULL,
+    description text,
+    base_price numeric(10,2) DEFAULT 0.00 NOT NULL,
+    stock integer DEFAULT 0 NOT NULL,
+    category character varying,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT products_stock_check CHECK ((stock >= 0))
 );
-comment on table public.products is 'Catálogo de todos los productos disponibles.';
+-- Habilitar RLS
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+-- Políticas RLS para products
+DROP POLICY IF EXISTS "Los usuarios autenticados pueden ver productos" ON public.products;
+CREATE POLICY "Los usuarios autenticados pueden ver productos" ON public.products FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Los administradores pueden gestionar productos" ON public.products;
+CREATE POLICY "Los administradores pueden gestionar productos" ON public.products FOR ALL USING (auth.role() = 'authenticated');
 
--- Tabla de LISTAS DE PRECIOS
-create table if not exists public.price_lists (
-    id uuid not null default extensions.uuid_generate_v4(),
-    name character varying not null,
-    prices_include_vat boolean not null default true,
-    created_at timestamp with time zone not null default now(),
-    constraint price_lists_pkey primary key (id),
-    constraint price_lists_name_key unique (name)
+
+-- 3. Tabla de Listas de Precios
+CREATE TABLE IF NOT EXISTS public.price_lists (
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    name character varying NOT NULL UNIQUE,
+    prices_include_vat boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
-comment on table public.price_lists is 'Listas de precios reutilizables para diferentes convenios.';
+-- Habilitar RLS
+ALTER TABLE public.price_lists ENABLE ROW LEVEL SECURITY;
+-- Políticas RLS para price_lists
+DROP POLICY IF EXISTS "Los usuarios pueden ver listas de precios" ON public.price_lists;
+CREATE POLICY "Los usuarios pueden ver listas de precios" ON public.price_lists FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Los administradores pueden gestionar listas de precios" ON public.price_lists;
+CREATE POLICY "Los administradores pueden gestionar listas de precios" ON public.price_lists FOR ALL USING (auth.role() = 'authenticated');
 
--- Tabla de ITEMS DE LISTAS DE PRECIOS (Tabla intermedia)
-create table if not exists public.price_list_items (
-    price_list_id uuid not null,
-    product_id uuid not null,
-    price numeric(10, 2) not null,
-    volume_price numeric(10, 2) null,
-    created_at timestamp with time zone not null default now(),
-    constraint price_list_items_pkey primary key (price_list_id, product_id),
-    constraint price_list_items_price_list_id_fkey foreign key (price_list_id) references public.price_lists (id) on delete cascade,
-    constraint price_list_items_product_id_fkey foreign key (product_id) references public.products (id) on delete cascade
+
+-- 4. Tabla de Items de Listas de Precios (Tabla Pivote)
+CREATE TABLE IF NOT EXISTS public.price_list_items (
+    price_list_id uuid NOT NULL REFERENCES public.price_lists(id) ON DELETE CASCADE,
+    product_id uuid NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+    price numeric(10,2) NOT NULL,
+    volume_price numeric(10,2),
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    PRIMARY KEY (price_list_id, product_id)
 );
-comment on table public.price_list_items is 'Define el precio de un producto dentro de una lista específica.';
+-- Habilitar RLS
+ALTER TABLE public.price_list_items ENABLE ROW LEVEL SECURITY;
+-- Políticas RLS para price_list_items
+DROP POLICY IF EXISTS "Los usuarios pueden ver items de listas de precios" ON public.price_list_items;
+CREATE POLICY "Los usuarios pueden ver items de listas de precios" ON public.price_list_items FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Los administradores pueden gestionar items de listas de precios" ON public.price_list_items;
+CREATE POLICY "Los administradores pueden gestionar items de listas de precios" ON public.price_list_items FOR ALL USING (auth.role() = 'authenticated');
 
--- Tabla de CONVENIOS
-create table if not exists public.agreements (
-  id uuid default extensions.uuid_generate_v4() not null,
-  agreement_name character varying not null,
-  client_type public.client_type not null,
-  created_at timestamp with time zone not null default now(),
-  price_list_id uuid null,
-  constraint agreements_pkey primary key (id),
-  constraint agreements_agreement_name_key unique (agreement_name),
-  constraint agreements_price_list_id_fkey foreign key (price_list_id) references public.price_lists (id) on delete set null
+
+-- 5. Tabla de Convenios
+CREATE TABLE IF NOT EXISTS public.agreements (
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    agreement_name character varying NOT NULL UNIQUE,
+    client_type client_type NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    price_list_id uuid,
+    CONSTRAINT fk_price_list FOREIGN KEY (price_list_id) REFERENCES public.price_lists(id) ON DELETE SET NULL
 );
-comment on table public.agreements is 'Convenios comerciales que agrupan precios y promociones.';
+-- Habilitar RLS
+ALTER TABLE public.agreements ENABLE ROW LEVEL SECURITY;
+-- Políticas RLS para agreements
+DROP POLICY IF EXISTS "Los usuarios pueden ver convenios" ON public.agreements;
+CREATE POLICY "Los usuarios pueden ver convenios" ON public.agreements FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Los administradores pueden gestionar convenios" ON public.agreements;
+CREATE POLICY "Los administradores pueden gestionar convenios" ON public.agreements FOR ALL USING (auth.role() = 'authenticated');
 
--- Tabla de CLIENTES
-create table if not exists public.clients (
-    id uuid not null default extensions.uuid_generate_v4(),
-    cuit character varying null,
-    contact_name character varying null,
-    contact_dni character varying null,
-    address character varying null,
-    delivery_window text null,
-    email character varying null,
-    instagram character varying null,
-    status public.client_status not null default 'pending_onboarding'::client_status,
-    onboarding_token uuid not null default extensions.uuid_generate_v4(),
-    agreement_id uuid null,
-    created_at timestamp with time zone not null default now(),
-    constraint clients_pkey primary key (id),
-    constraint clients_cuit_key unique (cuit),
-    constraint clients_email_key unique (email),
-    constraint clients_onboarding_token_key unique (onboarding_token),
-    constraint clients_agreement_id_fkey foreign key (agreement_id) references public.agreements (id) on delete set null
+
+-- 6. Tabla de Promociones
+CREATE TABLE IF NOT EXISTS public.promotions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    name character varying NOT NULL,
+    description text,
+    rules jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
-comment on table public.clients is 'Almacena la información de los clientes finales.';
+-- Habilitar RLS
+ALTER TABLE public.promotions ENABLE ROW LEVEL SECURITY;
+-- Políticas RLS para promotions
+DROP POLICY IF EXISTS "Los usuarios pueden ver promociones" ON public.promotions;
+CREATE POLICY "Los usuarios pueden ver promociones" ON public.promotions FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Los administradores pueden gestionar promociones" ON public.promotions;
+CREATE POLICY "Los administradores pueden gestionar promociones" ON public.promotions FOR ALL USING (auth.role() = 'authenticated');
 
--- Tabla de PROMOCIONES
-create table if not exists public.promotions (
-  id uuid default extensions.uuid_generate_v4() not null,
-  name character varying not null,
-  description text null,
-  rules jsonb not null default '{}'::jsonb,
-  created_at timestamp with time zone not null default now(),
-  constraint promotions_pkey primary key (id)
+
+-- 7. Tabla de Convenios y Promociones (Tabla Pivote)
+CREATE TABLE IF NOT EXISTS public.agreement_promotions (
+    agreement_id uuid NOT NULL REFERENCES public.agreements(id) ON DELETE CASCADE,
+    promotion_id uuid NOT NULL REFERENCES public.promotions(id) ON DELETE CASCADE,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    PRIMARY KEY (agreement_id, promotion_id)
 );
-comment on table public.promotions is 'Promociones globales aplicables a los convenios.';
+-- Habilitar RLS
+ALTER TABLE public.agreement_promotions ENABLE ROW LEVEL SECURITY;
+-- Políticas RLS para agreement_promotions
+DROP POLICY IF EXISTS "Los usuarios pueden ver las promociones de un convenio" ON public.agreement_promotions;
+CREATE POLICY "Los usuarios pueden ver las promociones de un convenio" ON public.agreement_promotions FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Los administradores pueden gestionar las promociones de un convenio" ON public.agreement_promotions;
+CREATE POLICY "Los administradores pueden gestionar las promociones de un convenio" ON public.agreement_promotions FOR ALL USING (auth.role() = 'authenticated');
 
--- Tabla de PROMOCIONES POR CONVENIO (Tabla intermedia)
-create table if not exists public.agreement_promotions (
-  agreement_id uuid not null,
-  promotion_id uuid not null,
-  created_at timestamp with time zone not null default now(),
-  constraint agreement_promotions_pkey primary key (agreement_id, promotion_id),
-  constraint agreement_promotions_agreement_id_fkey foreign key (agreement_id) references public.agreements (id) on delete cascade,
-  constraint agreement_promotions_promotion_id_fkey foreign key (promotion_id) references public.promotions (id) on delete cascade
+
+-- 8. Tabla de Clientes
+CREATE TABLE IF NOT EXISTS public.clients (
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    cuit character varying(11) UNIQUE,
+    contact_name text,
+    contact_dni character varying(8),
+    address text,
+    delivery_window text,
+    email character varying UNIQUE,
+    instagram character varying,
+    status client_status DEFAULT 'pending_onboarding'::client_status NOT NULL,
+    onboarding_token uuid DEFAULT gen_random_uuid() NOT NULL UNIQUE,
+    agreement_id uuid REFERENCES public.agreements(id) ON DELETE SET NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
-comment on table public.agreement_promotions is 'Asigna promociones específicas a un convenio.';
-
-
--- ========= POLÍTICAS DE SEGURIDAD (ROW LEVEL SECURITY) ================
-
--- --- Tabla `products` ---
-alter table public.products enable row level security;
-drop policy if exists "Allow public read access to products" on public.products;
-create policy "Allow public read access to products" on public.products for select using (true);
-drop policy if exists "Allow admin access to manage products" on public.products;
-create policy "Allow admin access to manage products" on public.products for all
-  using (auth.role() = 'authenticated')
-  with check (auth.role() = 'authenticated');
-
--- --- Tabla `price_lists` ---
-alter table public.price_lists enable row level security;
-drop policy if exists "Allow public read access to price lists" on public.price_lists;
-create policy "Allow public read access to price lists" on public.price_lists for select using (true);
-drop policy if exists "Allow admin access to manage price lists" on public.price_lists;
-create policy "Allow admin access to manage price lists" on public.price_lists for all
-  using (auth.role() = 'authenticated')
-  with check (auth.role() = 'authenticated');
-
--- --- Tabla `price_list_items` ---
-alter table public.price_list_items enable row level security;
-drop policy if exists "Allow public read access to price list items" on public.price_list_items;
-create policy "Allow public read access to price list items" on public.price_list_items for select using (true);
-drop policy if exists "Allow admin access to manage price list items" on public.price_list_items;
-create policy "Allow admin access to manage price list items" on public.price_list_items for all
-  using (auth.role() = 'authenticated')
-  with check (auth.role() = 'authenticated');
-
--- --- Tabla `agreements` ---
-alter table public.agreements enable row level security;
-drop policy if exists "Allow public read access to agreements" on public.agreements;
-create policy "Allow public read access to agreements" on public.agreements for select using (true);
-drop policy if exists "Allow admin access to manage agreements" on public.agreements;
-create policy "Allow admin access to manage agreements" on public.agreements for all
-  using (auth.role() = 'authenticated')
-  with check (auth.role() = 'authenticated');
-
--- --- Tabla `promotions` ---
-alter table public.promotions enable row level security;
-drop policy if exists "Allow public read access to promotions" on public.promotions;
-create policy "Allow public read access to promotions" on public.promotions for select using (true);
-drop policy if exists "Allow admin access to manage promotions" on public.promotions;
-create policy "Allow admin access to manage promotions" on public.promotions for all
-  using (auth.role() = 'authenticated')
-  with check (auth.role() = 'authenticated');
-
--- --- Tabla `agreement_promotions` ---
-alter table public.agreement_promotions enable row level security;
-drop policy if exists "Allow public read access to assigned promotions" on public.agreement_promotions;
-create policy "Allow public read access to assigned promotions" on public.agreement_promotions for select using (true);
-drop policy if exists "Allow admin access to manage assigned promotions" on public.agreement_promotions;
-create policy "Allow admin access to manage assigned promotions" on public.agreement_promotions for all
-  using (auth.role() = 'authenticated')
-  with check (auth.role() = 'authenticated');
-
--- --- Tabla `clients` ---
-alter table public.clients enable row level security;
-drop policy if exists "Allow public access for onboarding" on public.clients;
-create policy "Allow public access for onboarding" on public.clients for select using (true);
-drop policy if exists "Allow public update for onboarding form" on public.clients;
-create policy "Allow public update for onboarding form" on public.clients for update using (true) with check (true);
-drop policy if exists "Allow admin full access to clients" on public.clients;
-create policy "Allow admin full access to clients" on public.clients for all
-    using (auth.role() = 'authenticated')
-    with check (auth.role() = 'authenticated');
-
--- =================================================================
---  FIN DEL SCRIPT
--- =================================================================
+-- Habilitar RLS
+ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
+-- Políticas RLS para clients
+DROP POLICY IF EXISTS "Los usuarios autenticados pueden ver clientes" ON public.clients;
+CREATE POLICY "Los usuarios autenticados pueden ver clientes" ON public.clients FOR SELECT USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Cualquiera puede completar su propio formulario de onboarding" ON public.clients;
+CREATE POLICY "Cualquiera puede completar su propio formulario de onboarding" ON public.clients FOR UPDATE USING (onboarding_token = (select nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'onboarding_token')::uuid) WITH CHECK (onboarding_token = (select nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'onboarding_token')::uuid);
+DROP POLICY IF EXISTS "Los administradores pueden gestionar clientes" ON public.clients;
+CREATE POLICY "Los administradores pueden gestionar clientes" ON public.clients FOR ALL USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Cualquiera puede ver su propio registro de cliente por token" ON public.clients;
+CREATE POLICY "Cualquiera puede ver su propio registro de cliente por token" ON public.clients FOR SELECT USING (onboarding_token = (select nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'onboarding_token')::uuid);
