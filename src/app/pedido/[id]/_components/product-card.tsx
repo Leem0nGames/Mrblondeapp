@@ -6,7 +6,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { ProductWithPrice, AgreementPromotion } from "@/types";
+import type { ProductWithPrice } from "@/types";
 import Image from "next/image";
 import { QuantitySelector } from "./add-to-cart-button";
 import { getImageUrl } from "@/lib/placeholder-images";

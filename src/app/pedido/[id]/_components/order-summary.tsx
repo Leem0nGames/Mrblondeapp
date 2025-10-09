@@ -47,7 +47,7 @@ function formatWhatsAppMessage(
   }
 
   let shippingText = "";
-  const freeShippingPromo = availablePromotions.map(parseFreeShippingPromo).find(p => p !== null);
+  const freeShippingPromo = availablePromotions.map(promo => parseFreeShippingPromo(promo)).find(p => p !== null);
   if (freeShippingPromo && totalItems >= freeShippingPromo.min_units) {
     shippingText = `*Envío Bonificado*\n`;
   }

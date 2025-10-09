@@ -75,12 +75,11 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, availablePro
 
   if (buyXGetYPromos.length > 0) {
     items.forEach(item => { // Iterate over each product in the cart
-      let bonusesForThisItem = 0;
       buyXGetYPromos.forEach(promo => { // Check every available promotion against this item
         if (item.quantity >= promo.buy) {
           const times = Math.floor(item.quantity / promo.buy);
           const bonusUnits = times * promo.get;
-          bonusesForThisItem += bonusUnits;
+          totalBonuses += bonusUnits;
           
           // Add to the list of applied promos for display
           appliedPromos.push({
@@ -90,7 +89,6 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, availablePro
           });
         }
       });
-      totalBonuses += bonusesForThisItem;
     });
   }
   
