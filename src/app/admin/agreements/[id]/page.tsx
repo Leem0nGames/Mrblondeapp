@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import { ArrowLeft, Edit, FileWarning, Package, Percent, PlusCircle } from "lucide-react";
 import { getAgreementById } from "@/app/actions/admin.actions";
@@ -9,17 +10,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
 import { AgreementDialog } from "../_components/agreement-dialog";
-import AgreementProductsTable from "./_components/agreement-products-table";
 import AgreementPromotionsList from "./_components/agreement-promotions-list";
-import { AssignProductDialog } from "./_components/assign-product-dialog";
 import { AssignPromotionDialog } from "./_components/assign-promotion-dialog";
+import { Badge } from "@/components/ui/badge";
 
 export default async function AgreementDetailPage({
   params,
@@ -70,39 +64,33 @@ export default async function AgreementDetailPage({
         </div>
       </div>
 
-      <Tabs defaultValue="products">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="products">
-            <Package className="mr-2 h-4 w-4" />
-            Productos Asignados ({agreement.agreement_products.length})
-          </TabsTrigger>
-          <TabsTrigger value="promotions">
-             <Percent className="mr-2 h-4 w-4" />
-            Promociones Asignadas ({agreement.agreement_promotions.length})
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="products">
-          <Card>
-            <CardHeader className="flex flex-row items-center">
-              <div className="flex-grow">
-                <CardTitle>Productos del Convenio</CardTitle>
-                <CardDescription>
-                  Gestiona los productos y sus precios específicos para este convenio.
-                </CardDescription>
-              </div>
-               <AssignProductDialog agreementId={agreement.id}>
-                  <Button size="sm" className="h-8 gap-1">
-                    <PlusCircle className="h-3.5 w-3.5" />
-                    <span>Asignar Producto</span>
-                  </Button>
-                </AssignProductDialog>
-            </CardHeader>
-            <CardContent>
-              <AgreementProductsTable products={agreement.agreement_products} agreementId={agreement.id} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="promotions">
+       <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Lista de Precios</CardTitle>
+                    <CardDescription>La lista de precios que rige este convenio.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {agreement.price_lists ? (
+                        <div className="flex flex-col gap-2">
+                            <Badge variant="secondary" className="w-fit text-base">{agreement.price_lists.name}</Badge>
+                            <Button variant="outline" size="sm" className="w-fit" asChild>
+                                <Link href={`/admin/pricelists/${agreement.price_lists.id}`}>
+                                    Ver o Editar Lista
+                                </Link>
+                            </Button>
+                        </div>
+
+                    ) : (
+                        <div className="text-sm text-muted-foreground">
+                            <p>No hay una lista de precios asignada.</p>
+                            <AgreementDialog agreement={agreement}>
+                                <Button variant="link" className="p-0 h-auto">Asignar una ahora</Button>
+                            </AgreementDialog>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center">
                     <div className="flex-grow">
@@ -114,7 +102,7 @@ export default async function AgreementDetailPage({
                      <AssignPromotionDialog agreementId={agreement.id}>
                         <Button size="sm" className="h-8 gap-1">
                             <PlusCircle className="h-3.5 w-3.5" />
-                            <span>Asignar Promoción</span>
+                            <span>Asignar</span>
                         </Button>
                      </AssignPromotionDialog>
                 </CardHeader>
@@ -122,8 +110,7 @@ export default async function AgreementDetailPage({
                     <AgreementPromotionsList promotions={agreement.agreement_promotions} agreementId={agreement.id} />
                 </CardContent>
             </Card>
-        </TabsContent>
-      </Tabs>
+       </div>
     </div>
   );
 }

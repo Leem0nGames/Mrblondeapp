@@ -1,3 +1,4 @@
+
 "use client";
 
 import { create } from "zustand";
@@ -8,6 +9,8 @@ export type CartItem = {
   product: ProductWithPrice;
   quantity: number;
 };
+
+const VOLUME_THRESHOLD = 150;
 
 type CartState = {
   items: CartItem[];
@@ -24,10 +27,14 @@ type CartState = {
 // Helper function to compute totals from a given set of items.
 const calculateTotals = (items: CartItem[]) => {
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
-  const totalPrice = items.reduce(
-    (total, item) => total + item.product.price * item.quantity,
-    0
-  );
+  
+  const isVolumePricing = totalItems >= VOLUME_THRESHOLD;
+
+  const totalPrice = items.reduce((total, item) => {
+    const price = (isVolumePricing && item.product.volume_price) ? item.product.volume_price : item.product.price;
+    return total + price * item.quantity;
+  }, 0);
+
   return { totalItems, totalPrice };
 };
 

@@ -15,6 +15,7 @@ export type Product = {
 // Used on the order page to ensure the correct price is used.
 export type ProductWithPrice = Product & {
   price: number;
+  volume_price?: number | null;
 };
 
 export type Promotion = {
@@ -25,13 +26,23 @@ export type Promotion = {
   created_at: string;
 };
 
-// Represents a product specifically assigned to an agreement, with a custom price.
-export type AgreementProduct = {
-  agreement_id: string;
-  product_id: string;
-  price: number; // Custom price for this agreement
-  products: Product; // Joined data from the products table
-};
+export type PriceList = {
+    id: string;
+    name: string;
+    created_at: string;
+}
+
+export type PriceListItem = {
+    price_list_id: string;
+    product_id: string;
+    price: number;
+    volume_price: number | null;
+    products: Product; // Joined data
+}
+
+export type DetailedPriceList = PriceList & {
+    price_list_items: PriceListItem[];
+}
 
 // Represents a promotion specifically assigned to an agreement.
 export type AgreementPromotion = {
@@ -45,18 +56,19 @@ export type Agreement = {
   agreement_name: string;
   client_type: "barberia" | "distribuidor" | "especial";
   created_at: string;
+  price_list_id: string | null;
 };
 
 // Type for the `agreements_with_counts` view
 export type AgreementWithCount = Agreement & {
-  product_count: number;
   promotion_count: number;
+  price_lists: { name: string } | null
 }
 
 
 export type DetailedAgreement = Agreement & {
-  agreement_products: AgreementProduct[]; // Joined data
   agreement_promotions: AgreementPromotion[]; // Joined data
+  price_lists: { id: string, name: string } | null; // Joined data
 }
 
 export type Client = {

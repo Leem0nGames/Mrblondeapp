@@ -6,7 +6,9 @@ import {
   FileText,
   Percent,
   Settings,
-  Users
+  Users,
+  ListRestart,
+  ClipboardList
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -47,6 +49,18 @@ export default function AdminLayout({
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">Productos</TooltipContent>
+            </Tooltip>
+             <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/admin/pricelists"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                >
+                  <ClipboardList className="h-5 w-5" />
+                  <span className="sr-only">Listas de Precios</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Listas de Precios</TooltipContent>
             </Tooltip>
              <Tooltip>
               <TooltipTrigger asChild>
@@ -151,6 +165,15 @@ export default function AdminLayout({
                 >
                   <Package className="h-6 w-6" />
                   <span className="text-xs">Productos</span>
+                </Link>
+            </li>
+             <li>
+                <Link
+                  href="/admin/pricelists"
+                  className="flex flex-col items-center text-muted-foreground hover:text-foreground"
+                >
+                  <ClipboardList className="h-6 w-6" />
+                  <span className="text-xs">Precios</span>
                 </Link>
             </li>
             <li>

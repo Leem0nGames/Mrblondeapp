@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,12 +34,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { upsertAgreement } from "@/app/actions/admin.actions";
-import type { DetailedAgreement } from "@/types";
+import { getPriceLists, upsertAgreement } from "@/app/actions/admin.actions";
+import type { DetailedAgreement, PriceList } from "@/types";
 
 const agreementSchema = z.object({
   agreement_name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
   client_type: z.enum(["barberia", "distribuidor", "especial"]),
+  price_list_id: z.string().nullable(),
 });
 
 type AgreementFormValues = z.infer<typeof agreementSchema>;
@@ -52,6 +54,7 @@ export function AgreementDialog({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [priceLists, setPriceLists] = useState<PriceList[]>([]);
   const { toast } = useToast();
 
   const form = useForm<AgreementFormValues>({
@@ -59,8 +62,19 @@ export function AgreementDialog({
     defaultValues: {
       agreement_name: agreement?.agreement_name ?? "",
       client_type: agreement?.client_type ?? "barberia",
+      price_list_id: agreement?.price_list_id ?? null,
     },
   });
+  
+  useEffect(() => {
+    if (isOpen) {
+        async function fetchPriceLists() {
+            const { data } = await getPriceLists();
+            setPriceLists(data ?? []);
+        }
+        fetchPriceLists();
+    }
+  }, [isOpen]);
 
   const onSubmit = (values: AgreementFormValues) => {
     startTransition(async () => {
@@ -110,28 +124,55 @@ export function AgreementDialog({
               )}
             />
             
-            <FormField
-              control={form.control}
-              name="client_type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Cliente</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona un tipo" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                          <SelectItem value="barberia">Barbería</SelectItem>
-                          <SelectItem value="distribuidor">Distribuidor</SelectItem>
-                          <SelectItem value="especial">Especial</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                control={form.control}
+                name="client_type"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Tipo de Cliente</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Selecciona un tipo" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="barberia">Barbería</SelectItem>
+                            <SelectItem value="distribuidor">Distribuidor</SelectItem>
+                            <SelectItem value="especial">Especial</SelectItem>
+                        </SelectContent>
+                        </Select>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="price_list_id"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Lista de Precios</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(value === 'null' ? null : value)} defaultValue={field.value ?? 'null'}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecciona una lista..." />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            <SelectItem value="null">Ninguna</SelectItem>
+                            {priceLists.map(list => (
+                                <SelectItem key={list.id} value={list.id}>
+                                {list.name}
+                                </SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+            </div>
            
             <DialogFooter className="pt-4">
               <DialogClose asChild>

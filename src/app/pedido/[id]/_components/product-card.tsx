@@ -13,6 +13,7 @@ import { QuantitySelector } from "./add-to-cart-button";
 import { getImageUrl } from "@/lib/placeholder-images";
 import { useCartStore } from "@/hooks/use-cart-store";
 import { Gift } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 
 // Helper function to parse promotion rules safely
@@ -48,6 +49,8 @@ function calculateTotalBonuses(promos: AgreementPromotion[], totalItems: number)
     return totalBonuses;
 }
 
+const VOLUME_THRESHOLD = 150;
+
 export function ProductCard({ product, promotions }: { product: ProductWithPrice, promotions: AgreementPromotion[] }) {
   const { totalItems } = useCartStore();
 
@@ -74,6 +77,8 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
     return calculateTotalBonuses(applicablePromos, totalItems);
   }, [totalItems, applicablePromos]);
 
+  const isVolumePriceActive = totalItems >= VOLUME_THRESHOLD && product.volume_price;
+  const displayPrice = isVolumePriceActive ? product.volume_price : product.price;
 
   return (
     <Card className="flex flex-col sm:flex-row w-full overflow-hidden">
@@ -109,9 +114,20 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
             )}
             
             <div className="flex items-center justify-between mt-2">
-              <p className="text-lg font-bold">
-                ${product.price.toLocaleString()}
-              </p>
+              <div className="flex items-baseline gap-2">
+                 <p className={cn(
+                    "text-lg font-bold",
+                    isVolumePriceActive && "text-primary"
+                  )}>
+                    ${displayPrice?.toLocaleString()}
+                 </p>
+                  {isVolumePriceActive && (
+                      <p className="text-sm font-normal text-muted-foreground line-through">
+                          ${product.price.toLocaleString()}
+                      </p>
+                  )}
+              </div>
+
               <div className="w-32 flex-shrink-0">
                  <QuantitySelector product={product} />
               </div>

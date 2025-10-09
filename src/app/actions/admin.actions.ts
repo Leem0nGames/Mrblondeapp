@@ -3,13 +3,13 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { Product, Agreement, Promotion, DetailedAgreement, AgreementWithCount, Client } from "@/types";
+import type { Product, Agreement, Promotion, DetailedAgreement, AgreementWithCount, Client, PriceList, DetailedPriceList, PriceListItem } from "@/types";
 
 type UpsertProductPayload = Omit<Product, "id" | "created_at"> & {
   id?: string;
 };
 
-type UpsertAgreementPayload = Pick<Agreement, "agreement_name" | "client_type"> & {
+type UpsertAgreementPayload = Pick<Agreement, "agreement_name" | "client_type" | "price_list_id"> & {
   id?: string;
 };
 
@@ -75,6 +75,7 @@ export async function deleteProduct(id: string) {
     return { error }; 
   }
   revalidatePath("/admin/products");
+  revalidatePath("/admin/pricelists");
   return { error: null };
 }
 
@@ -84,13 +85,12 @@ export async function getAgreements(): Promise<{ data: AgreementWithCount[] | nu
     await checkAuth();
     const supabase = createClient();
     
-    // Updated query to manually count related items instead of using a view
     const { data, error } = await supabase
         .from("agreements")
         .select(`
             *,
-            agreement_products(count),
-            agreement_promotions(count)
+            agreement_promotions(count),
+            price_lists ( name )
         `)
         .order("agreement_name", { ascending: true });
 
@@ -102,7 +102,6 @@ export async function getAgreements(): Promise<{ data: AgreementWithCount[] | nu
     // Manually map the data to the expected shape
     const agreementsWithCounts = data.map(agreement => ({
         ...agreement,
-        product_count: agreement.agreement_products[0]?.count ?? 0,
         promotion_count: agreement.agreement_promotions[0]?.count ?? 0,
     }));
     
@@ -116,13 +115,10 @@ export async function getAgreementById(id: string): Promise<{ data: DetailedAgre
         .from("agreements")
         .select(`
             *,
-            agreement_products (
-                price,
-                products ( * )
-            ),
             agreement_promotions (
                 promotions ( * )
-            )
+            ),
+            price_lists ( id, name )
         `)
         .eq("id", id)
         .single();
@@ -133,8 +129,8 @@ export async function getAgreementById(id: string): Promise<{ data: DetailedAgre
     // Ensure nested arrays are not null
     const detailedAgreement: DetailedAgreement = {
         ...data,
-        agreement_products: data.agreement_products ?? [],
         agreement_promotions: data.agreement_promotions ?? [],
+        price_lists: data.price_lists,
     };
     return { data: detailedAgreement, error: null };
 }
@@ -237,36 +233,6 @@ export async function deletePromotion(id: string) {
 
 // --- Agreement Product & Promotion Management ---
 
-export async function getUnassignedProducts(agreementId: string) {
-    await checkAuth();
-    const supabase = createClient();
-    const { data: assignedProductIds, error: assignedIdsError } = await supabase
-        .from('agreement_products')
-        .select('product_id')
-        .eq('agreement_id', agreementId);
-
-    if (assignedIdsError) {
-      console.error("getUnassignedProducts (assigned) error:", assignedIdsError.message);
-      return { data: [], error: assignedIdsError };
-    }
-
-    const assignedIds = assignedProductIds.map(p => p.product_id);
-    
-    const query = supabase.from('products').select('*').order('name');
-
-    if (assignedIds.length > 0) {
-      query.not('id', 'in', `(${assignedIds.join(',')})`)
-    }
-
-    const { data, error } = await query;
-    
-    if (error) {
-        console.error("getUnassignedProducts (filtered) error:", error.message);
-        throw error;
-    }
-    return { data, error };
-}
-
 export async function getUnassignedPromotions(agreementId: string) {
     await checkAuth();
     const supabase = createClient();
@@ -295,75 +261,6 @@ export async function getUnassignedPromotions(agreementId: string) {
         throw error;
     }
     return { data, error };
-}
-
-
-export async function assignProductToAgreement(payload: { agreement_id: string; product_id: string; price: number; }) {
-    await checkAuth();
-    const supabase = createClient();
-    const { error } = await supabase.from('agreement_products').insert(payload);
-    if (error) {
-      console.error("assignProductToAgreement error:", error.message);
-      return { error };
-    }
-    revalidatePath(`/admin/agreements/${payload.agreement_id}`);
-    return { error: null };
-}
-
-export async function assignMultipleProductsToAgreement(payload: {
-  agreement_id: string;
-  products: { product_id: string; price: number }[];
-}) {
-  await checkAuth();
-  const supabase = createClient();
-
-  const productsToInsert = payload.products.map(p => ({
-    agreement_id: payload.agreement_id,
-    product_id: p.product_id,
-    price: p.price,
-  }));
-
-  const { error } = await supabase.from('agreement_products').insert(productsToInsert);
-
-  if (error) {
-    console.error("assignMultipleProductsToAgreement error:", error.message);
-    return { error };
-  }
-
-  revalidatePath(`/admin/agreements/${payload.agreement_id}`);
-  return { error: null };
-}
-
-export async function unassignProductFromAgreement(payload: { agreement_id: string; product_id: string; }) {
-    await checkAuth();
-    const supabase = createClient();
-    const { error } = await supabase.from('agreement_products')
-        .delete()
-        .eq('agreement_id', payload.agreement_id)
-        .eq('product_id', payload.product_id);
-
-    if (error) {
-      console.error("unassignProductFromAgreement error:", error.message);
-      return { error };
-    }
-    revalidatePath(`/admin/agreements/${payload.agreement_id}`);
-    return { error: null };
-}
-
-export async function updateAgreementProductPrice(payload: { agreement_id: string; product_id: string; price: number; }) {
-    await checkAuth();
-    const supabase = createClient();
-    const { error } = await supabase.from('agreement_products')
-        .update({ price: payload.price })
-        .eq('agreement_id', payload.agreement_id)
-        .eq('product_id', payload.product_id);
-
-    if (error) {
-      console.error("updateAgreementProductPrice error:", error.message);
-      return { error };
-    }
-    revalidatePath(`/admin/agreements/${payload.agreement_id}`);
-    return { error: null };
 }
 
 export async function assignMultiplePromotionsToAgreement(payload: {
@@ -477,4 +374,157 @@ export async function deleteClient(id: string) {
   }
   revalidatePath("/admin/clients");
   return { error: null };
+}
+
+// --- Price List Actions ---
+
+export async function getPriceLists(): Promise<{ data: PriceList[] | null, error: any }> {
+    await checkAuth();
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from("price_lists")
+        .select('*')
+        .order("name", { ascending: true });
+
+    if (error) {
+        console.error("getPriceLists error:", error.message);
+        return { data: null, error };
+    }
+    return { data, error: null };
+}
+
+export async function getPriceListById(id: string): Promise<{ data: DetailedPriceList | null, error: any }> {
+    await checkAuth();
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from("price_lists")
+        .select(`
+            *,
+            price_list_items (
+                *,
+                products ( * )
+            )
+        `)
+        .eq("id", id)
+        .single();
+    if (error) {
+        console.error("getPriceListById error:", error.message);
+        return { data: null, error };
+    }
+    const detailedPriceList: DetailedPriceList = {
+        ...data,
+        price_list_items: data.price_list_items ?? [],
+    };
+    return { data: detailedPriceList, error: null };
+}
+
+
+export async function upsertPriceList(payload: { name: string, id?: string }) {
+  await checkAuth();
+  const supabase = createClient();
+  const { id, ...priceListData } = payload;
+
+  const query = supabase.from("price_lists");
+
+  const { data, error } = id
+    ? await query.update(priceListData).eq("id", id).select().single()
+    : await query.insert(priceListData).select().single();
+
+  if (error) {
+    console.error("upsertPriceList error:", error.message);
+    if (error.code === '23505') { // Unique constraint violation
+        return { data: null, error: { ...error, message: `El nombre '${priceListData.name}' ya existe.` } };
+    }
+    return { data: null, error };
+  }
+
+  revalidatePath("/admin/pricelists");
+  return { data, error: null };
+}
+
+export async function deletePriceList(id: string) {
+    await checkAuth();
+    const supabase = createClient();
+    const { error } = await supabase.from("price_lists").delete().eq("id", id);
+    if (error) {
+      console.error("deletePriceList error:", error.message);
+      return { error }; 
+    }
+    revalidatePath("/admin/pricelists");
+    return { error: null };
+}
+
+export async function getUnassignedProductsForPriceList(priceListId: string) {
+    await checkAuth();
+    const supabase = createClient();
+    const { data: assignedProductIds, error: assignedIdsError } = await supabase
+        .from('price_list_items')
+        .select('product_id')
+        .eq('price_list_id', priceListId);
+
+    if (assignedIdsError) {
+      console.error("getUnassignedProductsForPriceList (assigned) error:", assignedIdsError.message);
+      return { data: [], error: assignedIdsError };
+    }
+
+    const assignedIds = assignedProductIds.map(p => p.product_id);
+    const query = supabase.from('products').select('*').order('name');
+    if (assignedIds.length > 0) {
+      query.not('id', 'in', `(${assignedIds.join(',')})`)
+    }
+    const { data, error } = await query;
+    
+    if (error) {
+        console.error("getUnassignedProductsForPriceList (filtered) error:", error.message);
+        throw error;
+    }
+    return { data, error };
+}
+
+export async function assignProductsToPriceList(payload: {
+  price_list_id: string;
+  products: { product_id: string; price: number, volume_price: number | null }[];
+}) {
+  await checkAuth();
+  const supabase = createClient();
+  const productsToInsert = payload.products.map(p => ({ ...p, price_list_id: payload.price_list_id }));
+  const { error } = await supabase.from('price_list_items').insert(productsToInsert);
+
+  if (error) {
+    console.error("assignProductsToPriceList error:", error.message);
+    return { error };
+  }
+  revalidatePath(`/admin/pricelists/${payload.price_list_id}`);
+  return { error: null };
+}
+
+export async function unassignProductFromPriceList(payload: { price_list_id: string; product_id: string; }) {
+    await checkAuth();
+    const supabase = createClient();
+    const { error } = await supabase.from('price_list_items')
+        .delete()
+        .eq('price_list_id', payload.price_list_id)
+        .eq('product_id', payload.product_id);
+    if (error) {
+      console.error("unassignProductFromPriceList error:", error.message);
+      return { error };
+    }
+    revalidatePath(`/admin/pricelists/${payload.price_list_id}`);
+    return { error: null };
+}
+
+export async function updatePriceListItem(payload: { price_list_id: string; product_id: string; price: number; volume_price: number | null }) {
+    await checkAuth();
+    const supabase = createClient();
+    const { price_list_id, product_id, ...updateData } = payload;
+    const { error } = await supabase.from('price_list_items')
+        .update(updateData)
+        .eq('price_list_id', price_list_id)
+        .eq('product_id', product_id);
+    if (error) {
+      console.error("updatePriceListItem error:", error.message);
+      return { error };
+    }
+    revalidatePath(`/admin/pricelists/${price_list_id}`);
+    return { error: null };
 }

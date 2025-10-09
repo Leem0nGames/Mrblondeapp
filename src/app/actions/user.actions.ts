@@ -125,34 +125,29 @@ export async function getOrderPageData(agreementId: string) {
             *,
             agreement_promotions(
                 promotions(*)
+            ),
+            price_lists(
+                id,
+                price_list_items(
+                    price,
+                    volume_price,
+                    products(*)
+                )
             )
         `)
         .eq('id', agreementId)
         .single();
 
-    if (agreementError || !agreement) {
+    if (agreementError || !agreement || !agreement.price_lists) {
         console.error("getOrderPageData (agreement) error:", agreementError?.message);
-        return { data: null, error: { message: "El convenio no es válido o ha expirado." } };
+        return { data: null, error: { message: "El convenio no es válido, ha expirado o no tiene una lista de precios asignada." } };
     }
 
-    const { data: agreementProducts, error: productsError } = await supabase
-        .from('agreement_products')
-        .select(`
-            price,
-            products(*)
-        `)
-        .eq('agreement_id', agreementId)
-        .order('name', { foreignTable: 'products', ascending: true });
-    
-    if (productsError) {
-        console.error("getOrderPageData (products) error:", productsError.message);
-        return { data: null, error: { message: "No se pudieron cargar los productos del convenio." } };
-    }
-
-    const products = agreementProducts.map(ap => ({
-        ...ap.products!,
-        price: ap.price,
-    }));
+    const products = agreement.price_lists.price_list_items.map(pli => ({
+        ...pli.products!,
+        price: pli.price,
+        volume_price: pli.volume_price,
+    })).sort((a, b) => a.name.localeCompare(b.name));
     
     const productsByCategory = products.reduce((acc, product) => {
         const category = product.category || 'Sin Categoría';

@@ -84,7 +84,7 @@ export default function AgreementsTable({ agreements }: { agreements: AgreementW
             <TableRow>
               <TableHead>Nombre del Convenio</TableHead>
               <TableHead>Tipo de Cliente</TableHead>
-              <TableHead className="hidden sm:table-cell">Productos</TableHead>
+              <TableHead className="hidden sm:table-cell">Lista de Precios</TableHead>
               <TableHead className="hidden sm:table-cell">Promociones</TableHead>
               <TableHead>
                 <span className="sr-only">Acciones</span>
@@ -98,7 +98,7 @@ export default function AgreementsTable({ agreements }: { agreements: AgreementW
                 <TableCell>
                   <Badge variant="outline" className="capitalize">{agreement.client_type}</Badge>
                 </TableCell>
-                <TableCell className="hidden sm:table-cell">{agreement.product_count ?? 0}</TableCell>
+                <TableCell className="hidden sm:table-cell">{agreement.price_lists?.name ?? <span className="text-muted-foreground">Ninguna</span>}</TableCell>
                 <TableCell className="hidden sm:table-cell">{agreement.promotion_count ?? 0}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
