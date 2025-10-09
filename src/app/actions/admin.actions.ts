@@ -3,7 +3,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { Product, Agreement, Promotion, DetailedAgreement, AgreementWithCount, Client, PriceList, DetailedPriceList, PriceListItem, DashboardStats, Order } from "@/types";
+import type { Product, Agreement, Promotion, DetailedAgreement, AgreementWithCount, Client, PriceList, DetailedPriceList, PriceListItem, DashboardStats, Order, SalesCondition } from "@/types";
 
 type UpsertProductPayload = Omit<Product, "id" | "created_at"> & {
   id?: string;
@@ -14,6 +14,11 @@ type UpsertAgreementPayload = Pick<Agreement, "agreement_name" | "client_type" |
 };
 
 type UpsertPromotionPayload = Omit<Promotion, "id" | "created_at" | "rules"> & {
+  id?: string;
+  rules: any;
+};
+
+type UpsertSalesConditionPayload = Omit<SalesCondition, "id" | "created_at" | "rules"> & {
   id?: string;
   rules: any;
 };
@@ -96,10 +101,9 @@ export async function getAgreements(): Promise<{ data: AgreementWithCount[] | nu
     const supabase = await getSupabaseClientWithAuth();
     
     const { data, error } = await supabase
-        .from("agreements")
+        .from("agreements_with_counts")
         .select(`
             *,
-            agreement_promotions(count),
             price_lists ( name )
         `)
         .order("agreement_name", { ascending: true });
@@ -108,13 +112,8 @@ export async function getAgreements(): Promise<{ data: AgreementWithCount[] | nu
         console.error("getAgreements error:", error.message);
         return { data: null, error };
     }
-
-    const agreementsWithCounts = data.map(agreement => ({
-        ...agreement,
-        promotion_count: agreement.agreement_promotions[0]?.count ?? 0,
-    }));
     
-    return { data: agreementsWithCounts, error: null };
+    return { data: data as AgreementWithCount[], error: null };
 }
 
 export async function getAgreementById(id: string): Promise<{ data: DetailedAgreement | null, error: any }> {
@@ -125,6 +124,9 @@ export async function getAgreementById(id: string): Promise<{ data: DetailedAgre
             *,
             agreement_promotions (
                 promotions ( * )
+            ),
+            agreement_sales_conditions (
+              sales_conditions ( * )
             ),
             price_lists ( id, name, prices_include_vat ),
             clients ( id, contact_name )
@@ -138,6 +140,7 @@ export async function getAgreementById(id: string): Promise<{ data: DetailedAgre
     const detailedAgreement: DetailedAgreement = {
         ...data,
         agreement_promotions: data.agreement_promotions ?? [],
+        agreement_sales_conditions: data.agreement_sales_conditions ?? [],
         price_lists: data.price_lists,
         clients: data.clients ?? [],
     };
@@ -175,6 +178,27 @@ export async function upsertPromotion(payload: UpsertPromotionPayload) {
 
 export async function deletePromotion(id: string) {
   return await deleteEntity("promotions", id, ["/admin/promotions", "/admin/agreements"]);
+}
+
+
+// --- Sales Condition Actions ---
+
+export async function getSalesConditions() {
+  const supabase = await getSupabaseClientWithAuth();
+  const { data, error } = await supabase.from("sales_conditions").select("*").order("name", { ascending: true });
+  if (error) {
+    console.error("getSalesConditions error:", error.message);
+    throw error;
+  }
+  return { data, error };
+}
+
+export async function upsertSalesCondition(payload: UpsertSalesConditionPayload) {
+  return await upsertEntity("sales_conditions", payload, ["/admin/sales-conditions", "/admin/agreements"]);
+}
+
+export async function deleteSalesCondition(id: string) {
+  return await deleteEntity("sales_conditions", id, ["/admin/sales-conditions", "/admin/agreements"]);
 }
 
 // --- Agreement Product & Promotion Management ---

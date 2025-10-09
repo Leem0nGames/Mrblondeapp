@@ -1,4 +1,3 @@
-
 // These types are manually created to match the Supabase schema.
 // For a more robust solution, you can use `supabase gen types typescript`.
 
@@ -32,6 +31,14 @@ export type Promotion = {
   created_at: string;
 };
 
+export type SalesCondition = {
+  id: string;
+  name: string;
+  description: string | null;
+  rules: any; // JSON object
+  created_at: string;
+};
+
 export type PriceList = {
     id: string;
     name: string;
@@ -58,6 +65,12 @@ export type AgreementPromotion = {
   promotions: Promotion; // Joined data from the promotions table
 }
 
+export type AgreementSalesCondition = {
+  agreement_id: string;
+  sales_condition_id: string;
+  sales_conditions: SalesCondition; // Joined data from the sales_conditions table
+}
+
 export type Agreement = {
   id: string;
   agreement_name: string;
@@ -69,12 +82,14 @@ export type Agreement = {
 // Type for the `agreements_with_counts` view
 export type AgreementWithCount = Agreement & {
   promotion_count: number;
+  sales_condition_count: number;
   price_lists: { name: string } | null
 }
 
 
 export type DetailedAgreement = Agreement & {
   agreement_promotions: AgreementPromotion[]; // Joined data
+  agreement_sales_conditions: AgreementSalesCondition[]; // Joined data
   price_lists: { id: string, name: string, prices_include_vat: boolean } | null; // Joined data
   clients: { id: string, contact_name: string | null }[]; // Joined data
 }

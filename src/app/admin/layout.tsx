@@ -7,8 +7,8 @@ import {
   Percent,
   Settings,
   Users,
-  ListRestart,
-  ClipboardList
+  ClipboardList,
+  Landmark
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -101,6 +101,18 @@ export default function AdminLayout({
              <Tooltip>
               <TooltipTrigger asChild>
                 <Link
+                  href="/admin/sales-conditions"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                >
+                  <Landmark className="h-5 w-5" />
+                  <span className="sr-only">Condiciones de Venta</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Condiciones de Venta</TooltipContent>
+            </Tooltip>
+             <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
                   href="/admin/settings"
                   className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
@@ -157,7 +169,7 @@ export default function AdminLayout({
       </div>
        <footer className="sm:hidden fixed bottom-0 left-0 right-0 h-16 bg-background border-t z-10">
         <nav className="h-full">
-          <ul className="h-full flex justify-around items-center">
+          <ul className="h-full grid grid-cols-6 justify-around items-center">
             <li>
                 <Link
                   href="/admin/products"
@@ -203,13 +215,13 @@ export default function AdminLayout({
                   <span className="text-xs">Promos</span>
                 </Link>
             </li>
-             <li>
+            <li>
                 <Link
-                  href="/admin/settings"
+                  href="/admin/sales-conditions"
                   className="flex flex-col items-center text-muted-foreground hover:text-foreground"
                 >
-                  <Settings className="h-6 w-6" />
-                  <span className="text-xs">Ajustes</span>
+                  <Landmark className="h-6 w-6" />
+                  <span className="text-xs">Condiciones</span>
                 </Link>
             </li>
           </ul>

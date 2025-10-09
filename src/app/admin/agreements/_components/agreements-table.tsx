@@ -99,7 +99,9 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                 <CardHeader>
                     <div className="flex flex-col gap-2">
                       <CardTitle>{agreement.agreement_name}</CardTitle>
-                      <Badge variant="outline" className="capitalize w-fit">{agreement.client_type}</Badge>
+                       <div className="text-sm text-muted-foreground">
+                        <Badge variant="outline" className="capitalize">{agreement.client_type}</Badge>
+                      </div>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -110,6 +112,10 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                      <div className="text-sm">
                         <p className="font-medium">Promociones</p>
                         <p className="text-muted-foreground">{agreement.promotion_count ?? 0}</p>
+                    </div>
+                     <div className="text-sm">
+                        <p className="font-medium">Condiciones de Venta</p>
+                        <p className="text-muted-foreground">{agreement.sales_condition_count ?? 0}</p>
                     </div>
                 </CardContent>
                 <CardFooter className="flex flex-col items-stretch gap-2">
@@ -169,6 +175,7 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
               <TableHead>Tipo de Cliente</TableHead>
               <TableHead>Lista de Precios</TableHead>
               <TableHead>Promociones</TableHead>
+              <TableHead>Condiciones</TableHead>
               <TableHead>
                 <span className="sr-only">Acciones</span>
               </TableHead>
@@ -187,6 +194,7 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                 </TableCell>
                 <TableCell>{agreement.price_lists?.name ?? <span className="text-muted-foreground">Ninguna</span>}</TableCell>
                 <TableCell>{agreement.promotion_count ?? 0}</TableCell>
+                <TableCell>{agreement.sales_condition_count ?? 0}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
                       <Button variant="outline" size="sm" onClick={() => copyToClipboard(agreement.id)}>
