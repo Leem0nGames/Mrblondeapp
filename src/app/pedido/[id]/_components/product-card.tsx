@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo } from "react";
@@ -17,13 +16,13 @@ import { cn } from "@/lib/utils";
 
 
 // Helper function to parse promotion rules safely
-function parsePromoRules(promo: AgreementPromotion) {
+function parseBuyXGetYPromo(promo: AgreementPromotion) {
   const rules = promo.promotions.rules;
   if (rules?.type === 'buy_x_get_y_free') {
     const buy = Number(rules.buy);
     const get = Number(rules.get);
     if (!isNaN(buy) && buy > 0 && !isNaN(get) && get > 0) {
-      return { buy, get };
+      return { buy, get, name: promo.promotions.name };
     }
   }
   return null;
@@ -32,7 +31,7 @@ function parsePromoRules(promo: AgreementPromotion) {
 // This function calculates total bonuses based on the quantity of a single product
 function calculateBonusesForProduct(promotions: AgreementPromotion[], productQuantity: number): number {
     const sortedPromos = promotions
-      .map(parsePromoRules)
+      .map(parseBuyXGetYPromo)
       .filter((p): p is NonNullable<typeof p> => p !== null)
       .sort((a, b) => b.buy - a.buy); // Sort from highest requirement to lowest
 

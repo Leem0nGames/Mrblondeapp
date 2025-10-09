@@ -178,67 +178,63 @@ export function OrderSummary({
   const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
 
   return (
-    <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-sm -mx-4 lg:-mx-8 mb-8">
-        <div className="container mx-auto p-4">
-            <Card>
-                 <CardHeader>
-                    <CardTitle>Resumen de Pedido</CardTitle>
-                    {hasItems && <CardDescription>Revisa tu pedido y envíalo cuando estés listo.</CardDescription>}
-                </CardHeader>
-                <CardContent>
-                    {hasItems ? (
-                    <div className="flex flex-col gap-4">
-                        <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Subtotal</span>
-                                <span>{formatCurrency(subtotal)}</span>
-                            </div>
-                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">IVA (21%)</span>
-                                <span>{formatCurrency(vatAmount)}</span>
-                            </div>
-                            <Separator />
-                            <div className="flex justify-between font-bold text-base">
-                                <span>Total</span>
-                                <span>{formatCurrency(totalPrice)}</span>
-                            </div>
-                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">{totalItems} Unidades</span>
-                                {freeShippingPromo && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger>
-                                            <Badge variant={hasFreeShipping ? "default" : "secondary"}>
-                                                <Truck className="h-4 w-4 mr-1"/>
-                                                {hasFreeShipping ? "Envío Gratis" : "Envío"}
-                                            </Badge>
-                                        </TooltipTrigger>
-                                        {!hasFreeShipping && itemsForFreeShipping > 0 && (
-                                            <TooltipContent>
-                                                <p>Agrega {itemsForFreeShipping} unidades más para envío gratis.</p>
-                                            </TooltipContent>
-                                        )}
-                                    </Tooltip>
-                                   </TooltipProvider>
-                                )}
-                            </div>
-                        </div>
-                        <Separator />
-                        <Button
-                            onClick={handleSend}
-                            size="lg"
-                            className="w-full"
-                        >
-                            <span>Enviar Pedido por WhatsApp</span>
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                    </div>
-                     ) : (
-                        <p className="text-center text-muted-foreground py-4">Tu carrito está vacío.</p>
-                    )}
-                </CardContent>
-            </Card>
-        </div>
-    </div>
+    <Card>
+          <CardHeader>
+              <CardTitle>Resumen de Pedido</CardTitle>
+              {hasItems && <CardDescription>Revisa tu pedido y envíalo cuando estés listo.</CardDescription>}
+          </CardHeader>
+          <CardContent>
+              {hasItems ? (
+              <div className="flex flex-col gap-4">
+                  <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                          <span className="text-muted-foreground">Subtotal</span>
+                          <span>{formatCurrency(subtotal)}</span>
+                      </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">IVA (21%)</span>
+                          <span>{formatCurrency(vatAmount)}</span>
+                      </div>
+                      <Separator />
+                      <div className="flex justify-between font-bold text-base">
+                          <span>Total</span>
+                          <span>{formatCurrency(totalPrice)}</span>
+                      </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-muted-foreground">{totalItems} Unidades</span>
+                          {freeShippingPromo && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                  <TooltipTrigger>
+                                      <Badge variant={hasFreeShipping ? "default" : "secondary"}>
+                                          <Truck className="h-4 w-4 mr-1"/>
+                                          {hasFreeShipping ? "Envío Gratis" : "Envío"}
+                                      </Badge>
+                                  </TooltipTrigger>
+                                  {!hasFreeShipping && itemsForFreeShipping > 0 && (
+                                      <TooltipContent>
+                                          <p>Agrega {itemsForFreeShipping} unidades más para envío gratis.</p>
+                                      </TooltipContent>
+                                  )}
+                              </Tooltip>
+                              </TooltipProvider>
+                          )}
+                      </div>
+                  </div>
+                  <Separator />
+                  <Button
+                      onClick={handleSend}
+                      size="lg"
+                      className="w-full"
+                  >
+                      <span>Enviar Pedido por WhatsApp</span>
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+              </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-4">Tu carrito está vacío.</p>
+              )}
+          </CardContent>
+      </Card>
   );
 }
