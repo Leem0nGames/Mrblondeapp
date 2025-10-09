@@ -28,9 +28,11 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { upsertPriceList } from "@/app/actions/admin.actions";
 import type { PriceList } from "@/types";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const formSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
+  prices_include_vat: z.boolean().default(true),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -50,6 +52,7 @@ export function PriceListDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: priceList?.name ?? "",
+      prices_include_vat: priceList?.prices_include_vat ?? true,
     },
   });
 
@@ -95,6 +98,26 @@ export function PriceListDialog({
                     <Input placeholder="e.g., Precios Barbería Enero 2024" {...field} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="prices_include_vat"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      Los precios de esta lista incluyen IVA
+                    </FormLabel>
+                    <FormMessage />
+                  </div>
                 </FormItem>
               )}
             />

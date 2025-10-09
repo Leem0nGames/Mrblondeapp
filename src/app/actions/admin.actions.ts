@@ -118,7 +118,7 @@ export async function getAgreementById(id: string): Promise<{ data: DetailedAgre
             agreement_promotions (
                 promotions ( * )
             ),
-            price_lists ( id, name )
+            price_lists ( id, name, prices_include_vat )
         `)
         .eq("id", id)
         .single();
@@ -419,7 +419,7 @@ export async function getPriceListById(id: string): Promise<{ data: DetailedPric
 }
 
 
-export async function upsertPriceList(payload: { name: string, id?: string }) {
+export async function upsertPriceList(payload: { name: string, prices_include_vat: boolean, id?: string }) {
   await checkAuth();
   const supabase = createClient();
   const { id, ...priceListData } = payload;

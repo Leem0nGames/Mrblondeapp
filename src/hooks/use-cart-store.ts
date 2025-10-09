@@ -11,13 +11,17 @@ export type CartItem = {
 };
 
 const VOLUME_THRESHOLD = 150;
+const VAT_RATE = 0.21; // 21%
 
 type CartState = {
   items: CartItem[];
   totalItems: number;
+  subtotal: number;
+  vatAmount: number;
   totalPrice: number;
   agreementId: string | null;
-  setAgreementId: (id: string) => void;
+  pricesIncludeVat: boolean;
+  setAgreement: (id: string, pricesIncludeVat: boolean) => void;
   addItem: (product: ProductWithPrice, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -25,17 +29,31 @@ type CartState = {
 };
 
 // Helper function to compute totals from a given set of items.
-const calculateTotals = (items: CartItem[]) => {
+const calculateTotals = (items: CartItem[], pricesIncludeVat: boolean) => {
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
   
   const isVolumePricing = totalItems >= VOLUME_THRESHOLD;
 
-  const totalPrice = items.reduce((total, item) => {
-    const price = (isVolumePricing && item.product.volume_price) ? item.product.volume_price : item.product.price;
-    return total + price * item.quantity;
-  }, 0);
+  let subtotal = 0;
+  let totalPrice = 0;
+  
+  items.forEach(item => {
+    const priceWithVat = (isVolumePricing && item.product.volume_price) ? item.product.volume_price : item.product.price;
+    
+    if (pricesIncludeVat) {
+        const singleItemSubtotal = priceWithVat / (1 + VAT_RATE);
+        subtotal += singleItemSubtotal * item.quantity;
+        totalPrice += priceWithVat * item.quantity;
+    } else {
+        const singleItemSubtotal = priceWithVat;
+        subtotal += singleItemSubtotal * item.quantity;
+        totalPrice += singleItemSubtotal * (1 + VAT_RATE) * item.quantity;
+    }
+  });
 
-  return { totalItems, totalPrice };
+  const vatAmount = totalPrice - subtotal;
+
+  return { totalItems, subtotal, vatAmount, totalPrice };
 };
 
 export const useCartStore = create<CartState>()(
@@ -43,15 +61,18 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       totalItems: 0,
+      subtotal: 0,
+      vatAmount: 0,
       totalPrice: 0,
       agreementId: null,
+      pricesIncludeVat: true,
       
-      setAgreementId: (id: string) => {
-        set({ agreementId: id });
+      setAgreement: (id: string, pricesIncludeVat: boolean) => {
+        set({ agreementId: id, pricesIncludeVat: pricesIncludeVat });
       },
 
       addItem: (product: ProductWithPrice, quantity: number = 1) => {
-        const { items } = get();
+        const { items, pricesIncludeVat } = get();
         const existingItem = items.find(
           (item) => item.product.id === product.id
         );
@@ -68,11 +89,11 @@ export const useCartStore = create<CartState>()(
         }
 
         updatedItems = updatedItems.filter(item => item.quantity > 0);
-        set({ items: updatedItems, ...calculateTotals(updatedItems) });
+        set({ items: updatedItems, ...calculateTotals(updatedItems, pricesIncludeVat) });
       },
 
       removeItem: (productId: string) => {
-        const { items } = get();
+        const { items, pricesIncludeVat } = get();
         const existingItem = items.find(item => item.product.id === productId);
 
         if (!existingItem) return;
@@ -88,10 +109,11 @@ export const useCartStore = create<CartState>()(
             updatedItems = items.filter(item => item.product.id !== productId);
         }
 
-        set({ items: updatedItems, ...calculateTotals(updatedItems) });
+        set({ items: updatedItems, ...calculateTotals(updatedItems, pricesIncludeVat) });
       },
 
       updateQuantity: (productId: string, quantity: number) => {
+        const { pricesIncludeVat } = get();
         let updatedItems;
         if (quantity <= 0) {
           updatedItems = get().items.filter(
@@ -102,11 +124,11 @@ export const useCartStore = create<CartState>()(
             item.product.id === productId ? { ...item, quantity } : item
           );
         }
-        set({ items: updatedItems, ...calculateTotals(updatedItems) });
+        set({ items: updatedItems, ...calculateTotals(updatedItems, pricesIncludeVat) });
       },
 
       clearCart: () => {
-        set({ items: [], totalItems: 0, totalPrice: 0 });
+        set({ items: [], totalItems: 0, subtotal: 0, vatAmount: 0, totalPrice: 0 });
       },
     }),
     {
@@ -115,8 +137,10 @@ export const useCartStore = create<CartState>()(
       // This function runs when the store is rehydrated from localStorage
       onRehydrateStorage: () => (state) => {
         if (state) {
-          const { totalItems, totalPrice } = calculateTotals(state.items);
+          const { totalItems, subtotal, vatAmount, totalPrice } = calculateTotals(state.items, state.pricesIncludeVat);
           state.totalItems = totalItems;
+          state.subtotal = subtotal;
+          state.vatAmount = vatAmount;
           state.totalPrice = totalPrice;
         }
       }

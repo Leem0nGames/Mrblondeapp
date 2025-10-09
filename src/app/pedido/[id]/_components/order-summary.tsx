@@ -5,7 +5,8 @@ import { useEffect, useMemo } from "react";
 import { useCartStore, type CartItem } from "@/hooks/use-cart-store";
 import type { AgreementPromotion } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -60,19 +61,20 @@ function calculateTotalBonuses(promos: AgreementPromotion[], totalItems: number)
 function formatWhatsAppMessage(
   clientName: string,
   cartItems: CartItem[],
+  totalItems: number,
+  subtotal: number,
+  vatAmount: number,
   totalPrice: number,
   promotions: AgreementPromotion[],
-  totalUnits: number,
 ) {
   const itemsText = cartItems
     .map((item) => `- ${item.quantity}x ${item.product.name}`)
     .join("\n");
 
   let bonusText = "";
-  const totalBonuses = calculateTotalBonuses(promotions, totalUnits);
+  const totalBonuses = calculateTotalBonuses(promotions, totalItems);
 
   if (totalBonuses > 0) {
-      // Regla de negocio: el producto de regalo es el más barato del carrito
       const sortedItems = [...cartItems].sort((a, b) => a.product.price - b.product.price);
       const cheapestItem = sortedItems[0];
       
@@ -83,15 +85,16 @@ function formatWhatsAppMessage(
 
   let shippingText = "";
   const freeShippingPromo = promotions.map(parseFreeShippingPromo).find(p => p !== null);
-  if (freeShippingPromo && totalUnits >= freeShippingPromo.min_units) {
+  if (freeShippingPromo && totalItems >= freeShippingPromo.min_units) {
     shippingText = `*Envío Bonificado*\n`;
   }
 
+  const formatCurrency = (value: number) => `$${value.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const messageParts = [
     "✨ NUEVO PEDIDO ✨\n",
     `👤 *Cliente:*\n${clientName}\n`,
-    `📦 *Productos:* (${totalUnits} unidades)\n${itemsText}\n`,
+    `📦 *Productos:* (${totalItems} unidades)\n${itemsText}\n`,
   ];
 
   if (bonusText) {
@@ -101,8 +104,13 @@ function formatWhatsAppMessage(
   if(shippingText) {
     messageParts.push(`🚚 ${shippingText}\n`);
   }
-
-  messageParts.push(`💰 *Total a Pagar:*\n$${totalPrice.toLocaleString('es-AR')}`);
+  
+  messageParts.push(
+    `*Resumen de Pago:*\n` +
+    `Subtotal: ${formatCurrency(subtotal)}\n` +
+    `IVA (21%): ${formatCurrency(vatAmount)}\n` +
+    `*Total a Pagar: ${formatCurrency(totalPrice)}*`
+  );
 
   const message = messageParts.join("\n").trim();
   
@@ -114,24 +122,24 @@ export function OrderSummary({
   agreementId,
   clientName,
   availablePromotions,
+  pricesIncludeVat,
 }: {
   agreementId: string;
   clientName: string;
   availablePromotions: AgreementPromotion[];
+  pricesIncludeVat: boolean;
 }) {
-  const { items, totalItems, totalPrice, clearCart, agreementId: storedAgreementId, setAgreementId } = useCartStore();
+  const { items, totalItems, subtotal, vatAmount, totalPrice, clearCart, agreementId: storedAgreementId, setAgreement } = useCartStore();
   const { toast } = useToast();
   const whatsAppNumber =
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5491123456789";
 
   useEffect(() => {
-    // Si el ID del convenio actual es diferente al guardado en el carrito, se limpia.
     if (storedAgreementId && storedAgreementId !== agreementId) {
       clearCart();
     }
-    // Siempre se establece el ID del convenio actual en el store.
-    setAgreementId(agreementId);
-  }, [agreementId, storedAgreementId, clearCart, setAgreementId]);
+    setAgreement(agreementId, pricesIncludeVat);
+  }, [agreementId, pricesIncludeVat, storedAgreementId, clearCart, setAgreement]);
 
 
   const handleSend = () => {
@@ -146,9 +154,11 @@ export function OrderSummary({
     const message = formatWhatsAppMessage(
       clientName,
       items,
+      totalItems,
+      subtotal,
+      vatAmount,
       totalPrice,
-      availablePromotions,
-      totalItems
+      availablePromotions
     );
     const whatsappUrl = `https://wa.me/${whatsAppNumber}?text=${message}`;
     window.open(whatsappUrl, "_blank");
@@ -163,7 +173,8 @@ export function OrderSummary({
   
   const hasFreeShipping = freeShippingPromo && totalItems >= freeShippingPromo.min_units;
   const itemsForFreeShipping = freeShippingPromo ? freeShippingPromo.min_units - totalItems : 0;
-
+  
+  const formatCurrency = (value: number) => value.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
 
   return (
     <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-sm -mx-4 lg:-mx-8 mb-8">
@@ -171,20 +182,28 @@ export function OrderSummary({
             <Card>
                  <CardHeader>
                     <CardTitle>Resumen de Pedido</CardTitle>
+                    {hasItems && <CardDescription>Revisa tu pedido y envíalo cuando estés listo.</CardDescription>}
                 </CardHeader>
                 <CardContent>
+                    {hasItems ? (
                     <div className="flex flex-col gap-4">
-                        <div className="flex flex-wrap items-center justify-between gap-4">
-                            <div className="flex items-baseline gap-6">
-                                <div className="text-center">
-                                    <p className="text-2xl font-bold">{totalItems}</p>
-                                    <p className="text-sm text-muted-foreground">Unidades</p>
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-2xl font-bold">${totalPrice.toLocaleString()}</p>
-                                    <p className="text-sm text-muted-foreground">Total</p>
-                                </div>
-                                {freeShippingPromo && hasItems && (
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Subtotal</span>
+                                <span>{formatCurrency(subtotal)}</span>
+                            </div>
+                             <div className="flex justify-between">
+                                <span className="text-muted-foreground">IVA (21%)</span>
+                                <span>{formatCurrency(vatAmount)}</span>
+                            </div>
+                            <Separator />
+                            <div className="flex justify-between font-bold text-base">
+                                <span>Total</span>
+                                <span>{formatCurrency(totalPrice)}</span>
+                            </div>
+                             <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">{totalItems} Unidades</span>
+                                {freeShippingPromo && (
                                   <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger>
@@ -202,21 +221,23 @@ export function OrderSummary({
                                    </TooltipProvider>
                                 )}
                             </div>
-                            <Button
-                                onClick={handleSend}
-                                size="lg"
-                                className="w-full sm:w-auto"
-                                disabled={!hasItems}
-                            >
-                                <span>Enviar Pedido</span>
-                                <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
                         </div>
+                        <Separator />
+                        <Button
+                            onClick={handleSend}
+                            size="lg"
+                            className="w-full"
+                        >
+                            <span>Enviar Pedido por WhatsApp</span>
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
                     </div>
+                     ) : (
+                        <p className="text-center text-muted-foreground py-4">Tu carrito está vacío.</p>
+                    )}
                 </CardContent>
             </Card>
         </div>
     </div>
   );
 }
-

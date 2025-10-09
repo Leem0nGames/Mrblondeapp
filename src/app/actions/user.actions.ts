@@ -128,6 +128,8 @@ export async function getOrderPageData(agreementId: string) {
             ),
             price_lists(
                 id,
+                name,
+                prices_include_vat,
                 price_list_items(
                     price,
                     volume_price,

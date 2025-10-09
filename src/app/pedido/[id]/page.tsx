@@ -1,3 +1,4 @@
+
 import { getOrderPageData } from "@/app/actions/user.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/components/logo";
@@ -64,6 +65,7 @@ export default async function OrderPage({
           agreementId={agreement.id}
           clientName={agreement.agreement_name}
           availablePromotions={agreement.agreement_promotions}
+          pricesIncludeVat={agreement.price_lists?.prices_include_vat ?? true}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -29,6 +29,7 @@ export type Promotion = {
 export type PriceList = {
     id: string;
     name: string;
+    prices_include_vat: boolean;
     created_at: string;
 }
 
@@ -68,7 +69,7 @@ export type AgreementWithCount = Agreement & {
 
 export type DetailedAgreement = Agreement & {
   agreement_promotions: AgreementPromotion[]; // Joined data
-  price_lists: { id: string, name: string } | null; // Joined data
+  price_lists: { id: string, name: string, prices_include_vat: boolean } | null; // Joined data
 }
 
 export type Client = {
