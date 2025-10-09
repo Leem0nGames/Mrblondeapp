@@ -108,6 +108,11 @@ export function AssignProductToPriceListDialog({
       setValue('product_ids', []);
     }
   };
+  
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
+  }
+
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -198,7 +203,7 @@ export function AssignProductToPriceListDialog({
                                       <p>{product.name}</p>
                                       <p className="text-xs text-muted-foreground">{product.category}</p>
                                     </div>
-                                    <Badge variant="outline">${product.base_price.toLocaleString()}</Badge>
+                                    <Badge variant="outline">{formatCurrency(product.base_price)}</Badge>
                                   </label>
                                 </FormItem>
                               )}

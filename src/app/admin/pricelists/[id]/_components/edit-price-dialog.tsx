@@ -82,6 +82,10 @@ export function PriceListItemEditDialog({
     });
   };
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -96,7 +100,7 @@ export function PriceListItemEditDialog({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="flex items-baseline gap-4">
                  <p className="text-sm text-muted-foreground">Precio Base Sugerido:</p>
-                 <p className="font-semibold">${item.products.base_price.toLocaleString()}</p>
+                 <p className="font-semibold">{formatCurrency(item.products.base_price)}</p>
             </div>
             
             <FormField

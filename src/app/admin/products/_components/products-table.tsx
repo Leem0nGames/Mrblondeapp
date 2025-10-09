@@ -66,6 +66,10 @@ export default function ProductsTable({ products }: { products: Product[] }) {
       }
     });
   };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
+  }
   
   return (
     <Card>
@@ -108,7 +112,7 @@ export default function ProductsTable({ products }: { products: Product[] }) {
                   </Badge>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  ${product.base_price.toLocaleString()}
+                  {formatCurrency(product.base_price)}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {product.stock}

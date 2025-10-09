@@ -63,6 +63,11 @@ export function PriceListProductsTable({ items, priceListId }: { items: PriceLis
       }
     });
   }
+  
+  const formatCurrency = (value: number | null | undefined) => {
+    if (value === null || value === undefined) return "N/A";
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
+  }
 
   return (
     <>
@@ -95,12 +100,12 @@ export function PriceListProductsTable({ items, priceListId }: { items: PriceLis
                   />
               </TableCell>
               <TableCell className="font-medium">{item.products.name}</TableCell>
-              <TableCell>${item.products.base_price.toLocaleString()}</TableCell>
+              <TableCell>{formatCurrency(item.products.base_price)}</TableCell>
               <TableCell>
-                <Badge variant="secondary" className="text-base">${item.price.toLocaleString()}</Badge>
+                <Badge variant="secondary" className="text-base">{formatCurrency(item.price)}</Badge>
               </TableCell>
                <TableCell>
-                <Badge variant="outline" className="text-base">${item.volume_price?.toLocaleString() ?? "N/A"}</Badge>
+                <Badge variant="outline" className="text-base">{formatCurrency(item.volume_price)}</Badge>
               </TableCell>
               <TableCell>
                 <DropdownMenu>

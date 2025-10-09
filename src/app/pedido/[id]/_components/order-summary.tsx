@@ -89,7 +89,7 @@ function formatWhatsAppMessage(
     shippingText = `*Envío Bonificado*\n`;
   }
 
-  const formatCurrency = (value: number) => `$${value.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formatCurrency = (value: number) => `$${new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`;
 
   const messageParts = [
     "✨ NUEVO PEDIDO ✨\n",
@@ -174,7 +174,7 @@ export function OrderSummary({
   const hasFreeShipping = freeShippingPromo && totalItems >= freeShippingPromo.min_units;
   const itemsForFreeShipping = freeShippingPromo ? freeShippingPromo.min_units - totalItems : 0;
   
-  const formatCurrency = (value: number) => value.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+  const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
 
   return (
     <div className="sticky top-0 z-30 bg-background/90 backdrop-blur-sm -mx-4 lg:-mx-8 mb-8">

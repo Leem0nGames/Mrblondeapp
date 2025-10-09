@@ -79,6 +79,10 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
 
   const isVolumePriceActive = totalItems >= VOLUME_THRESHOLD && product.volume_price;
   const displayPrice = isVolumePriceActive ? product.volume_price : product.price;
+  
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('es-AR').format(num);
+  }
 
   return (
     <Card className="flex flex-col sm:flex-row w-full overflow-hidden">
@@ -119,11 +123,11 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
                     "text-lg font-bold",
                     isVolumePriceActive && "text-primary"
                   )}>
-                    ${displayPrice?.toLocaleString()}
+                    ${displayPrice ? formatNumber(displayPrice) : '0'}
                  </p>
                   {isVolumePriceActive && (
                       <p className="text-sm font-normal text-muted-foreground line-through">
-                          ${product.price.toLocaleString()}
+                          ${formatNumber(product.price)}
                       </p>
                   )}
               </div>
