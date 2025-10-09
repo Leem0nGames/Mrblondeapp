@@ -23,30 +23,31 @@ function parsePromoRules(promo: AgreementPromotion) {
     const buy = Number(rules.buy);
     const get = Number(rules.get);
     if (!isNaN(buy) && buy > 0 && !isNaN(get) && get > 0) {
-      return { ...promo, buy, get };
+      return { buy, get };
     }
   }
   return null;
 }
 
 // This function calculates total bonuses based on sorted promotions
-function calculateTotalBonuses(promos: AgreementPromotion[], totalItems: number) {
-    const sortedPromos = promos
+function calculateTotalBonuses(promotions: AgreementPromotion[], totalItems: number) {
+    const sortedPromos = promotions
       .map(parsePromoRules)
       .filter((p): p is NonNullable<typeof p> => p !== null)
       .sort((a, b) => b.buy - a.buy); // Sort from highest requirement to lowest
 
-    let remainingItems = totalItems;
-    let totalBonuses = 0;
+    if (sortedPromos.length === 0) return 0;
+    
+    // Find the highest-tier promotion that has been met
+    const applicablePromo = sortedPromos.find(p => totalItems >= p.buy);
 
-    for (const promo of sortedPromos) {
-        if (remainingItems >= promo.buy) {
-            const times = Math.floor(remainingItems / promo.buy);
-            totalBonuses += times * promo.get;
-            remainingItems %= promo.buy; // Use remaining items for next smaller promo
-        }
+    if (applicablePromo) {
+        // Calculate how many times the promotion is applied
+        const times = Math.floor(totalItems / applicablePromo.buy);
+        return times * applicablePromo.get;
     }
-    return totalBonuses;
+
+    return 0;
 }
 
 const VOLUME_THRESHOLD = 150;
@@ -67,21 +68,20 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
       ? "secondary"
       : "destructive";
   
-  const applicablePromos = useMemo(() => {
-    return promotions
-      .map(parsePromoRules)
-      .filter((p): p is NonNullable<typeof p> => p !== null);
-  }, [promotions]);
-
   const totalBonuses = useMemo(() => {
-    return calculateTotalBonuses(applicablePromos, totalItems);
-  }, [totalItems, applicablePromos]);
+    return calculateTotalBonuses(promotions, totalItems);
+  }, [totalItems, promotions]);
 
   const isVolumePriceActive = totalItems >= VOLUME_THRESHOLD && product.volume_price;
   const displayPrice = isVolumePriceActive ? product.volume_price : product.price;
   
   const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('es-AR').format(num);
+    // Ensure it's formatted for 'es-AR' to avoid hydration mismatch
+    return new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num);
+  }
+
+  const formatCurrency = (num: number) => {
+     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num);
   }
 
   return (
@@ -123,11 +123,11 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
                     "text-lg font-bold",
                     isVolumePriceActive && "text-primary"
                   )}>
-                    ${displayPrice ? formatNumber(displayPrice) : '0'}
+                    {displayPrice ? formatCurrency(displayPrice) : '$0'}
                  </p>
                   {isVolumePriceActive && (
                       <p className="text-sm font-normal text-muted-foreground line-through">
-                          ${formatNumber(product.price)}
+                          {formatCurrency(product.price)}
                       </p>
                   )}
               </div>

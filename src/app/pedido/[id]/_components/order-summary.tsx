@@ -43,19 +43,19 @@ function calculateTotalBonuses(promos: AgreementPromotion[], totalItems: number)
     const sortedPromos = promos
       .map(p => parseBuyXGetYPromo(p))
       .filter((p): p is NonNullable<typeof p> => p !== null)
-      .sort((a, b) => b.buy - a.buy); // Ordenar de mayor a menor requisito (importante)
+      .sort((a, b) => b.buy - a.buy); // Ordenar de mayor a menor requisito
 
-    let remainingItems = totalItems;
-    let totalBonuses = 0;
-
-    for (const promo of sortedPromos) {
-        if (remainingItems >= promo.buy) {
-            const times = Math.floor(remainingItems / promo.buy);
-            totalBonuses += times * promo.get;
-            remainingItems %= promo.buy; // Actualizar los items restantes para la siguiente promo
-        }
+    if (sortedPromos.length === 0) return 0;
+    
+    // Aplicar la promoción más alta que se cumpla
+    const applicablePromo = sortedPromos.find(p => totalItems >= p.buy);
+    
+    if (applicablePromo) {
+        const times = Math.floor(totalItems / applicablePromo.buy);
+        return times * applicablePromo.get;
     }
-    return totalBonuses;
+    
+    return 0;
 }
 
 function formatWhatsAppMessage(
