@@ -3,7 +3,7 @@
 
 import { useTransition, useCallback } from "react";
 import Link from 'next/link';
-import { MoreHorizontal, Trash2, FileText, Copy } from "lucide-react";
+import { MoreHorizontal, Trash2, FileText, Copy, Edit } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -97,10 +97,10 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
         {agreements.map((agreement) => (
              <Card key={agreement.id}>
                 <CardHeader>
-                    <CardTitle>{agreement.agreement_name}</CardTitle>
-                    <CardDescription>
-                         <Badge variant="outline" className="capitalize">{agreement.client_type}</Badge>
-                    </CardDescription>
+                    <div className="flex flex-col gap-2">
+                      <CardTitle>{agreement.agreement_name}</CardTitle>
+                      <Badge variant="outline" className="capitalize w-fit">{agreement.client_type}</Badge>
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                      <div className="text-sm">
@@ -117,10 +117,13 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                         <Copy className="mr-2 h-4 w-4" />
                         Copiar Link de Pedido
                     </Button>
+                     <EntityDialog formConfig={agreementFormConfig} entity={agreement}>
+                        <Button variant="outline" size="sm"><Edit className="mr-2 h-4 w-4" /> Editar</Button>
+                    </EntityDialog>
                     <Button asChild size="sm">
                         <Link href={`/admin/agreements/${agreement.id}`}>
                             <FileText className="mr-2 h-4 w-4" />
-                            Gestionar y Editar
+                            Gestionar Convenio
                         </Link>
                     </Button>
                      <AlertDialog>
@@ -174,7 +177,11 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
           <TableBody>
             {agreements.map((agreement) => (
               <TableRow key={agreement.id}>
-                <TableCell className="font-medium">{agreement.agreement_name}</TableCell>
+                <TableCell className="font-medium">
+                  <Link href={`/admin/agreements/${agreement.id}`} className="hover:underline">
+                    {agreement.agreement_name}
+                  </Link>
+                </TableCell>
                 <TableCell>
                   <Badge variant="outline" className="capitalize">{agreement.client_type}</Badge>
                 </TableCell>
@@ -202,7 +209,7 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                               </Link>
                           </DropdownMenuItem>
                            <EntityDialog formConfig={agreementFormConfig} entity={agreement}>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Editar</DropdownMenuItem>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}><Edit className="mr-2 h-4 w-4" />Editar</DropdownMenuItem>
                             </EntityDialog>
                           
                           <DropdownMenuSeparator />

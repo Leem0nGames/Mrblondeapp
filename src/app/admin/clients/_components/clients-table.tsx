@@ -92,7 +92,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
               <div className="flex justify-between items-start">
                   <div>
                     <CardTitle>{client.contact_name || "Cliente pendiente"}</CardTitle>
-                    <CardDescription>{client.email}</CardDescription>
+                    {client.email && <CardDescription>{client.email}</CardDescription>}
                   </div>
                   <Badge variant={statusMap[client.status].variant}>
                     {statusMap[client.status].label}
@@ -118,7 +118,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                 <Button 
                     variant="secondary"
                     size="sm"
-                    onSelect={() => copyToClipboard(`${window.location.origin}/onboarding/${client.onboarding_token}`, 'Enlace de alta copiado!')}
+                    onClick={() => copyToClipboard(`${window.location.origin}/onboarding/${client.onboarding_token}`, 'Enlace de alta copiado!')}
                     disabled={client.status !== 'pending_onboarding'}
                 >
                     <Copy className="mr-2 h-4 w-4" />
@@ -203,7 +203,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                                   <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Asignar Convenio</DropdownMenuItem>
                               </AssignAgreementDialog>
                               <DropdownMenuItem 
-                                  onSelect={() => copyToClipboard(`${window.location.origin}/onboarding/${client.onboarding_token}`, 'Enlace de alta copiado!')}
+                                  onClick={() => copyToClipboard(`${window.location.origin}/onboarding/${client.onboarding_token}`, 'Enlace de alta copiado!')}
                                   disabled={client.status !== 'pending_onboarding'}
                               >
                                   <Copy className="mr-2 h-4 w-4" />
