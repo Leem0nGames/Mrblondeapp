@@ -29,21 +29,21 @@ function parsePromoRules(promo: AgreementPromotion) {
   return null;
 }
 
-// This function calculates total bonuses based on sorted promotions
-function calculateTotalBonuses(promotions: AgreementPromotion[], totalItems: number) {
+// This function calculates total bonuses based on the quantity of a single product
+function calculateBonusesForProduct(promotions: AgreementPromotion[], productQuantity: number): number {
     const sortedPromos = promotions
       .map(parsePromoRules)
       .filter((p): p is NonNullable<typeof p> => p !== null)
       .sort((a, b) => b.buy - a.buy); // Sort from highest requirement to lowest
 
-    if (sortedPromos.length === 0) return 0;
+    if (sortedPromos.length === 0 || productQuantity === 0) return 0;
     
-    // Find the highest-tier promotion that has been met
-    const applicablePromo = sortedPromos.find(p => totalItems >= p.buy);
+    // Find the highest-tier promotion that has been met for this product's quantity
+    const applicablePromo = sortedPromos.find(p => productQuantity >= p.buy);
 
     if (applicablePromo) {
         // Calculate how many times the promotion is applied
-        const times = Math.floor(totalItems / applicablePromo.buy);
+        const times = Math.floor(productQuantity / applicablePromo.buy);
         return times * applicablePromo.get;
     }
 
@@ -53,7 +53,9 @@ function calculateTotalBonuses(promotions: AgreementPromotion[], totalItems: num
 const VOLUME_THRESHOLD = 150;
 
 export function ProductCard({ product, promotions }: { product: ProductWithPrice, promotions: AgreementPromotion[] }) {
-  const { totalItems } = useCartStore();
+  const { items, totalItems } = useCartStore();
+  const itemInCart = items.find(item => item.product.id === product.id);
+  const quantity = itemInCart ? itemInCart.quantity : 0;
 
   const stockStatus =
     product.stock > 10
@@ -68,18 +70,13 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
       ? "secondary"
       : "destructive";
   
-  const totalBonuses = useMemo(() => {
-    return calculateTotalBonuses(promotions, totalItems);
-  }, [totalItems, promotions]);
+  const productBonuses = useMemo(() => {
+    return calculateBonusesForProduct(promotions, quantity);
+  }, [quantity, promotions]);
 
   const isVolumePriceActive = totalItems >= VOLUME_THRESHOLD && product.volume_price;
   const displayPrice = isVolumePriceActive ? product.volume_price : product.price;
   
-  const formatNumber = (num: number) => {
-    // Ensure it's formatted for 'es-AR' to avoid hydration mismatch
-    return new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num);
-  }
-
   const formatCurrency = (num: number) => {
      return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num);
   }
@@ -108,11 +105,11 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
             
             <p className="text-muted-foreground text-sm line-clamp-2 sm:h-10">{product.description}</p>
             
-            {totalBonuses > 0 && (
+            {productBonuses > 0 && (
               <div className="mt-2 space-y-1">
                   <Badge variant="secondary" className="font-normal">
                     <Gift className="h-3 w-3 mr-1.5" />
-                     ¡Pedido con +{totalBonuses} de regalo!
+                     ¡Este producto tiene +{productBonuses} de regalo!
                   </Badge>
               </div>
             )}

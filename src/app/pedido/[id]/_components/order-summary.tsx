@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useMemo } from "react";
@@ -20,7 +19,7 @@ function parseBuyXGetYPromo(promo: AgreementPromotion) {
     const buy = Number(rules.buy);
     const get = Number(rules.get);
     if (!isNaN(buy) && buy > 0 && !isNaN(get) && get > 0) {
-      return { buy, get };
+      return { buy, get, name: promo.promotions.name };
     }
   }
   return null;
@@ -38,24 +37,31 @@ function parseFreeShippingPromo(promo: AgreementPromotion) {
 }
 
 
-// Función para calcular el total de bonificaciones de forma inteligente
-function calculateTotalBonuses(promos: AgreementPromotion[], totalItems: number) {
-    const sortedPromos = promos
-      .map(p => parseBuyXGetYPromo(p))
-      .filter((p): p is NonNullable<typeof p> => p !== null)
-      .sort((a, b) => b.buy - a.buy); // Ordenar de mayor a menor requisito
+// This function calculates total bonuses based on sorted promotions for each item
+function calculateTotalBonuses(promos: AgreementPromotion[], items: CartItem[]): { total: number; cheapestItem: CartItem | null } {
+    const buyXGetYPromos = promos
+      .map(parseBuyXGetYPromo)
+      .filter((p): p is NonNullable<ReturnType<typeof parseBuyXGetYPromo>> => p !== null)
+      .sort((a, b) => b.buy - a.buy); // Highest requirement first
 
-    if (sortedPromos.length === 0) return 0;
-    
-    // Aplicar la promoción más alta que se cumpla
-    const applicablePromo = sortedPromos.find(p => totalItems >= p.buy);
-    
-    if (applicablePromo) {
-        const times = Math.floor(totalItems / applicablePromo.buy);
-        return times * applicablePromo.get;
+    if (buyXGetYPromos.length === 0 || items.length === 0) {
+      return { total: 0, cheapestItem: null };
     }
+
+    let totalBonuses = 0;
     
-    return 0;
+    // Calculate bonuses for each item line
+    items.forEach(item => {
+        const applicablePromo = buyXGetYPromos.find(p => item.quantity >= p.buy);
+        if (applicablePromo) {
+            const times = Math.floor(item.quantity / applicablePromo.buy);
+            totalBonuses += times * applicablePromo.get;
+        }
+    });
+
+    const cheapestItem = [...items].sort((a, b) => a.product.price - b.product.price)[0];
+
+    return { total: totalBonuses, cheapestItem };
 }
 
 function formatWhatsAppMessage(
@@ -72,15 +78,10 @@ function formatWhatsAppMessage(
     .join("\n");
 
   let bonusText = "";
-  const totalBonuses = calculateTotalBonuses(promotions, totalItems);
+  const { total: totalBonuses, cheapestItem } = calculateTotalBonuses(promotions, cartItems);
 
-  if (totalBonuses > 0) {
-      const sortedItems = [...cartItems].sort((a, b) => a.product.price - b.product.price);
-      const cheapestItem = sortedItems[0];
-      
-      if (cheapestItem) {
-        bonusText = `*Bonificaciones de Regalo:*\n- ${totalBonuses}x ${cheapestItem.product.name}`;
-      }
+  if (totalBonuses > 0 && cheapestItem) {
+      bonusText = `*Bonificaciones de Regalo:*\n- ${totalBonuses}x ${cheapestItem.product.name}`;
   }
 
   let shippingText = "";
