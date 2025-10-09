@@ -18,9 +18,9 @@ type UpsertPromotionPayload = Omit<Promotion, "id" | "created_at" | "rules"> & {
   rules: any;
 };
 
-// Helper function to ensure user is authenticated and the Supabase client is fresh.
-// It will be called at the start of every action.
-async function checkAuth() {
+// --- Generic Helpers ---
+
+async function getSupabaseClientWithAuth() {
   const supabase = createClient();
   const {
     data: { user },
@@ -29,15 +29,51 @@ async function checkAuth() {
   if (!user) {
     throw new Error("You must be logged in to perform this action.");
   }
-  return user;
+  return supabase;
 }
 
+async function upsertEntity(tableName: string, payload: { id?: string, [key: string]: any }, revalidatePaths: string[]) {
+    const supabase = await getSupabaseClientWithAuth();
+    const { id, ...data } = payload;
+    
+    const query = supabase.from(tableName);
+    const { data: result, error } = id
+        ? await query.update(data).eq("id", id).select().single()
+        : await query.insert(data).select().single();
+
+    if (error) {
+        console.error(`upsertEntity error on table ${tableName}:`, error.message);
+        return { data: null, error };
+    }
+
+    if (revalidatePaths.length > 0) {
+        revalidatePaths.forEach(path => revalidatePath(path));
+    }
+    
+    return { data: result, error: null };
+}
+
+async function deleteEntity(tableName: string, id: string, revalidatePaths: string[]) {
+    const supabase = await getSupabaseClientWithAuth();
+    
+    const { error } = await supabase.from(tableName).delete().eq("id", id);
+    
+    if (error) {
+        console.error(`deleteEntity error on table ${tableName}:`, error.message);
+        return { error };
+    }
+
+    if (revalidatePaths.length > 0) {
+        revalidatePaths.forEach(path => revalidatePath(path));
+    }
+    
+    return { error: null };
+}
 
 // --- Product Actions ---
 
 export async function getProducts() {
-  await checkAuth();
-  const supabase = createClient();
+  const supabase = await getSupabaseClientWithAuth();
   const { data, error } = await supabase.from("products").select("*").order("name", { ascending: true });
   if (error) {
     console.error("getProducts error:", error.message);
@@ -47,43 +83,17 @@ export async function getProducts() {
 }
 
 export async function upsertProduct(payload: UpsertProductPayload) {
-  await checkAuth();
-  const supabase = createClient();
-  const { id, ...productData } = payload;
-  
-  const query = supabase.from("products");
-
-  const { data, error } = id
-    ? await query.update(productData).eq("id", id).select().single()
-    : await query.insert(productData).select().single();
-
-  if (error) { 
-    console.error("upsertProduct error:", error.message);
-    return { data: null, error }; 
-  }
-
-  revalidatePath("/admin/products");
-  return { data, error: null };
+  return await upsertEntity("products", payload, ["/admin/products"]);
 }
 
 export async function deleteProduct(id: string) {
-  await checkAuth();
-  const supabase = createClient();
-  const { error } = await supabase.from("products").delete().eq("id", id);
-  if (error) { 
-    console.error("deleteProduct error:", error.message);
-    return { error }; 
-  }
-  revalidatePath("/admin/products");
-  revalidatePath("/admin/pricelists");
-  return { error: null };
+  return await deleteEntity("products", id, ["/admin/products", "/admin/pricelists"]);
 }
 
 // --- Agreement Actions ---
 
 export async function getAgreements(): Promise<{ data: AgreementWithCount[] | null, error: any }> {
-    await checkAuth();
-    const supabase = createClient();
+    const supabase = await getSupabaseClientWithAuth();
     
     const { data, error } = await supabase
         .from("agreements")
@@ -99,7 +109,6 @@ export async function getAgreements(): Promise<{ data: AgreementWithCount[] | nu
         return { data: null, error };
     }
 
-    // Manually map the data to the expected shape
     const agreementsWithCounts = data.map(agreement => ({
         ...agreement,
         promotion_count: agreement.agreement_promotions[0]?.count ?? 0,
@@ -109,8 +118,7 @@ export async function getAgreements(): Promise<{ data: AgreementWithCount[] | nu
 }
 
 export async function getAgreementById(id: string): Promise<{ data: DetailedAgreement | null, error: any }> {
-    await checkAuth();
-    const supabase = createClient();
+    const supabase = await getSupabaseClientWithAuth();
     const { data, error } = await supabase
         .from("agreements")
         .select(`
@@ -127,7 +135,6 @@ export async function getAgreementById(id: string): Promise<{ data: DetailedAgre
         console.error("getAgreementById error:", error.message);
         return { data: null, error };
     }
-    // Ensure nested arrays are not null
     const detailedAgreement: DetailedAgreement = {
         ...data,
         agreement_promotions: data.agreement_promotions ?? [],
@@ -139,59 +146,21 @@ export async function getAgreementById(id: string): Promise<{ data: DetailedAgre
 
 
 export async function upsertAgreement(payload: UpsertAgreementPayload) {
-  await checkAuth();
-  const supabase = createClient();
-  const { id, ...agreementData } = payload;
-
-  const query = supabase.from("agreements");
-
-  let data, error;
-  
-  if (id) {
-    // Update existing agreement
-    ({ data, error } = await query
-      .update(agreementData)
-      .eq("id", id)
-      .select()
-      .single());
-  } else {
-    // Create new agreement
-    ({ data, error } = await query
-      .insert(agreementData)
-      .select()
-      .single());
+  const result = await upsertEntity("agreements", payload, ["/admin/agreements", "/admin/clients"]);
+  if (result.error && result.error.code === '23505') {
+    return { data: null, error: { ...result.error, message: `Error: El nombre del convenio '${payload.agreement_name}' ya existe.` } };
   }
-
-  if (error) {
-    console.error("upsertAgreement error:", error.message);
-    if (error.code === '23505') { // Handle unique constraint violation for agreement_name
-        return { data: null, error: { ...error, message: `Error: El nombre del convenio '${agreementData.agreement_name}' ya existe.` } };
-    }
-    return { data: null, error };
-  }
-
-  revalidatePath("/admin/agreements");
-  revalidatePath("/admin/clients");
-  return { data, error: null };
+  return result;
 }
 
 export async function deleteAgreement(id: string) {
-    await checkAuth();
-    const supabase = createClient();
-    const { error } = await supabase.from("agreements").delete().eq("id", id);
-    if (error) {
-      console.error("deleteAgreement error:", error.message);
-      return { error }; 
-    }
-    revalidatePath("/admin/agreements");
-    return { error: null };
+    return await deleteEntity("agreements", id, ["/admin/agreements"]);
 }
 
 // --- Promotion Actions ---
 
 export async function getPromotions() {
-  await checkAuth();
-  const supabase = createClient();
+  const supabase = await getSupabaseClientWithAuth();
   const { data, error } = await supabase.from("promotions").select("*").order("name", { ascending: true });
   if (error) {
     console.error("getPromotions error:", error.message);
@@ -201,43 +170,17 @@ export async function getPromotions() {
 }
 
 export async function upsertPromotion(payload: UpsertPromotionPayload) {
-  await checkAuth();
-  const supabase = createClient();
-  const { id, ...promoData } = payload;
-  
-  const query = supabase.from("promotions");
-  const { data, error } = id
-    ? await query.update(promoData).eq("id", id).select().single()
-    : await query.insert(promoData).select().single();
-    
-  if (error) {
-    console.error("upsertPromotion error:", error.message);
-    return { data: null, error }; 
-  }
-
-  revalidatePath("/admin/promotions");
-  revalidatePath("/admin/agreements");
-  return { data, error: null };
+  return await upsertEntity("promotions", payload, ["/admin/promotions", "/admin/agreements"]);
 }
 
 export async function deletePromotion(id: string) {
-  await checkAuth();
-  const supabase = createClient();
-  const { error } = await supabase.from("promotions").delete().eq("id", id);
-  if (error) { 
-    console.error("deletePromotion error:", error.message);
-    return { error };
-  }
-  revalidatePath("/admin/promotions");
-  revalidatePath("/admin/agreements");
-  return { error: null };
+  return await deleteEntity("promotions", id, ["/admin/promotions", "/admin/agreements"]);
 }
 
 // --- Agreement Product & Promotion Management ---
 
 export async function getUnassignedPromotions(agreementId: string) {
-    await checkAuth();
-    const supabase = createClient();
+    const supabase = await getSupabaseClientWithAuth();
     const { data: assignedPromotionIds, error: assignedIdsError } = await supabase
         .from('agreement_promotions')
         .select('promotion_id')
@@ -269,8 +212,7 @@ export async function assignMultiplePromotionsToAgreement(payload: {
   agreement_id: string;
   promotion_ids: string[];
 }) {
-  await checkAuth();
-  const supabase = createClient();
+  const supabase = await getSupabaseClientWithAuth();
 
   const promotionsToInsert = payload.promotion_ids.map(promoId => ({
     agreement_id: payload.agreement_id,
@@ -289,8 +231,7 @@ export async function assignMultiplePromotionsToAgreement(payload: {
 }
 
 export async function unassignPromotionFromAgreement(payload: { agreement_id: string; promotion_id: string; }) {
-    await checkAuth();
-    const supabase = createClient();
+    const supabase = await getSupabaseClientWithAuth();
     const { error } = await supabase.from('agreement_promotions')
         .delete()
         .eq('agreement_id', payload.agreement_id)
@@ -307,8 +248,7 @@ export async function unassignPromotionFromAgreement(payload: { agreement_id: st
 
 // --- Client Actions ---
 export async function getClients(): Promise<{ data: Client[] | null, error: any }> {
-    await checkAuth();
-    const supabase = createClient();
+    const supabase = await getSupabaseClientWithAuth();
     
     const { data, error } = await supabase
         .from("clients")
@@ -328,8 +268,7 @@ export async function getClients(): Promise<{ data: Client[] | null, error: any 
 }
 
 export async function createClientOnboardingLink(): Promise<{ data: { onboarding_token: string } | null, error: any }> {
-    await checkAuth();
-    const supabase = createClient();
+    const supabase = await getSupabaseClientWithAuth();
 
     const { data, error } = await supabase
         .from("clients")
@@ -347,8 +286,7 @@ export async function createClientOnboardingLink(): Promise<{ data: { onboarding
 }
 
 export async function assignAgreementToClient(payload: { clientId: string, agreementId: string | null }): Promise<{ error: any }> {
-    await checkAuth();
-    const supabase = createClient();
+    const supabase = await getSupabaseClientWithAuth();
 
     const { error } = await supabase
         .from("clients")
@@ -369,8 +307,7 @@ export async function assignAgreementToClient(payload: { clientId: string, agree
 }
 
 export async function deleteClient(id: string) {
-  await checkAuth();
-  const supabase = createClient();
+  const supabase = await getSupabaseClientWithAuth();
   const { error } = await supabase
     .from("clients")
     .update({ status: 'archived' })
@@ -387,8 +324,7 @@ export async function deleteClient(id: string) {
 // --- Price List Actions ---
 
 export async function getPriceLists(): Promise<{ data: PriceList[] | null, error: any }> {
-    await checkAuth();
-    const supabase = createClient();
+    const supabase = await getSupabaseClientWithAuth();
     const { data, error } = await supabase
         .from("price_lists")
         .select('*')
@@ -402,8 +338,7 @@ export async function getPriceLists(): Promise<{ data: PriceList[] | null, error
 }
 
 export async function getPriceListById(id: string): Promise<{ data: DetailedPriceList | null, error: any }> {
-    await checkAuth();
-    const supabase = createClient();
+    const supabase = await getSupabaseClientWithAuth();
     const { data, error } = await supabase
         .from("price_lists")
         .select(`
@@ -428,43 +363,19 @@ export async function getPriceListById(id: string): Promise<{ data: DetailedPric
 
 
 export async function upsertPriceList(payload: { name: string, prices_include_vat: boolean, id?: string }) {
-  await checkAuth();
-  const supabase = createClient();
-  const { id, ...priceListData } = payload;
-
-  const query = supabase.from("price_lists");
-
-  const { data, error } = id
-    ? await query.update(priceListData).eq("id", id).select().single()
-    : await query.insert(priceListData).select().single();
-
-  if (error) {
-    console.error("upsertPriceList error:", error.message);
-    if (error.code === '23505') { // Unique constraint violation
-        return { data: null, error: { ...error, message: `El nombre '${priceListData.name}' ya existe.` } };
-    }
-    return { data: null, error };
+  const result = await upsertEntity("price_lists", payload, ["/admin/pricelists"]);
+   if (result.error && result.error.code === '23505') { // Unique constraint violation
+      return { data: null, error: { ...result.error, message: `El nombre '${payload.name}' ya existe.` } };
   }
-
-  revalidatePath("/admin/pricelists");
-  return { data, error: null };
+  return result;
 }
 
 export async function deletePriceList(id: string) {
-    await checkAuth();
-    const supabase = createClient();
-    const { error } = await supabase.from("price_lists").delete().eq("id", id);
-    if (error) {
-      console.error("deletePriceList error:", error.message);
-      return { error }; 
-    }
-    revalidatePath("/admin/pricelists");
-    return { error: null };
+    return await deleteEntity("price_lists", id, ["/admin/pricelists"]);
 }
 
 export async function getUnassignedProductsForPriceList(priceListId: string) {
-    await checkAuth();
-    const supabase = createClient();
+    const supabase = await getSupabaseClientWithAuth();
     const { data: assignedProductIds, error: assignedIdsError } = await supabase
         .from('price_list_items')
         .select('product_id')
@@ -493,8 +404,7 @@ export async function assignProductsToPriceList(payload: {
   price_list_id: string;
   products: { product_id: string; price: number, volume_price: number | null }[];
 }) {
-  await checkAuth();
-  const supabase = createClient();
+  const supabase = await getSupabaseClientWithAuth();
   const productsToInsert = payload.products.map(p => ({ ...p, price_list_id: payload.price_list_id }));
   const { error } = await supabase.from('price_list_items').insert(productsToInsert);
 
@@ -507,8 +417,7 @@ export async function assignProductsToPriceList(payload: {
 }
 
 export async function unassignProductFromPriceList(payload: { price_list_id: string; product_id: string; }) {
-    await checkAuth();
-    const supabase = createClient();
+    const supabase = await getSupabaseClientWithAuth();
     const { error } = await supabase.from('price_list_items')
         .delete()
         .eq('price_list_id', payload.price_list_id)
@@ -522,8 +431,7 @@ export async function unassignProductFromPriceList(payload: { price_list_id: str
 }
 
 export async function updatePriceListItem(payload: { price_list_id: string; product_id: string; price: number; volume_price: number | null }) {
-    await checkAuth();
-    const supabase = createClient();
+    const supabase = await getSupabaseClientWithAuth();
     const { price_list_id, product_id, ...updateData } = payload;
     const { error } = await supabase.from('price_list_items')
         .update(updateData)
@@ -541,8 +449,7 @@ export async function updatePriceListItem(payload: { price_list_id: string; prod
 // --- Dashboard Actions ---
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-    await checkAuth();
-    const supabase = createClient();
+    const supabase = await getSupabaseClientWithAuth();
     
     // For simplicity, we are fetching from a pre-aggregated table.
     // In a real app, you might have a cron job that updates this table.
@@ -561,8 +468,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 }
 
 export async function getPendingOrders(): Promise<Order[]> {
-    await checkAuth();
-    const supabase = createClient();
+    const supabase = await getSupabaseClientWithAuth();
     const { data, error } = await supabase
         .from("orders")
         .select("*")
@@ -578,8 +484,7 @@ export async function getPendingOrders(): Promise<Order[]> {
 }
 
 export async function getClientsWithPendingAgreements(): Promise<Client[]> {
-    await checkAuth();
-    const supabase = createClient();
+    const supabase = await getSupabaseClientWithAuth();
     const { data, error } = await supabase
         .from("clients")
         .select("*")
@@ -594,8 +499,7 @@ export async function getClientsWithPendingAgreements(): Promise<Client[]> {
 }
 
 export async function completeOrder(orderId: string, currentTotalRevenue: number, orderTotal: number) {
-    await checkAuth();
-    const supabase = createClient();
+    const supabase = await getSupabaseClientWithAuth();
     
     const { error: orderUpdateError } = await supabase
         .from('orders')
@@ -625,3 +529,5 @@ export async function completeOrder(orderId: string, currentTotalRevenue: number
     revalidatePath('/admin');
     return { error: null };
 }
+
+    
