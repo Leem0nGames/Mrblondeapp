@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from "react";
@@ -13,10 +14,8 @@ import { getImageUrl } from "@/lib/placeholder-images";
 import { useCartStore } from "@/hooks/use-cart-store";
 import { cn } from "@/lib/utils";
 
-const VOLUME_THRESHOLD = 150;
-
 export function ProductCard({ product }: { product: ProductWithPrice }) {
-  const { totalItems } = useCartStore();
+  const { isVolumePricingActive } = useCartStore();
 
   const stockStatus =
     product.stock > 10
@@ -31,8 +30,8 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
       ? "secondary"
       : "destructive";
   
-  const isVolumePriceActive = totalItems >= VOLUME_THRESHOLD && product.volume_price;
-  const displayPrice = isVolumePriceActive ? product.volume_price : product.price;
+  const isVolumePriceActiveForThisProduct = isVolumePricingActive && product.volume_price;
+  const displayPrice = isVolumePriceActiveForThisProduct ? product.volume_price : product.price;
   
   const formatCurrency = (num: number) => {
      return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(num);
@@ -66,11 +65,11 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
               <div className="flex items-baseline gap-2">
                  <p className={cn(
                     "text-lg font-bold",
-                    isVolumePriceActive && "text-primary"
+                    isVolumePriceActiveForThisProduct && "text-primary"
                   )}>
                     {displayPrice ? formatCurrency(displayPrice) : '$0'}
                  </p>
-                  {isVolumePriceActive && (
+                  {isVolumePriceActiveForThisProduct && (
                       <p className="text-sm font-normal text-muted-foreground line-through">
                           {formatCurrency(product.price)}
                       </p>

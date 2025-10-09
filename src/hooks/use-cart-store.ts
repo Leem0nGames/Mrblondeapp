@@ -19,6 +19,7 @@ type CartState = {
   subtotal: number;
   vatAmount: number;
   totalPrice: number;
+  isVolumePricingActive: boolean;
   agreementId: string | null;
   pricesIncludeVat: boolean;
   setAgreement: (id: string, pricesIncludeVat: boolean) => void;
@@ -32,12 +33,12 @@ type CartState = {
 // The single source of truth for all calculations.
 const calculateAll = (items: CartItem[], pricesIncludeVat: boolean) => {
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
-  const isVolumePricing = totalItems >= VOLUME_THRESHOLD;
+  const isVolumePricingActive = totalItems >= VOLUME_THRESHOLD;
 
   let subtotal = 0;
   
   items.forEach(item => {
-    const priceWithVat = (isVolumePricing && item.product.volume_price) ? item.product.volume_price : item.product.price;
+    const priceWithVat = (isVolumePricingActive && item.product.volume_price) ? item.product.volume_price : item.product.price;
     
     if (pricesIncludeVat) {
         const singleItemSubtotal = priceWithVat / (1 + VAT_RATE);
@@ -51,7 +52,7 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean) => {
   const vatAmount = subtotal * VAT_RATE;
   const totalPrice = subtotal + vatAmount;
 
-  return { totalItems, subtotal, vatAmount, totalPrice };
+  return { totalItems, subtotal, vatAmount, totalPrice, isVolumePricingActive };
 };
 
 export const useCartStore = create<CartState>()(
@@ -62,6 +63,7 @@ export const useCartStore = create<CartState>()(
       subtotal: 0,
       vatAmount: 0,
       totalPrice: 0,
+      isVolumePricingActive: false,
       agreementId: null,
       pricesIncludeVat: true,
       
@@ -77,12 +79,12 @@ export const useCartStore = create<CartState>()(
                 subtotal: 0, 
                 vatAmount: 0, 
                 totalPrice: 0,
+                isVolumePricingActive: false,
             });
-        } else {
-             // Same agreement, just update settings and recalculate
+        } else if (pricesIncludeVat !== get().pricesIncludeVat) {
+             // Same agreement, but VAT setting changed. Recalculate.
              const { items } = get();
              set({ 
-                agreementId: id, 
                 pricesIncludeVat: pricesIncludeVat, 
                 ...calculateAll(items, pricesIncludeVat)
             });
@@ -146,7 +148,7 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => {
-        set({ items: [], totalItems: 0, subtotal: 0, vatAmount: 0, totalPrice: 0 });
+        set({ items: [], totalItems: 0, subtotal: 0, vatAmount: 0, totalPrice: 0, isVolumePricingActive: false });
       },
     }),
     {
@@ -156,11 +158,12 @@ export const useCartStore = create<CartState>()(
       onRehydrateStorage: () => (state, error) => {
         if (state) {
             // Recalculate everything on rehydration to ensure consistency
-            const { totalItems, subtotal, vatAmount, totalPrice } = calculateAll(state.items, state.pricesIncludeVat);
+            const { totalItems, subtotal, vatAmount, totalPrice, isVolumePricingActive } = calculateAll(state.items, state.pricesIncludeVat);
             state.totalItems = totalItems;
             state.subtotal = subtotal;
             state.vatAmount = vatAmount;
             state.totalPrice = totalPrice;
+            state.isVolumePricingActive = isVolumePricingActive;
         }
       }
     }
