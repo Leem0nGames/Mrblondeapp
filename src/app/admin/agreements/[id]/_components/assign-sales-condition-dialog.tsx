@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useCallback } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,6 +29,9 @@ import { useToast } from "@/hooks/use-toast";
 import { getUnassignedSalesConditions, assignMultipleSalesConditionsToAgreement } from "@/app/actions/admin.actions";
 import type { SalesCondition } from "@/types";
 import { Checkbox } from "@/components/ui/checkbox";
+import { EntityDialog } from "../../../_components/entity-dialog";
+import { salesConditionFormConfig } from "../../../sales-conditions/_components/form-config";
+import type { FormConfig } from "../../../_components/entity-dialog";
 
 const assignSchema = z.object({
   sales_condition_ids: z.array(z.string()).nonempty("Debes seleccionar al menos una condición."),
@@ -59,10 +61,8 @@ export function AssignSalesConditionDialog({
   
   const selectedIds = form.watch("sales_condition_ids");
 
-
-  useEffect(() => {
-    if (isOpen) {
-      startLoading(async () => {
+  const fetchUnassignedConditions = useCallback(async () => {
+    startLoading(async () => {
         const { data, error } = await getUnassignedSalesConditions(agreementId);
         if (error) {
           toast({ title: "Error", description: "No se pudieron cargar las condiciones de venta.", variant: "destructive" });
@@ -70,8 +70,13 @@ export function AssignSalesConditionDialog({
           setConditions(data ?? []);
         }
       });
+  }, [agreementId, toast]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchUnassignedConditions();
     }
-  }, [isOpen, agreementId, toast]);
+  }, [isOpen, fetchUnassignedConditions]);
 
 
   const onSubmit = (values: AssignFormValues) => {
@@ -86,6 +91,25 @@ export function AssignSalesConditionDialog({
       }
     });
   };
+
+  const handleNewConditionSuccess = useCallback(async (newCondition: SalesCondition) => {
+    await fetchUnassignedConditions();
+    form.setValue('sales_condition_ids', [...(form.getValues().sales_condition_ids || []), newCondition.id], { shouldValidate: true });
+  }, [fetchUnassignedConditions, form]);
+
+  const upsertActionWithCallback = useCallback(async (payload: any) => {
+    const result = await salesConditionFormConfig.upsertAction(payload);
+    if (!result.error && result.data) {
+        await handleNewConditionSuccess(result.data);
+    }
+    return result;
+  }, [handleNewConditionSuccess]);
+
+  const newConditionDialogConfig: FormConfig<any> = {
+      ...salesConditionFormConfig,
+      upsertAction: upsertActionWithCallback,
+  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
@@ -116,7 +140,14 @@ export function AssignSalesConditionDialog({
               name="sales_condition_ids"
               render={() => (
                 <FormItem>
-                  <FormLabel>Condiciones Disponibles</FormLabel>
+                   <div className="flex justify-between items-center pr-2">
+                    <FormLabel>Condiciones Disponibles</FormLabel>
+                    <EntityDialog formConfig={newConditionDialogConfig} entity={undefined}>
+                       <Button variant="link" size="sm" type="button" className="p-1 h-auto text-xs">
+                          Crear Nueva
+                      </Button>
+                    </EntityDialog>
+                  </div>
                    <ScrollArea className="h-60 border rounded-md">
                      <div className="p-1">
                       {conditions.length > 0 ? conditions.map(condition => (
@@ -132,6 +163,7 @@ export function AssignSalesConditionDialog({
                                 >
                                   <FormControl>
                                     <Checkbox
+                                      id={`checkbox-cond-${condition.id}`}
                                       checked={field.value?.includes(condition.id)}
                                       onCheckedChange={(checked) => {
                                         return checked
@@ -145,7 +177,7 @@ export function AssignSalesConditionDialog({
                                     />
                                   </FormControl>
                                   <label
-                                    htmlFor={`checkbox-${condition.id}`}
+                                    htmlFor={`checkbox-cond-${condition.id}`}
                                     className="w-full flex flex-col font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                                   >
                                       <p>{condition.name}</p>
@@ -178,5 +210,3 @@ export function AssignSalesConditionDialog({
     </Dialog>
   );
 }
-
-    

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useCallback } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +29,10 @@ import { useToast } from "@/hooks/use-toast";
 import { getUnassignedPromotions, assignMultiplePromotionsToAgreement } from "@/app/actions/admin.actions";
 import type { Promotion } from "@/types";
 import { Checkbox } from "@/components/ui/checkbox";
+import { EntityDialog } from "../../../_components/entity-dialog";
+import { promotionFormConfig } from "../../../promotions/_components/form-config";
+import type { FormConfig } from "../../../_components/entity-dialog";
+import { Separator } from "@/components/ui/separator";
 
 const assignSchema = z.object({
   promotion_ids: z.array(z.string()).nonempty("Debes seleccionar al menos una promoción."),
@@ -58,10 +62,8 @@ export function AssignPromotionDialog({
   
   const selectedPromotionIds = form.watch("promotion_ids");
 
-
-  useEffect(() => {
-    if (isOpen) {
-      startLoading(async () => {
+  const fetchUnassignedPromotions = useCallback(async () => {
+    startLoading(async () => {
         const { data, error } = await getUnassignedPromotions(agreementId);
         if (error) {
           toast({ title: "Error", description: "No se pudieron cargar las promociones.", variant: "destructive" });
@@ -69,8 +71,13 @@ export function AssignPromotionDialog({
           setPromotions(data ?? []);
         }
       });
+  }, [agreementId, toast]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchUnassignedPromotions();
     }
-  }, [isOpen, agreementId, toast]);
+  }, [isOpen, fetchUnassignedPromotions]);
 
 
   const onSubmit = (values: AssignFormValues) => {
@@ -85,6 +92,25 @@ export function AssignPromotionDialog({
       }
     });
   };
+
+  const handleNewPromotionSuccess = useCallback(async (newPromotion: Promotion) => {
+      await fetchUnassignedPromotions();
+      form.setValue('promotion_ids', [...(form.getValues().promotion_ids || []), newPromotion.id], { shouldValidate: true });
+  }, [fetchUnassignedPromotions, form]);
+
+  const upsertActionWithCallback = useCallback(async (payload: any) => {
+    const result = await promotionFormConfig.upsertAction(payload);
+    if (!result.error && result.data) {
+        await handleNewPromotionSuccess(result.data);
+    }
+    return result;
+  }, [handleNewPromotionSuccess]);
+
+  const newPromotionDialogConfig: FormConfig<any> = {
+      ...promotionFormConfig,
+      upsertAction: upsertActionWithCallback,
+  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
@@ -115,7 +141,14 @@ export function AssignPromotionDialog({
               name="promotion_ids"
               render={() => (
                 <FormItem>
-                  <FormLabel>Promociones Disponibles</FormLabel>
+                  <div className="flex justify-between items-center pr-2">
+                    <FormLabel>Promociones Disponibles</FormLabel>
+                    <EntityDialog formConfig={newPromotionDialogConfig} entity={undefined}>
+                       <Button variant="link" size="sm" type="button" className="p-1 h-auto text-xs">
+                          Crear Nueva
+                      </Button>
+                    </EntityDialog>
+                  </div>
                    <ScrollArea className="h-60 border rounded-md">
                      <div className="p-1">
                       {promotions.length > 0 ? promotions.map(promo => (
@@ -131,6 +164,7 @@ export function AssignPromotionDialog({
                                 >
                                   <FormControl>
                                     <Checkbox
+                                      id={`checkbox-promo-${promo.id}`}
                                       checked={field.value?.includes(promo.id)}
                                       onCheckedChange={(checked) => {
                                         return checked
@@ -144,7 +178,7 @@ export function AssignPromotionDialog({
                                     />
                                   </FormControl>
                                   <label
-                                    htmlFor={`checkbox-${promo.id}`}
+                                    htmlFor={`checkbox-promo-${promo.id}`}
                                     className="w-full flex flex-col font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                                   >
                                       <p>{promo.name}</p>
