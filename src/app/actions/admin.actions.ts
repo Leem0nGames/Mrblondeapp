@@ -270,6 +270,75 @@ export async function unassignPromotionFromAgreement(payload: { agreement_id: st
 }
 
 
+// --- Agreement Sales Condition Management ---
+
+export async function getUnassignedSalesConditions(agreementId: string) {
+    const supabase = await getSupabaseClientWithAuth();
+    const { data: assignedIdsResult, error: assignedIdsError } = await supabase
+        .from('agreement_sales_conditions')
+        .select('sales_condition_id')
+        .eq('agreement_id', agreementId);
+
+    if (assignedIdsError) {
+        console.error("getUnassignedSalesConditions (assigned) error:", assignedIdsError.message);
+        return { data: [], error: assignedIdsError };
+    }
+
+    const assignedIds = assignedIdsResult.map(item => item.sales_condition_id);
+
+    const query = supabase.from('sales_conditions').select('*').order('name');
+
+    if (assignedIds.length > 0) {
+        query.not('id', 'in', `(${assignedIds.join(',')})`)
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+        console.error("getUnassignedSalesConditions (filtered) error:", error.message);
+        throw error;
+    }
+    return { data, error };
+}
+
+export async function assignMultipleSalesConditionsToAgreement(payload: {
+    agreement_id: string;
+    sales_condition_ids: string[];
+}) {
+    const supabase = await getSupabaseClientWithAuth();
+
+    const conditionsToInsert = payload.sales_condition_ids.map(id => ({
+        agreement_id: payload.agreement_id,
+        sales_condition_id: id,
+    }));
+
+    const { error } = await supabase.from('agreement_sales_conditions').insert(conditionsToInsert);
+
+    if (error) {
+        console.error("assignMultipleSalesConditionsToAgreement error:", error.message);
+        return { error };
+    }
+
+    revalidatePath(`/admin/agreements/${payload.agreement_id}`);
+    return { error: null };
+}
+
+export async function unassignSalesConditionFromAgreement(payload: { agreement_id: string; sales_condition_id: string; }) {
+    const supabase = await getSupabaseClientWithAuth();
+    const { error } = await supabase.from('agreement_sales_conditions')
+        .delete()
+        .eq('agreement_id', payload.agreement_id)
+        .eq('sales_condition_id', payload.sales_condition_id);
+
+    if (error) {
+        console.error("unassignSalesConditionFromAgreement error:", error.message);
+        return { error };
+    }
+    revalidatePath(`/admin/agreements/${payload.agreement_id}`);
+    return { error: null };
+}
+
+
 // --- Client Actions ---
 export async function getClients(): Promise<{ data: Client[] | null, error: any }> {
     const supabase = await getSupabaseClientWithAuth();
@@ -553,5 +622,7 @@ export async function completeOrder(orderId: string, currentTotalRevenue: number
     revalidatePath('/admin');
     return { error: null };
 }
+
+    
 
     

@@ -1,3 +1,4 @@
+
 // These types are manually created to match the Supabase schema.
 // For a more robust solution, you can use `supabase gen types typescript`.
 
@@ -125,3 +126,5 @@ export type DashboardStats = {
     month_revenue: number;
     active_clients: number;
 }
+
+    

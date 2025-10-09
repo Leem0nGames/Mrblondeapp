@@ -1,6 +1,6 @@
 
 import Link from "next/link";
-import { ArrowLeft, Edit, FileWarning, Package, Percent, PlusCircle, Users } from "lucide-react";
+import { ArrowLeft, Edit, FileWarning, Landmark, Package, Percent, PlusCircle, Users } from "lucide-react";
 import { getAgreementById } from "@/app/actions/admin.actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { agreementFormConfig } from "../_components/form-config";
+import AgreementSalesConditionsList from "./_components/agreement-sales-conditions-list";
+import { AssignSalesConditionDialog } from "./_components/assign-sales-condition-dialog";
 
 export default async function AgreementDetailPage({
   params,
@@ -93,26 +95,7 @@ export default async function AgreementDetailPage({
                     )}
                 </CardContent>
             </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center">
-                    <div className="flex-grow">
-                        <CardTitle>Promociones del Convenio</CardTitle>
-                        <CardDescription>
-                            Gestiona las promociones aplicables para este convenio.
-                        </CardDescription>
-                    </div>
-                     <AssignPromotionDialog agreementId={agreement.id}>
-                        <Button size="sm" className="h-8 gap-1">
-                            <PlusCircle className="h-3.5 w-3.5" />
-                            <span>Asignar</span>
-                        </Button>
-                     </AssignPromotionDialog>
-                </CardHeader>
-                <CardContent>
-                    <AgreementPromotionsList promotions={agreement.agreement_promotions} agreementId={agreement.id} />
-                </CardContent>
-            </Card>
-            <Card>
+             <Card>
                 <CardHeader>
                     <CardTitle>Clientes Asignados</CardTitle>
                     <CardDescription>
@@ -142,6 +125,48 @@ export default async function AgreementDetailPage({
                 </CardContent>
             </Card>
        </div>
+       <div className="grid gap-4">
+            <Card>
+                <CardHeader className="flex flex-row items-center">
+                    <div className="flex-grow">
+                        <CardTitle>Promociones del Convenio</CardTitle>
+                        <CardDescription>
+                            Gestiona las promociones aplicables para este convenio.
+                        </CardDescription>
+                    </div>
+                     <AssignPromotionDialog agreementId={agreement.id}>
+                        <Button size="sm" className="h-8 gap-1">
+                            <PlusCircle className="h-3.5 w-3.5" />
+                            <span>Asignar</span>
+                        </Button>
+                     </AssignPromotionDialog>
+                </CardHeader>
+                <CardContent>
+                    <AgreementPromotionsList promotions={agreement.agreement_promotions} agreementId={agreement.id} />
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader className="flex flex-row items-center">
+                    <div className="flex-grow">
+                        <CardTitle>Condiciones de Venta</CardTitle>
+                        <CardDescription>
+                            Gestiona las condiciones comerciales (pagos, descuentos, etc.).
+                        </CardDescription>
+                    </div>
+                     <AssignSalesConditionDialog agreementId={agreement.id}>
+                        <Button size="sm" className="h-8 gap-1">
+                            <PlusCircle className="h-3.5 w-3.5" />
+                            <span>Asignar</span>
+                        </Button>
+                     </AssignSalesConditionDialog>
+                </CardHeader>
+                <CardContent>
+                    <AgreementSalesConditionsList conditions={agreement.agreement_sales_conditions} agreementId={agreement.id} />
+                </CardContent>
+            </Card>
+       </div>
     </div>
   );
 }
+
+    
