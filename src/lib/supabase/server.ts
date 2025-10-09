@@ -12,12 +12,10 @@ export function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        // The get method is now async to align with Next.js changes.
-        async get(name: string) {
+        get(name: string) {
           return cookieStore.get(name)?.value
         },
-        // The set method is also async.
-        async set(name: string, value: string, options: CookieOptions) {
+        set(name: string, value: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value, ...options })
           } catch (error) {
@@ -26,8 +24,7 @@ export function createClient() {
             // user sessions.
           }
         },
-        // The remove method is also async.
-        async remove(name: string, options: CookieOptions) {
+        remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: '', ...options })
           } catch (error) {
