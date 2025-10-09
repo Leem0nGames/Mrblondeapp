@@ -1,3 +1,4 @@
+
 // These types are manually created to match the Supabase schema.
 // For a more robust solution, you can use `supabase gen types typescript`.
 
@@ -108,24 +109,4 @@ export type DashboardStats = {
     total_revenue: number;
     month_revenue: number;
     active_clients: number;
-}
-
-// --- Genkit Flow Types ---
-
-export type SuggestPromotionsInput = {
-    items: {
-        id: string;
-        quantity: number;
-        name: string;
-    }[];
-    total_unidades: number;
-    nombre: string;
-    availablePromotions: Promotion[];
-}
-
-export type SuggestPromotionsOutput = {
-    promotionSuggestions: {
-        name: string;
-        reason: string;
-    }[];
 }

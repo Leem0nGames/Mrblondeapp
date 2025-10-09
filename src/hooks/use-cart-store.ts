@@ -1,8 +1,9 @@
+
 "use client";
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { ProductWithPrice, AgreementPromotion, Promotion } from "@/types";
+import type { ProductWithPrice, Promotion } from "@/types";
 
 export type CartItem = {
   product: ProductWithPrice;
