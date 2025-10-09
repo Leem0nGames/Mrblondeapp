@@ -1,10 +1,11 @@
 
 "use client";
 
-import Link from "next/link";
 import type { Client } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { AssignAgreementDialog } from "../clients/_components/assign-agreement-dialog";
+import { Edit } from "lucide-react";
 
 export function PendingClients({ clients }: { clients: Client[] }) {
 
@@ -32,11 +33,12 @@ export function PendingClients({ clients }: { clients: Client[] }) {
                             {client.email}
                         </p>
                     </div>
-                    <Button asChild variant="outline" size="sm" className="ml-auto">
-                        <Link href="/admin/clients">
+                     <AssignAgreementDialog client={client}>
+                        <Button variant="outline" size="sm" className="ml-auto">
+                            <Edit className="h-4 w-4 mr-2" />
                            Asignar Convenio
-                        </Link>
-                    </Button>
+                        </Button>
+                    </AssignAgreementDialog>
                 </div>
             ))}
         </div>

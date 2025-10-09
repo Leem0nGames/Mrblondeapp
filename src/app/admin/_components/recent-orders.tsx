@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
 import type { Order } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -9,32 +9,41 @@ import { Check } from "lucide-react";
 import { completeOrder } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
 }
 
-export function RecentOrders({ orders }: { orders: Order[] }) {
+export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
+    const [orders, setOrders] = useState(initialOrders);
 
     // In a real app, this would be fetched, not hardcoded.
     const currentTotalRevenue = 123456.78; 
 
     const handleCompleteOrder = (orderId: string, orderTotal: number) => {
+        // Optimistic UI update: remove the order from the list immediately
+        setOrders(currentOrders => currentOrders.filter(order => order.id !== orderId));
+
         startTransition(async () => {
             const result = await completeOrder(orderId, currentTotalRevenue, orderTotal);
             if (result.error) {
                 toast({
                     title: "Error",
-                    description: "No se pudo completar el pedido.",
+                    description: "No se pudo completar el pedido. Se ha restaurado.",
                     variant: "destructive"
                 });
+                // Rollback: add the order back to the list if the server action fails
+                setOrders(initialOrders);
             } else {
                 toast({
                     title: "Éxito",
                     description: "Pedido marcado como completado."
                 });
+                // Optional: you might want to re-fetch the initial data here in a real app
+                // For now, the optimistic update is sufficient.
             }
         });
     }
@@ -50,7 +59,7 @@ export function RecentOrders({ orders }: { orders: Order[] }) {
     return (
         <div className="space-y-8">
             {orders.map((order) => (
-                <div key={order.id} className="flex items-center">
+                <div key={order.id} className="flex items-center transition-opacity">
                     <Avatar className="h-9 w-9">
                         <AvatarImage src={`https://avatar.vercel.sh/${order.client_id}.png`} alt="Avatar" />
                         <AvatarFallback>{order.client_name_cache.charAt(0)}</AvatarFallback>
