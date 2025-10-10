@@ -3,7 +3,7 @@
 
 import type { DashboardStats as StatsType } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Users, Package, Activity } from "lucide-react";
+import { DollarSign, Users, Package } from "lucide-react";
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
@@ -22,7 +22,7 @@ export function DashboardStats({ stats }: { stats: StatsType }) {
                 <CardContent>
                     <div className="text-2xl font-bold">{formatCurrency(stats.total_revenue)}</div>
                     <p className="text-xs text-muted-foreground">
-                        +20.1% from last month
+                        Acumulado histórico de pedidos completados.
                     </p>
                 </CardContent>
             </Card>
@@ -36,7 +36,7 @@ export function DashboardStats({ stats }: { stats: StatsType }) {
                 <CardContent>
                     <div className="text-2xl font-bold">+{stats.active_clients}</div>
                      <p className="text-xs text-muted-foreground">
-                        +180.1% from last month
+                        Clientes con convenio asignado.
                     </p>
                 </CardContent>
             </Card>
@@ -48,7 +48,7 @@ export function DashboardStats({ stats }: { stats: StatsType }) {
                 <CardContent>
                     <div className="text-2xl font-bold">{formatCurrency(stats.month_revenue)}</div>
                     <p className="text-xs text-muted-foreground">
-                        +19% from last month
+                        Esta es una métrica de ejemplo.
                     </p>
                 </CardContent>
             </Card>

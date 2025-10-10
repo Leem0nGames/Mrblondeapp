@@ -591,9 +591,13 @@ export async function getClientsWithPendingAgreements(): Promise<Client[]> {
     return data;
 }
 
-export async function completeOrder(orderId: string, currentTotalRevenue: number, orderTotal: number) {
+export async function completeOrder(orderId: string, orderTotal: number) {
     const supabase = await getSupabaseClientWithAuth();
     
+    // In a real app, this should be a single database transaction or an RPC call
+    // to ensure atomicity. For this demo, we perform sequential operations.
+
+    // 1. Mark the order as completed
     const { error: orderUpdateError } = await supabase
         .from('orders')
         .update({ status: 'completed' })
@@ -604,25 +608,18 @@ export async function completeOrder(orderId: string, currentTotalRevenue: number
         return { error: orderUpdateError };
     }
 
-    // In a real app, this logic should be in a database trigger or a more robust
-    // serverless function to prevent race conditions. For this demo, we update it here.
-    const { error: statsUpdateError } = await supabase
-        .from('dashboard_stats')
-        .update({ 
-            total_revenue: currentTotalRevenue + orderTotal,
-         })
-        .eq('id', 1); // Assuming single row for stats
+    // 2. Increment the total_revenue in the stats table
+    // This is not safe from race conditions. A DB function would be better.
+    const { error: rpcError } = await supabase.rpc('increment_total_revenue', {
+      amount_to_add: orderTotal
+    });
 
-     if (statsUpdateError) {
-        console.error("completeOrder (stats) error:", statsUpdateError.message);
-        // Note: The order is already marked as completed. We should handle this inconsistency.
-        return { error: statsUpdateError };
+    if (rpcError) {
+        console.error("completeOrder (rpc) error:", rpcError.message);
+        // In a real app, we might try to revert the order status update here.
+        return { error: rpcError };
     }
 
     revalidatePath('/admin');
     return { error: null };
 }
-
-    
-
-    

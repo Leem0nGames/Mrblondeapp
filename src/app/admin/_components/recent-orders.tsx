@@ -9,7 +9,6 @@ import { Check } from "lucide-react";
 import { completeOrder } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
@@ -20,15 +19,13 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
     const { toast } = useToast();
     const [orders, setOrders] = useState(initialOrders);
 
-    // In a real app, this would be fetched, not hardcoded.
-    const currentTotalRevenue = 123456.78; 
-
     const handleCompleteOrder = (orderId: string, orderTotal: number) => {
         // Optimistic UI update: remove the order from the list immediately
+        const originalOrders = orders;
         setOrders(currentOrders => currentOrders.filter(order => order.id !== orderId));
 
         startTransition(async () => {
-            const result = await completeOrder(orderId, currentTotalRevenue, orderTotal);
+            const result = await completeOrder(orderId, orderTotal);
             if (result.error) {
                 toast({
                     title: "Error",
@@ -36,14 +33,13 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
                     variant: "destructive"
                 });
                 // Rollback: add the order back to the list if the server action fails
-                setOrders(initialOrders);
+                setOrders(originalOrders);
             } else {
                 toast({
-                    title: "Éxito",
-                    description: "Pedido marcado como completado."
+                    title: "¡Pedido Completado!",
+                    description: "El pedido se ha marcado como completado y las estadísticas se han actualizado."
                 });
-                // Optional: you might want to re-fetch the initial data here in a real app
-                // For now, the optimistic update is sufficient.
+                // No need to re-fetch, the optimistic update is now confirmed.
             }
         });
     }
