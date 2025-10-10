@@ -11,23 +11,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import AgreementPromotionsList from "./_components/agreement-promotions-list";
-import { AssignPromotionDialog } from "./_components/assign-promotion-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { agreementFormConfig } from "../_components/form-config";
 import AgreementSalesConditionsList from "./_components/agreement-sales-conditions-list";
-import { AssignSalesConditionDialog } from "./_components/assign-sales-condition-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { CreateAndAssignPromotionDialog } from "./_components/create-and-assign-promotion-dialog";
-import { CreateAndAssignSalesConditionDialog } from "./_components/create-and-assign-sales-condition-dialog";
+import { AgreementActionsMenu } from "./_components/agreement-actions-menu";
 
 
 export default async function AgreementDetailPage({
@@ -145,24 +134,10 @@ export default async function AgreementDetailPage({
                             Gestiona las promociones aplicables para este convenio.
                         </CardDescription>
                     </div>
-                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                          <Button size="sm" className="h-8 gap-1">
-                              <PlusCircle className="h-3.5 w-3.5" />
-                              <span>Agregar</span>
-                          </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Acción</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <AssignPromotionDialog agreementId={agreement.id}>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Asignar Existente</DropdownMenuItem>
-                          </AssignPromotionDialog>
-                          <CreateAndAssignPromotionDialog agreementId={agreement.id}>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Crear y Asignar Nueva</DropdownMenuItem>
-                          </CreateAndAssignPromotionDialog>
-                      </DropdownMenuContent>
-                  </DropdownMenu>
+                     <AgreementActionsMenu 
+                        agreementId={agreement.id}
+                        type="promotion"
+                     />
                 </CardHeader>
                 <CardContent>
                     <AgreementPromotionsList promotions={agreement.agreement_promotions} agreementId={agreement.id} />
@@ -176,24 +151,10 @@ export default async function AgreementDetailPage({
                             Gestiona las condiciones comerciales (pagos, descuentos, etc.).
                         </CardDescription>
                     </div>
-                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                          <Button size="sm" className="h-8 gap-1">
-                              <PlusCircle className="h-3.5 w-3.5" />
-                              <span>Agregar</span>
-                          </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Acción</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <AssignSalesConditionDialog agreementId={agreement.id}>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Asignar Existente</DropdownMenuItem>
-                          </AssignSalesConditionDialog>
-                          <CreateAndAssignSalesConditionDialog agreementId={agreement.id}>
-                             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Crear y Asignar Nueva</DropdownMenuItem>
-                          </CreateAndAssignSalesConditionDialog>
-                      </DropdownMenuContent>
-                  </DropdownMenu>
+                    <AgreementActionsMenu 
+                        agreementId={agreement.id}
+                        type="sales-condition"
+                     />
                 </CardHeader>
                 <CardContent>
                     <AgreementSalesConditionsList conditions={agreement.agreement_sales_conditions} agreementId={agreement.id} />
