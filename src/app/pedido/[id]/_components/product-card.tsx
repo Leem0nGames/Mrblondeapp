@@ -16,19 +16,6 @@ import { cn } from "@/lib/utils";
 
 export function ProductCard({ product }: { product: ProductWithPrice }) {
   const { isVolumePricingActive } = useCartStore();
-
-  const stockStatus =
-    product.stock > 10
-      ? "En Stock"
-      : product.stock > 0
-      ? "Poco Stock"
-      : "Agotado";
-  const badgeVariant =
-    product.stock > 10
-      ? "default"
-      : product.stock > 0
-      ? "secondary"
-      : "destructive";
   
   const isVolumePriceApplicable = isVolumePricingActive && product.volume_price && product.volume_price < product.price;
   const displayPrice = isVolumePriceApplicable ? product.volume_price : product.price;
@@ -54,9 +41,7 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
         <div className="flex flex-col justify-between w-full gap-2">
             <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-2">
               <h3 className="font-semibold text-base leading-tight">{product.name}</h3>
-              <Badge variant={badgeVariant} className="w-fit shrink-0">
-                {stockStatus}
-              </Badge>
+              {product.category && <Badge variant="secondary" className="w-fit shrink-0">{product.category}</Badge>}
             </div>
             
             <p className="text-muted-foreground text-sm line-clamp-2 sm:h-10">{product.description}</p>

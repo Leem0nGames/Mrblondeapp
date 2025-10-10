@@ -26,6 +26,7 @@ type CartState = {
   addItem: (product: ProductWithPrice, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
+  getItemQuantity: (productId: string) => number;
   clearCart: () => void;
 };
 
@@ -147,6 +148,11 @@ export const useCartStore = create<CartState>()(
           );
         }
         set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat) });
+      },
+      
+      getItemQuantity: (productId: string) => {
+        const item = get().items.find(item => item.product.id === productId);
+        return item ? item.quantity : 0;
       },
 
       clearCart: () => {

@@ -13,7 +13,6 @@ const productSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
   description: z.string().optional(),
   base_price: z.coerce.number().min(0, "El precio debe ser un número positivo"),
-  stock: z.coerce.number().int().min(0, "El stock debe ser un número entero positivo"),
   category: z.string().optional(),
 });
 
@@ -22,7 +21,6 @@ const getProductDefaultValues = (product?: any) => ({
   name: product?.name ?? "",
   description: product?.description ?? "",
   base_price: product?.base_price ?? 0,
-  stock: product?.stock ?? 0,
   category: product?.category ?? "",
 });
 
@@ -55,7 +53,7 @@ const renderProductFields = (form: any) => (
         </FormItem>
       )}
     />
-    <div className="grid grid-cols-2 gap-4">
+     <div className="grid grid-cols-2 gap-4">
       <FormField
         control={form.control}
         name="base_price"
@@ -69,33 +67,20 @@ const renderProductFields = (form: any) => (
           </FormItem>
         )}
       />
-      <FormField
+       <FormField
         control={form.control}
-        name="stock"
+        name="category"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Stock</FormLabel>
+            <FormLabel>Categoría</FormLabel>
             <FormControl>
-              <Input type="number" {...field} />
+              <Input placeholder="e.g., Ceras, Shampoos" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
     </div>
-    <FormField
-      control={form.control}
-      name="category"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Categoría</FormLabel>
-          <FormControl>
-            <Input placeholder="e.g., Ceras, Shampoos" {...field} />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
   </>
 );
 

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition } from "react";
@@ -90,7 +91,6 @@ export function ImportProductsDialog() {
                         <li><strong>name</strong> (Texto, requerido): Nombre del producto.</li>
                         <li><strong>description</strong> (Texto, opcional): Descripción.</li>
                         <li><strong>base_price</strong> (Número, requerido): Precio base sin IVA.</li>
-                        <li><strong>stock</strong> (Número entero, requerido): Cantidad en inventario.</li>
                         <li><strong>category</strong> (Texto, opcional): Categoría para agrupar.</li>
                     </ul>
                 </AlertDescription>

@@ -101,11 +101,11 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
               />
               <div className="flex-grow">
                 <CardTitle>{product.name}</CardTitle>
-                <div className="text-sm text-muted-foreground">
-                  <Badge variant={product.stock > 0 ? "outline" : "destructive"}>
-                    {product.stock > 0 ? `Stock: ${product.stock}` : "Agotado"}
-                  </Badge>
-                </div>
+                {product.category && (
+                    <div className="text-sm text-muted-foreground">
+                        <Badge variant="outline">{product.category}</Badge>
+                    </div>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -159,9 +159,8 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
                   <span className="sr-only">Imagen</span>
                 </TableHead>
                 <TableHead>Nombre</TableHead>
-                <TableHead>Estado</TableHead>
+                <TableHead>Categoría</TableHead>
                 <TableHead>Precio Base</TableHead>
-                <TableHead>Stock</TableHead>
                 <TableHead>Creado el</TableHead>
                 <TableHead>
                   <span className="sr-only">Acciones</span>
@@ -183,17 +182,10 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
                   </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant={product.stock > 0 ? "outline" : "destructive"}
-                    >
-                      {product.stock > 0 ? "En Stock" : "Agotado"}
-                    </Badge>
+                    {product.category ? <Badge variant="outline">{product.category}</Badge> : <span className="text-muted-foreground">N/A</span>}
                   </TableCell>
                   <TableCell>
                     {formatCurrency(product.base_price)}
-                  </TableCell>
-                  <TableCell>
-                    {product.stock}
                   </TableCell>
                   <TableCell>
                     {formatDate(product.created_at)}

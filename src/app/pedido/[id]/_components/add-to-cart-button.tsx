@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -6,9 +7,8 @@ import type { ProductWithPrice } from "@/types";
 import { Minus, Plus } from "lucide-react";
 
 export function QuantitySelector({ product }: { product: ProductWithPrice }) {
-  const { items, addItem, removeItem } = useCartStore();
-  const itemInCart = items.find((item) => item.product.id === product.id);
-  const quantity = itemInCart ? itemInCart.quantity : 0;
+  const { items, addItem, removeItem, getItemQuantity } = useCartStore();
+  const quantity = getItemQuantity(product.id);
 
   if (quantity === 0) {
     return (
@@ -16,7 +16,6 @@ export function QuantitySelector({ product }: { product: ProductWithPrice }) {
         size="sm"
         className="w-full"
         onClick={() => addItem(product, 1)}
-        disabled={product.stock === 0}
       >
         <Plus className="mr-2 h-4 w-4" />
         Agregar
@@ -40,7 +39,6 @@ export function QuantitySelector({ product }: { product: ProductWithPrice }) {
         size="icon"
         className="h-8 w-8"
         onClick={() => addItem(product, 1)}
-        disabled={product.stock > 0 && quantity >= product.stock}
       >
         <Plus className="h-4 w-4" />
       </Button>
