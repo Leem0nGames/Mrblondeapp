@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useEffect, cloneElement, ReactElement } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { z } from "zod";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,8 +19,10 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Promotion } from "@/types";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
-// Define una interfaz para la configuración del formulario
+
 export interface FormConfig<T extends z.ZodType<any, any>> {
   entityName: string;
   schema: T;
@@ -57,7 +59,6 @@ export function EntityDialog({
     defaultValues: getDefaultValues(entity),
   });
 
-  // Efecto para resetear el formulario cuando se abre/cierra o cambia la entidad
   useEffect(() => {
     if (isOpen) {
       form.reset(getDefaultValues(entity));
@@ -66,7 +67,8 @@ export function EntityDialog({
 
   const onSubmit = (values: z.infer<any>) => {
     startTransition(async () => {
-      const result = await upsertAction({ ...values, id: entity?.id });
+      const payload = { ...values, id: entity?.id };
+      const result = await upsertAction(payload);
       if (result.error) {
         toast({
           title: "Error",
@@ -82,36 +84,47 @@ export function EntityDialog({
       }
     });
   };
-  
+
   const dialogTitle = `${entity ? "Editar" : "Nuevo"} ${entityName}`;
   const dialogDescription = entity
     ? `Actualiza los detalles de este ${entityName.toLowerCase()}.`
     : `Completa los detalles para el nuevo ${entityName.toLowerCase()}.`;
 
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg grid-rows-[auto_1fr_auto] p-0 max-h-[90vh]">
+        <DialogHeader className="p-6 pb-2">
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-            {renderFields(form)}
-            <DialogFooter className="pt-4">
-              <DialogClose asChild>
-                <Button variant="outline" type="button">
-                  Cancelar
-                </Button>
-              </DialogClose>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? "Guardando..." : `Guardar ${entityName}`}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+        <div className="grid gap-4 overflow-y-auto">
+          <ScrollArea className="h-full w-full">
+            <Form {...form}>
+              <form
+                id={`entity-form-${entityName}`}
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4 px-6"
+              >
+                {renderFields(form)}
+              </form>
+            </Form>
+          </ScrollArea>
+        </div>
+        <DialogFooter className="p-6 pt-2 border-t">
+          <DialogClose asChild>
+            <Button variant="outline" type="button">
+              Cancelar
+            </Button>
+          </DialogClose>
+          <Button
+            type="submit"
+            form={`entity-form-${entityName}`}
+            disabled={isPending}
+          >
+            {isPending ? "Guardando..." : `Guardar ${entityName}`}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
