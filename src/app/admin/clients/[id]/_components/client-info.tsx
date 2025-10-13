@@ -33,7 +33,7 @@ export function ClientInfo({ client }: { client: Client }) {
       <CardContent className="space-y-4">
         <div className="space-y-1 text-sm">
             <p className="font-medium">Estado</p>
-            <p><Badge variant={statusMap[client.status].variant}>{statusMap[client.status].label}</Badge></p>
+            <div><Badge variant={statusMap[client.status].variant}>{statusMap[client.status].label}</Badge></div>
         </div>
         <div className="space-y-1 text-sm">
           <p className="font-medium">Convenio Asignado</p>

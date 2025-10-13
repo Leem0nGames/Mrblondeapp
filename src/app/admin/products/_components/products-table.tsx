@@ -103,7 +103,7 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
                 <CardTitle>{product.name}</CardTitle>
                 {product.category && (
                     <div className="text-sm text-muted-foreground">
-                        <Badge variant="outline">{product.category}</Badge>
+                        <div><Badge variant="outline">{product.category}</Badge></div>
                     </div>
                 )}
               </div>
@@ -182,7 +182,7 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
                   </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>
-                    {product.category ? <Badge variant="outline">{product.category}</Badge> : <span className="text-muted-foreground">N/A</span>}
+                    {product.category ? <div><Badge variant="outline">{product.category}</Badge></div> : <span className="text-muted-foreground">N/A</span>}
                   </TableCell>
                   <TableCell>
                     {formatCurrency(product.base_price)}

@@ -58,9 +58,11 @@ export function ClientOrders({ orders }: { orders: Order[] }) {
                   <TableCell>{formatDate(order.created_at)}</TableCell>
                   <TableCell>{formatCurrency(order.total_amount)}</TableCell>
                   <TableCell>
-                     <Badge variant={statusMap[order.status].variant}>
-                        {statusMap[order.status].label}
-                    </Badge>
+                    <div>
+                        <Badge variant={statusMap[order.status].variant}>
+                            {statusMap[order.status].label}
+                        </Badge>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

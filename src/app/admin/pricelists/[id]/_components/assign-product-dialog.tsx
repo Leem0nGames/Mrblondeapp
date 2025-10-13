@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition, useEffect, useCallback } from "react";
@@ -235,7 +236,7 @@ export function AssignProductToPriceListDialog({
                                       <p>{product.name}</p>
                                       <p className="text-xs text-muted-foreground">{product.category}</p>
                                     </div>
-                                    <Badge variant="outline">{formatCurrency(product.base_price)}</Badge>
+                                    <div><Badge variant="outline">{formatCurrency(product.base_price)}</Badge></div>
                                   </label>
                                 </FormItem>
                               )}

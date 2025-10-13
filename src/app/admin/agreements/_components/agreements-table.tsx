@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useTransition, useCallback } from "react";
@@ -141,7 +142,7 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                     <div className="flex flex-col gap-2">
                       <CardTitle>{agreement.agreement_name}</CardTitle>
                        <div className="text-sm text-muted-foreground">
-                        <Badge variant="outline" className="capitalize">{agreement.client_type}</Badge>
+                        <div><Badge variant="outline" className="capitalize">{agreement.client_type}</Badge></div>
                       </div>
                     </div>
                 </CardHeader>
@@ -228,7 +229,7 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                   </Link>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="capitalize">{agreement.client_type}</Badge>
+                  <div><Badge variant="outline" className="capitalize">{agreement.client_type}</Badge></div>
                 </TableCell>
                 <TableCell>{agreement.price_lists?.name ?? <span className="text-muted-foreground">Ninguna</span>}</TableCell>
                 <TableCell>{agreement.promotion_count ?? 0}</TableCell>

@@ -89,9 +89,11 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                         <CardTitle>{client.contact_name || "Cliente pendiente"}</CardTitle>
                         {client.email && <CardDescription>{client.email}</CardDescription>}
                       </div>
-                      <Badge variant={statusMap[client.status].variant}>
-                        {statusMap[client.status].label}
-                      </Badge>
+                      <div>
+                        <Badge variant={statusMap[client.status].variant}>
+                            {statusMap[client.status].label}
+                        </Badge>
+                      </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -168,9 +170,11 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                       {client.agreements?.agreement_name || <span className="text-muted-foreground">Sin asignar</span>}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={statusMap[client.status].variant}>
-                      {statusMap[client.status].label}
-                    </Badge>
+                    <div>
+                        <Badge variant={statusMap[client.status].variant}>
+                        {statusMap[client.status].label}
+                        </Badge>
+                    </div>
                   </TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>

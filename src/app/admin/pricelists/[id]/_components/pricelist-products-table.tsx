@@ -102,10 +102,10 @@ export function PriceListProductsTable({ items, priceListId }: { items: PriceLis
               <TableCell className="font-medium">{item.products.name}</TableCell>
               <TableCell>{formatCurrency(item.products.base_price)}</TableCell>
               <TableCell>
-                <Badge variant="secondary" className="text-base">{formatCurrency(item.price)}</Badge>
+                <div><Badge variant="secondary" className="text-base">{formatCurrency(item.price)}</Badge></div>
               </TableCell>
                <TableCell>
-                <Badge variant="outline" className="text-base">{formatCurrency(item.volume_price)}</Badge>
+                <div><Badge variant="outline" className="text-base">{formatCurrency(item.volume_price)}</Badge></div>
               </TableCell>
               <TableCell>
                 <DropdownMenu>

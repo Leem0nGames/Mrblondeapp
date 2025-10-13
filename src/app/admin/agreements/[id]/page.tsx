@@ -77,7 +77,7 @@ export default async function AgreementDetailPage({
                 <CardContent>
                     {agreement.price_lists ? (
                         <div className="flex flex-col gap-2">
-                            <Badge variant="secondary" className="w-fit text-base">{agreement.price_lists.name}</Badge>
+                            <div><Badge variant="secondary" className="w-fit text-base">{agreement.price_lists.name}</Badge></div>
                             <Button variant="outline" size="sm" className="w-fit" asChild>
                                 <Link href={`/admin/pricelists/${agreement.price_lists.id}`}>
                                     Ver o Editar Lista
