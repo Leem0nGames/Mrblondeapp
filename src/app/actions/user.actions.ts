@@ -160,7 +160,7 @@ export async function getOrderPageData(agreementId: string) {
         }
         acc[category].push(product);
         return acc;
-    }, {} as Record<typeof products>);
+    }, {} as Record<string, typeof products>);
 
 
     return { 
