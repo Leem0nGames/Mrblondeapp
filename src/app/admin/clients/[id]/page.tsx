@@ -1,4 +1,5 @@
 
+
 import Link from "next/link";
 import { ArrowLeft, FileWarning } from "lucide-react";
 import { getClientById, getClientStats, getClientOrders } from "@/app/actions/admin.actions";
@@ -42,8 +43,8 @@ export default async function ClientDetailPage({
   const orders = ordersResult;
 
   return (
-    <div className="grid flex-1 items-start gap-4 md:gap-8 print-container">
-        <div className="flex items-center gap-4 no-print">
+    <div className="grid flex-1 items-start gap-4 md:gap-8">
+        <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" className="h-7 w-7" asChild>
             <Link href="/admin/clients">
                 <ArrowLeft className="h-4 w-4" />
@@ -55,24 +56,21 @@ export default async function ClientDetailPage({
             </h1>
         </div>
 
-        <div className="no-print">
+        <div>
             <ClientHeader client={client} />
         </div>
 
-        {stats && <div className="no-print"><ClientStats stats={stats} /></div>}
+        {stats && <div><ClientStats stats={stats} /></div>}
 
         <div className="grid gap-4 md:grid-cols-3 md:gap-8">
-            <div className="md:col-span-2 no-print">
+            <div className="md:col-span-2">
                 <ClientOrders orders={orders} />
             </div>
             <div className="md:col-span-1 grid gap-4 auto-rows-min">
-                 <div className="print-only">
-                    {/* Placeholder para la impresion, el contenido real se maneja con CSS */}
-                 </div>
-                <div className="no-print">
+                <div>
                     <ShippingLabel client={client} />
                 </div>
-                <div className="no-print">
+                <div>
                     <ClientInfo client={client} />
                 </div>
             </div>
