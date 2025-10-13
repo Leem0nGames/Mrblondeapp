@@ -3,7 +3,6 @@ import Link from "next/link";
 import { ArrowLeft, FileWarning } from "lucide-react";
 import { getClientById, getClientStats, getClientOrders } from "@/app/actions/admin.actions";
 import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/shared/empty-state";
 import { ClientHeader } from "./_components/client-header";
 import { ClientInfo } from "./_components/client-info";
 import { ClientStats } from "./_components/client-stats";
