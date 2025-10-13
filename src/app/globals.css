@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -118,4 +119,35 @@
     @apply rounded-md px-4 py-2 font-medium bg-primary text-primary-foreground 
            hover:bg-accent hover:text-accent-foreground transition-colors;
   }
+}
+
+@layer utilities {
+  @media print {
+    .no-print, .no-print * {
+      display: none !important;
+    }
+    .print-only {
+        display: block !important;
+    }
+    .print-container {
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .print-content {
+        border: none !important;
+        box-shadow: none !important;
+        margin: 0;
+        padding: 0;
+    }
+    .print-hide {
+        display: none !important;
+    }
+    body {
+        background-color: white !important;
+    }
+  }
+   .print-only {
+      display: none;
+    }
 }

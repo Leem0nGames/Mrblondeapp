@@ -7,6 +7,7 @@ import { ClientHeader } from "./_components/client-header";
 import { ClientInfo } from "./_components/client-info";
 import { ClientStats } from "./_components/client-stats";
 import { ClientOrders } from "./_components/client-orders";
+import { ShippingLabel } from "./_components/shipping-label";
 
 export default async function ClientDetailPage({
   params,
@@ -41,8 +42,8 @@ export default async function ClientDetailPage({
   const orders = ordersResult;
 
   return (
-    <div className="grid flex-1 items-start gap-4 md:gap-8">
-        <div className="flex items-center gap-4">
+    <div className="grid flex-1 items-start gap-4 md:gap-8 print-container">
+        <div className="flex items-center gap-4 no-print">
             <Button variant="outline" size="icon" className="h-7 w-7" asChild>
             <Link href="/admin/clients">
                 <ArrowLeft className="h-4 w-4" />
@@ -54,16 +55,26 @@ export default async function ClientDetailPage({
             </h1>
         </div>
 
-        <ClientHeader client={client} />
+        <div className="no-print">
+            <ClientHeader client={client} />
+        </div>
 
-        {stats && <ClientStats stats={stats} />}
+        {stats && <div className="no-print"><ClientStats stats={stats} /></div>}
 
         <div className="grid gap-4 md:grid-cols-3 md:gap-8">
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 no-print">
                 <ClientOrders orders={orders} />
             </div>
-            <div className="md:col-span-1">
-                <ClientInfo client={client} />
+            <div className="md:col-span-1 grid gap-4 auto-rows-min">
+                 <div className="print-only">
+                    <ShippingLabel client={client} />
+                 </div>
+                <div className="no-print">
+                    <ShippingLabel client={client} />
+                </div>
+                <div className="no-print">
+                    <ClientInfo client={client} />
+                </div>
             </div>
         </div>
     </div>
