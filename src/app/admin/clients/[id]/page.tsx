@@ -67,7 +67,7 @@ export default async function ClientDetailPage({
             </div>
             <div className="md:col-span-1 grid gap-4 auto-rows-min">
                  <div className="print-only">
-                    <ShippingLabel client={client} />
+                    {/* Placeholder para la impresion, el contenido real se maneja con CSS */}
                  </div>
                 <div className="no-print">
                     <ShippingLabel client={client} />
