@@ -6,7 +6,7 @@ Este documento contiene las instrucciones para configurar y poner en marcha la a
 
 El paso más importante es configurar la base de datos para que coincida con la aplicación.
 
-### Ejecutar el Script SQL
+### a. Ejecutar el Script de Esquema
 
 El script SQL en `src/lib/supabase/schema.sql` está diseñado para ser **idempotente**, lo que significa que puedes ejecutarlo de forma segura en cualquier momento, ya sea en una base de datos nueva o en una existente. Se encargará de limpiar y reconfigurar las tablas automáticamente.
 
@@ -15,7 +15,13 @@ El script SQL en `src/lib/supabase/schema.sql` está diseñado para ser **idempo
 3.  **Ve al "SQL Editor"** en tu panel de Supabase.
 4.  **Pega el script** en el editor y haz clic en **"RUN"**.
 
-Con esto, tu base de datos estará siempre sincronizada y lista para funcionar con la aplicación.
+### b. (Opcional) Cargar Datos de Ejemplo
+
+Si quieres empezar con productos, precios y promociones de ejemplo, puedes ejecutar el script de "seed".
+
+1.  **Abre el archivo `src/lib/supabase/seed.sql`**.
+2.  **Copia todo el contenido**.
+3.  **Pega el script** en el SQL Editor de Supabase y haz clic en **"RUN"**.
 
 ## 2. Crear el Usuario Administrador
 
