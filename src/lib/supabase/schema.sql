@@ -1,109 +1,58 @@
 
--- Versión: 2.0
--- Este script es IDEMPOTENTE. Puedes ejecutarlo de forma segura en cualquier momento.
--- Limpiará y reconfigurará la base de datos para que coincida con la aplicación.
-
--- 1. Desactivar la seguridad a nivel de fila temporalmente para poder eliminar
-ALTER TABLE if exists public.products DISABLE ROW LEVEL SECURITY;
-ALTER TABLE if exists public.promotions DISABLE ROW LEVEL SECURITY;
-ALTER TABLE if exists public.agreements DISABLE ROW LEVEL SECURITY;
-ALTER TABLE if exists public.clients DISABLE ROW LEVEL SECURITY;
-ALTER TABLE if exists public.price_lists DISABLE ROW LEVEL SECURITY;
-
--- 2. Eliminar tablas existentes en el orden correcto de dependencia
-DROP TABLE IF EXISTS public.order_items CASCADE;
-DROP TABLE IF EXISTS public.orders CASCADE;
-DROP TABLE IF EXISTS public.agreement_promotions CASCADE;
-DROP TABLE IF EXISTS public.agreement_sales_conditions CASCADE;
-DROP TABLE IF EXISTS public.price_list_items CASCADE;
-DROP TABLE IF EXISTS public.clients CASCADE;
-DROP TABLE IF EXISTS public.agreements CASCADE;
-DROP TABLE IF EXISTS public.products CASCADE;
-DROP TABLE IF EXISTS public.promotions CASCADE;
-DROP TABLE IF EXISTS public.sales_conditions CASCADE;
-DROP TABLE IF EXISTS public.price_lists CASCADE;
-DROP TABLE IF EXISTS public.dashboard_stats CASCADE;
-
--- 3. Eliminar vistas y funciones si existen
-DROP VIEW IF EXISTS public.agreements_with_counts;
-DROP FUNCTION IF EXISTS public.get_client_stats(p_client_id uuid);
-DROP FUNCTION IF EXISTS public.increment_total_revenue(amount_to_add double precision);
-DROP FUNCTION IF EXISTS public.update_dashboard_stats();
+-- =================================================================
+--  Blonde Orders - Supabase Schema
+--  Idempotent Script: Puedes ejecutarlo de forma segura en cualquier
+--  momento para resetear la DB a este estado.
+-- =================================================================
 
 
--- 4. Creación de Tablas
+-- --- Drop existing objects ---
+-- Dropa todas las tablas en el orden correcto para evitar errores de FK.
+DROP TABLE IF EXISTS "public"."order_items" CASCADE;
+DROP TABLE IF EXISTS "public"."orders" CASCADE;
+DROP TABLE IF EXISTS "public"."agreement_promotions" CASCADE;
+DROP TABLE IF EXISTS "public"."agreement_sales_conditions" CASCADE;
+DROP TABLE IF EXISTS "public"."clients" CASCADE;
+DROP TABLE IF EXISTS "public"."agreements" CASCADE;
+DROP TABLE IF EXISTS "public"."price_list_items" CASCADE;
+DROP TABLE IF EXISTS "public"."price_lists" CASCADE;
+DROP TABLE IF EXISTS "public"."promotions" CASCADE;
+DROP TABLE IF EXISTS "public"."sales_conditions" CASCADE;
+DROP TABLE IF EXISTS "public"."products" CASCADE;
+DROP VIEW IF EXISTS "public"."agreements_with_counts";
+DROP VIEW IF EXISTS "public"."dashboard_stats";
+DROP FUNCTION IF EXISTS "public"."get_client_stats";
+DROP FUNCTION IF EXISTS "public"."increment_total_revenue";
 
-CREATE TABLE "public"."products" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "name" "text" NOT NULL,
-    "description" "text",
-    "base_price" numeric NOT NULL DEFAULT 0,
-    "category" "text",
-    "created_at" timestamptz DEFAULT "now"() NOT NULL
-);
-ALTER TABLE "public"."products" ENABLE ROW LEVEL SECURITY;
-CREATE UNIQUE INDEX products_pkey ON public.products USING btree (id);
-ALTER TABLE "public"."products" ADD CONSTRAINT "products_pkey" PRIMARY KEY USING INDEX "products_pkey";
 
-CREATE TABLE "public"."promotions" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "name" "text" NOT NULL,
-    "description" "text",
-    "rules" "jsonb",
-    "created_at" timestamptz DEFAULT "now"() NOT NULL
-);
-ALTER TABLE "public"."promotions" ENABLE ROW LEVEL SECURITY;
-CREATE UNIQUE INDEX promotions_pkey ON public.promotions USING btree (id);
-ALTER TABLE "public"."promotions" ADD CONSTRAINT "promotions_pkey" PRIMARY KEY USING INDEX "promotions_pkey";
+-- --- Tables ---
 
-CREATE TABLE "public"."sales_conditions" (
+-- 1. products
+-- Almacena el catálogo de productos base.
+CREATE TABLE products (
     "id" uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
     "name" text NOT NULL,
     "description" text,
-    "rules" jsonb,
+    "base_price" numeric NOT NULL,
+    "category" text,
     "created_at" timestamptz DEFAULT now() NOT NULL
 );
-ALTER TABLE "public"."sales_conditions" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."products" ENABLE ROW LEVEL SECURITY;
 
-CREATE TABLE "public"."price_lists" (
+-- 2. price_lists
+-- Contiene diferentes listas de precios que se pueden asignar a los convenios.
+CREATE TABLE price_lists (
     "id" uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
     "name" text NOT NULL UNIQUE,
-    "prices_include_vat" boolean NOT NULL DEFAULT true,
+    "prices_include_vat" boolean DEFAULT true NOT NULL,
     "created_at" timestamptz DEFAULT now() NOT NULL
 );
 ALTER TABLE "public"."price_lists" ENABLE ROW LEVEL SECURITY;
 
-CREATE TABLE "public"."agreements" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "agreement_name" "text" NOT NULL,
-    "client_type" "text" NOT NULL,
-    "created_at" timestamptz DEFAULT "now"() NOT NULL,
-    "price_list_id" uuid,
-    CONSTRAINT "agreements_agreement_name_key" UNIQUE ("agreement_name"),
-    CONSTRAINT "agreements_pkey" PRIMARY KEY ("id"),
-    CONSTRAINT "agreements_price_list_id_fkey" FOREIGN KEY (price_list_id) REFERENCES price_lists(id) ON DELETE SET NULL
-);
-ALTER TABLE "public"."agreements" ENABLE ROW LEVEL SECURITY;
 
-CREATE TABLE "public"."clients" (
-    "id" uuid DEFAULT gen_random_uuid() NOT NULL,
-    "cuit" text UNIQUE,
-    "contact_name" text,
-    "contact_dni" text,
-    "address" text,
-    "delivery_window" text,
-    "email" text UNIQUE,
-    "instagram" text,
-    "status" text DEFAULT 'pending_onboarding'::text NOT NULL,
-    "onboarding_token" uuid DEFAULT gen_random_uuid() NOT NULL UNIQUE,
-    "agreement_id" uuid,
-    "created_at" timestamptz DEFAULT now() NOT NULL,
-    CONSTRAINT "clients_pkey" PRIMARY KEY ("id"),
-    CONSTRAINT "clients_agreement_id_fkey" FOREIGN KEY (agreement_id) REFERENCES agreements(id) ON DELETE SET NULL
-);
-ALTER TABLE "public"."clients" ENABLE ROW LEVEL SECURITY;
-
-CREATE TABLE "public"."price_list_items" (
+-- 3. price_list_items
+-- Tabla pivote que define el precio de un producto para una lista de precios específica.
+CREATE TABLE price_list_items (
     "price_list_id" uuid NOT NULL REFERENCES price_lists(id) ON DELETE CASCADE,
     "product_id" uuid NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     "price" numeric NOT NULL,
@@ -112,22 +61,83 @@ CREATE TABLE "public"."price_list_items" (
 );
 ALTER TABLE "public"."price_list_items" ENABLE ROW LEVEL SECURITY;
 
-CREATE TABLE "public"."agreement_promotions" (
-    "agreement_id" "uuid" NOT NULL REFERENCES agreements(id) ON DELETE CASCADE,
-    "promotion_id" "uuid" NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
+
+-- 4. promotions
+-- Define las promociones disponibles, como "compre X, lleve Y gratis".
+CREATE TABLE promotions (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    "name" text NOT NULL UNIQUE,
+    "description" text,
+    "rules" jsonb,
+    "created_at" timestamptz DEFAULT now() NOT NULL
+);
+ALTER TABLE "public"."promotions" ENABLE ROW LEVEL SECURITY;
+
+-- 5. sales_conditions
+-- Define condiciones comerciales como plazos de pago, descuentos, etc.
+CREATE TABLE sales_conditions (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    "name" text NOT NULL UNIQUE,
+    "description" text,
+    "rules" jsonb,
+    "created_at" timestamptz DEFAULT now() NOT NULL
+);
+ALTER TABLE "public"."sales_conditions" ENABLE ROW LEVEL SECURITY;
+
+
+-- 6. agreements
+-- Define un convenio que agrupa un tipo de cliente, una lista de precios y promociones.
+CREATE TABLE agreements (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    "agreement_name" text NOT NULL UNIQUE,
+    "client_type" text NOT NULL CHECK (client_type IN ('barberia', 'distribuidor', 'especial')),
+    "price_list_id" uuid REFERENCES price_lists(id) ON DELETE SET NULL,
+    "created_at" timestamptz DEFAULT now() NOT NULL
+);
+ALTER TABLE "public"."agreements" ENABLE ROW LEVEL SECURITY;
+
+
+-- 7. agreement_promotions
+-- Tabla pivote para asignar N promociones a N convenios.
+CREATE TABLE agreement_promotions (
+    "agreement_id" uuid NOT NULL REFERENCES agreements(id) ON DELETE CASCADE,
+    "promotion_id" uuid NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
     PRIMARY KEY (agreement_id, promotion_id)
 );
 ALTER TABLE "public"."agreement_promotions" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE TABLE "public"."agreement_sales_conditions" (
+-- 8. agreement_sales_conditions
+-- Tabla pivote para asignar N condiciones de venta a N convenios.
+CREATE TABLE agreement_sales_conditions (
     "agreement_id" uuid NOT NULL REFERENCES agreements(id) ON DELETE CASCADE,
     "sales_condition_id" uuid NOT NULL REFERENCES sales_conditions(id) ON DELETE CASCADE,
     PRIMARY KEY (agreement_id, sales_condition_id)
 );
 ALTER TABLE "public"."agreement_sales_conditions" ENABLE ROW LEVEL SECURITY;
 
-CREATE TABLE "public"."orders" (
+
+-- 9. clients
+-- Almacena la información de los clientes.
+CREATE TABLE clients (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    "cuit" text UNIQUE,
+    "contact_name" text,
+    "contact_dni" text,
+    "address" text,
+    "delivery_window" text,
+    "email" text UNIQUE,
+    "instagram" text,
+    "status" text DEFAULT 'pending_onboarding' NOT NULL CHECK (status IN ('pending_onboarding', 'pending_agreement', 'active', 'archived')),
+    "onboarding_token" uuid DEFAULT gen_random_uuid() NOT NULL UNIQUE,
+    "agreement_id" uuid REFERENCES agreements(id) ON DELETE SET NULL,
+    "created_at" timestamptz DEFAULT now() NOT NULL
+);
+ALTER TABLE "public"."clients" ENABLE ROW LEVEL SECURITY;
+
+-- 10. orders
+-- Guarda un registro de los pedidos realizados.
+CREATE TABLE orders (
     "id" uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
     "client_id" uuid NOT NULL REFERENCES clients(id),
     "agreement_id" uuid NOT NULL REFERENCES agreements(id),
@@ -138,8 +148,10 @@ CREATE TABLE "public"."orders" (
 );
 ALTER TABLE "public"."orders" ENABLE ROW LEVEL SECURITY;
 
-CREATE TABLE "public"."order_items" (
-    "id" bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+-- 11. order_items
+-- Guarda los productos específicos de cada pedido.
+CREATE TABLE order_items (
+    "id" uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
     "order_id" uuid NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
     "product_id" uuid NOT NULL REFERENCES products(id),
     "quantity" integer NOT NULL,
@@ -147,181 +159,99 @@ CREATE TABLE "public"."order_items" (
 );
 ALTER TABLE "public"."order_items" ENABLE ROW LEVEL SECURITY;
 
-CREATE TABLE "public"."dashboard_stats" (
-    "id" integer PRIMARY KEY DEFAULT 1,
-    "total_revenue" numeric DEFAULT 0,
-    "month_revenue" numeric DEFAULT 0,
-    "active_clients" integer DEFAULT 0,
-    CONSTRAINT dashboard_stats_id_check CHECK (id = 1)
-);
 
--- 5. Creación de Políticas de Seguridad (RLS)
+-- --- Views ---
 
--- Los usuarios autenticados pueden leer todo
-CREATE POLICY "Enable read access for authenticated users" ON "public"."products"
-AS PERMISSIVE FOR SELECT
-TO authenticated
-USING (true);
+-- 1. agreements_with_counts
+-- Una vista que facilita obtener los convenios con el conteo de sus promociones y condiciones.
+CREATE VIEW agreements_with_counts AS
+SELECT 
+    a.*,
+    (SELECT COUNT(*) FROM agreement_promotions ap WHERE ap.agreement_id = a.id) as promotion_count,
+    (SELECT COUNT(*) FROM agreement_sales_conditions asc WHERE asc.agreement_id = a.id) as sales_condition_count
+FROM agreements a;
 
-CREATE POLICY "Enable read access for authenticated users" ON "public"."promotions"
-AS PERMISSIVE FOR SELECT
-TO authenticated
-USING (true);
+-- 2. dashboard_stats
+-- Una vista simplificada para las estadísticas del dashboard.
+CREATE VIEW dashboard_stats AS
+SELECT
+    (SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status = 'completed') as total_revenue,
+    (SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status = 'completed' AND created_at >= date_trunc('month', now())) as month_revenue,
+    (SELECT COUNT(*) FROM clients WHERE status = 'active') as active_clients;
 
-CREATE POLICY "Enable read access for authenticated users" ON "public"."agreements"
-AS PERMISSIVE FOR SELECT
-TO authenticated
-USING (true);
+-- --- Functions ---
 
-CREATE POLICY "Enable read access for authenticated users" ON "public"."clients"
-AS PERMISSIVE FOR SELECT
-TO authenticated
-USING (true);
-
-CREATE POLICY "Enable read access for authenticated users" ON "public"."price_lists"
-AS PERMISSIVE FOR SELECT
-TO authenticated
-USING (true);
-
-CREATE POLICY "Enable read access for authenticated users" ON "public"."price_list_items"
-AS PERMISSIVE FOR SELECT
-TO authenticated
-USING (true);
-
-CREATE POLICY "Enable read access for authenticated users" ON "public"."agreement_promotions"
-AS PERMISSIVE FOR SELECT
-TO authenticated
-USING (true);
-
-CREATE POLICY "Enable read access for authenticated users" ON "public"."sales_conditions"
-AS PERMISSIVE FOR SELECT
-TO authenticated
-USING (true);
-
-CREATE POLICY "Enable read access for authenticated users" ON "public"."agreement_sales_conditions"
-AS PERMISSIVE FOR SELECT
-TO authenticated
-USING (true);
-
--- Cualquiera puede leer los datos de un convenio para la página de pedido
-CREATE POLICY "Enable public read access for order page" ON "public"."agreements"
-AS PERMISSIVE FOR SELECT
-TO public
-USING (true);
-
--- Los usuarios autenticados pueden modificar todo
-CREATE POLICY "Enable insert for authenticated users" ON "public"."products" FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Enable update for authenticated users" ON "public"."products" FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "Enable delete for authenticated users" ON "public"."products" FOR DELETE TO authenticated USING (true);
-
-CREATE POLICY "Enable insert for authenticated users" ON "public"."promotions" FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Enable update for authenticated users" ON "public"."promotions" FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "Enable delete for authenticated users" ON "public"."promotions" FOR DELETE TO authenticated USING (true);
-
-CREATE POLICY "Enable all actions for authenticated users on sales_conditions" ON "public"."sales_conditions"
-AS PERMISSIVE FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Enable all actions for authenticated users on price_lists" ON "public"."price_lists"
-AS PERMISSIVE FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Enable all actions for authenticated users on price_list_items" ON "public"."price_list_items"
-AS PERMISSIVE FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Enable insert for authenticated users" ON "public"."agreements" FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Enable update for authenticated users" ON "public"."agreements" FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "Enable delete for authenticated users" ON "public"."agreements" FOR DELETE TO authenticated USING (true);
-
-CREATE POLICY "Enable all actions for authenticated users on agreement_promotions" ON "public"."agreement_promotions"
-AS PERMISSIVE FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Enable all actions for auth users on agreement_sales_conditions" ON "public"."agreement_sales_conditions"
-AS PERMISSIVE FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
--- Políticas para Clientes y Pedidos
-CREATE POLICY "Enable insert for authenticated users on clients" ON "public"."clients" FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Enable update for authenticated users on clients" ON "public"."clients" FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "Enable delete for authenticated users on clients" ON "public"."clients" FOR DELETE TO authenticated USING (true);
-CREATE POLICY "Allow public read for onboarding" ON "public"."clients" FOR SELECT TO public USING (true);
-CREATE POLICY "Allow public update for onboarding" ON "public"."clients" FOR UPDATE TO public USING (true);
-
-CREATE POLICY "Allow all for authenticated users on orders" ON "public"."orders"
-AS PERMISSIVE FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Allow all for authenticated users on order_items" ON "public"."order_items"
-AS PERMISSIVE FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-
--- 6. Funciones de Base de Datos (RPC)
-
-CREATE OR REPLACE FUNCTION public.get_client_stats(p_client_id uuid)
-RETURNS TABLE(total_spent numeric, average_order_value numeric, total_orders bigint)
+-- 1. get_client_stats
+-- Función para obtener las estadísticas de un cliente específico.
+CREATE OR REPLACE FUNCTION get_client_stats(p_client_id uuid)
+RETURNS TABLE(total_spent numeric, total_orders bigint, average_order_value numeric)
 LANGUAGE plpgsql
 AS $$
 BEGIN
     RETURN QUERY
     SELECT
         COALESCE(SUM(o.total_amount), 0) AS total_spent,
-        COALESCE(AVG(o.total_amount), 0) AS average_order_value,
-        COUNT(o.id) AS total_orders
+        COUNT(o.id) AS total_orders,
+        COALESCE(AVG(o.total_amount), 0) AS average_order_value
     FROM
-        public.orders o
+        orders o
     WHERE
-        o.client_id = p_client_id
-        AND o.status = 'completed';
+        o.client_id = p_client_id AND o.status = 'completed';
 END;
 $$;
 
 
-CREATE OR REPLACE FUNCTION public.increment_total_revenue(amount_to_add double precision)
+-- 2. increment_total_revenue
+-- Función para manejar el incremento de ingresos de forma atómica.
+-- (Actualmente no se usa porque la vista `dashboard_stats` lo calcula,
+-- pero es una buena práctica tenerla para futuras optimizaciones).
+CREATE OR REPLACE FUNCTION increment_total_revenue(amount_to_add numeric)
 RETURNS void
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  -- This ensures the dashboard_stats table has a row to update.
-  INSERT INTO dashboard_stats (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
-  
-  UPDATE dashboard_stats
-  SET total_revenue = total_revenue + amount_to_add
-  WHERE id = 1;
+    -- This function would be more complex in a real-world scenario,
+    -- likely updating a dedicated stats table.
+    -- For now, it does nothing as the view handles the calculation.
 END;
 $$;
 
+-- --- SEED DATA ---
 
--- 7. Vista para contar promociones y condiciones por convenio
-CREATE OR REPLACE VIEW public.agreements_with_counts AS
-SELECT
-  a.id,
-  a.agreement_name,
-  a.client_type,
-  a.created_at,
-  a.price_list_id,
-  (SELECT count(*) FROM public.agreement_promotions ap WHERE ap.agreement_id = a.id) AS promotion_count,
-  (SELECT count(*) FROM public.agreement_sales_conditions asc_count WHERE asc_count.agreement_id = a.id) AS sales_condition_count
-FROM
-  public.agreements a;
+-- Insertar Productos
+INSERT INTO products (name, description, base_price, category) VALUES
+('Cera Polvo "Styling Dust"', 'Cera en polvo para un peinado con volumen y textura mate.', 2500.00, 'Ceras'),
+('Cera "Matte Clay"', 'Cera de arcilla para un acabado mate y fijación fuerte.', 2800.00, 'Ceras'),
+('Shampoo "Tea Tree"', 'Shampoo refrescante con aceite de árbol de té.', 3500.00, 'Cuidado Capilar'),
+('Acondicionador "Mint"', 'Acondicionador con extracto de menta para una sensación fresca.', 3500.00, 'Cuidado Capilar'),
+('Aceite para Barba "Woodsman"', 'Aceite nutritivo para barba con aroma amaderado.', 2200.00, 'Cuidado de Barba'),
+('Bálsamo para Barba "Citrus"', 'Bálsamo para modelar la barba con notas cítricas.', 2300.00, 'Cuidado de Barba');
 
--- 8. Inserts iniciales (si es necesario, por ejemplo para stats)
-INSERT INTO public.dashboard_stats(id, total_revenue, month_revenue, active_clients)
-VALUES (1, 0, 0, 0)
-ON CONFLICT (id) DO NOTHING;
+-- Insertar Listas de Precios
+INSERT INTO price_lists (id, name, prices_include_vat) VALUES
+('8a1b5cb1-4435-43a0-b5e1-5a3d7d4e3a21', 'Precios Barberías 2024', true),
+('f2c6d4a9-848a-48a1-9f9e-3d7a8e7b9e3a', 'Precios Distribuidores 2024', false);
+
+-- Insertar Promociones
+INSERT INTO promotions (name, description, rules) VALUES
+('Promo 8+2', 'Llevando 8 unidades de cualquier producto, te regalamos 2.', '{"buy": 8, "get": 2, "type": "buy_x_get_y_free"}'),
+('Envío Gratis CABA', 'Envío sin cargo para pedidos de 12 o más unidades a CABA.', '{"min_units": 12, "locations": ["CABA"], "type": "free_shipping"}');
+
+-- Insertar Condiciones de Venta
+INSERT INTO sales_conditions (name, description, rules) VALUES
+('Pago a 30 Días', 'Plazo de pago de 30 días desde la fecha de factura.', '{"days": 30, "type": "net_days"}'),
+('Descuento 5% Contado', '5% de descuento por pago al contado.', '{"percentage": 5, "type": "discount"}');
+
+
+-- --- RLS Policies ---
+-- Deshabilitadas por defecto para simplicidad del MVP.
+-- En una aplicación real, se habilitarían políticas estrictas.
+-- Ejemplo:
+-- CREATE POLICY "Allow read access to all users" ON "public"."products"
+-- AS PERMISSIVE FOR SELECT
+-- TO public
+-- USING (true);
+ra de 30 volúmenes para aclaraciones más potentes.', 5500, 300, 'Coloración'),
+('Tijera de Corte 5.5"', 'Tijera de acero japonés para corte de precisión. Filo navaja.', 45000, 40, 'Herramientas'),
+('Navaja de Afeitar Clásica', 'Navaja de barbero con hojas intercambiables. Mango de madera.', 35000, 60, 'Herramientas'),
+('Capa de Corte Premium', 'Capa de corte de tela impermeable y antiestática. Cierre ajustable.', 18000, 70, 'Accesorios');
