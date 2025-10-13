@@ -8,7 +8,9 @@ import {
   Settings,
   Users,
   ClipboardList,
-  Landmark
+  Landmark,
+  Home,
+  Menu,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -18,8 +20,28 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Logo } from "@/components/logo";
 import { logout } from "@/app/actions/user.actions";
+
+const mainNavItems = [
+    { href: "/admin", icon: Home, label: "Dashboard" },
+    { href: "/admin/products", icon: Package, label: "Productos" },
+    { href: "/admin/pricelists", icon: ClipboardList, label: "Precios" },
+    { href: "/admin/agreements", icon: FileText, label: "Convenios" },
+    { href: "/admin/clients", icon: Users, label: "Clientes" },
+    { href: "/admin/promotions", icon: Percent, label: "Promos" },
+    { href: "/admin/sales-conditions", icon: Landmark, label: "Condiciones" },
+];
+
+const mobileNavItems = [
+    { href: "/admin/products", icon: Package, label: "Productos" },
+    { href: "/admin/pricelists", icon: ClipboardList, label: "Precios" },
+    { href: "/admin/agreements", icon: FileText, label: "Convenios" },
+    { href: "/admin/clients", icon: Users, label: "Clientes" },
+    { href: "/admin/promotions", icon: Percent, label: "Promos" },
+    { href: "/admin", icon: Home, label: "Dashboard" },
+]
 
 export default function AdminLayout({
   children,
@@ -38,94 +60,36 @@ export default function AdminLayout({
             <span className="sr-only">Blonde Orders</span>
           </Link>
           <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/admin/products"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                  <Package className="h-5 w-5" />
-                  <span className="sr-only">Productos</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Productos</TooltipContent>
-            </Tooltip>
-             <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/admin/pricelists"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                  <ClipboardList className="h-5 w-5" />
-                  <span className="sr-only">Listas de Precios</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Listas de Precios</TooltipContent>
-            </Tooltip>
-             <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/admin/agreements"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                  <FileText className="h-5 w-5" />
-                  <span className="sr-only">Convenios</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Convenios</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/admin/clients"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                  <Users className="h-5 w-5" />
-                  <span className="sr-only">Clientes</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Clientes</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/admin/promotions"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                  <Percent className="h-5 w-5" />
-                  <span className="sr-only">Promociones</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Promociones</TooltipContent>
-            </Tooltip>
-             <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/admin/sales-conditions"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                  <Landmark className="h-5 w-5" />
-                  <span className="sr-only">Condiciones de Venta</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Condiciones de Venta</TooltipContent>
-            </Tooltip>
-             <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href="/admin/settings"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                  <Settings className="h-5 w-5" />
-                  <span className="sr-only">Configuración</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Configuración</TooltipContent>
-            </Tooltip>
+            {mainNavItems.map(item => (
+                 <Tooltip key={item.href}>
+                    <TooltipTrigger asChild>
+                        <Link
+                        href={item.href}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                        >
+                        <item.icon className="h-5 w-5" />
+                        <span className="sr-only">{item.label}</span>
+                        </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">{item.label}</TooltipContent>
+                </Tooltip>
+            ))}
           </TooltipProvider>
         </nav>
         <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
           <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                    href="/admin/settings"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                    >
+                    <Settings className="h-5 w-5" />
+                    <span className="sr-only">Configuración</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Configuración</TooltipContent>
+            </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <form action={logout}>
@@ -152,78 +116,69 @@ export default function AdminLayout({
               </Link>
             </div>
              <div className="ml-auto sm:hidden">
-                 <form action={logout}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                  >
-                    <LogOut className="h-5 w-5" />
-                    <span className="sr-only">Cerrar Sesión</span>
-                  </Button>
-                </form>
+                 <Sheet>
+                    <SheetTrigger asChild>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="shrink-0"
+                    >
+                        <Menu className="h-5 w-5" />
+                        <span className="sr-only">Toggle navigation menu</span>
+                    </Button>
+                    </SheetTrigger>
+                    <SheetContent side="right">
+                    <nav className="grid gap-6 text-lg font-medium">
+                        <Link
+                            href="/admin"
+                            className="flex items-center gap-2 text-lg font-semibold mb-4"
+                        >
+                            <Logo showText={true} />
+                            <span className="sr-only">Blonde Orders</span>
+                        </Link>
+                        {mainNavItems.map(item => (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className="text-muted-foreground hover:text-foreground"
+                            >
+                                {item.label}
+                            </Link>
+                        ))}
+                         <Link
+                            href="/admin/settings"
+                            className="text-muted-foreground hover:text-foreground"
+                         >
+                            Configuración
+                        </Link>
+                         <form action={logout}>
+                           <button className="w-full text-left text-muted-foreground hover:text-foreground">
+                                Cerrar Sesión
+                            </button>
+                        </form>
+                    </nav>
+                    </SheetContent>
+                </Sheet>
             </div>
         </header>
-        <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 pb-20 sm:pb-4">
+        <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 pb-24 sm:pb-4">
             {children}
         </main>
       </div>
        <footer className="sm:hidden fixed bottom-0 left-0 right-0 h-16 bg-background border-t z-10">
         <nav className="h-full">
-          <ul className="h-full grid grid-cols-6 justify-around items-center">
-            <li>
-                <Link
-                  href="/admin/products"
-                  className="flex flex-col items-center text-muted-foreground hover:text-foreground"
-                >
-                  <Package className="h-6 w-6" />
-                  <span className="text-xs">Productos</span>
-                </Link>
-            </li>
-             <li>
-                <Link
-                  href="/admin/pricelists"
-                  className="flex flex-col items-center text-muted-foreground hover:text-foreground"
-                >
-                  <ClipboardList className="h-6 w-6" />
-                  <span className="text-xs">Precios</span>
-                </Link>
-            </li>
-            <li>
-                <Link
-                  href="/admin/agreements"
-                  className="flex flex-col items-center text-muted-foreground hover:text-foreground"
-                >
-                  <FileText className="h-6 w-6" />
-                  <span className="text-xs">Convenios</span>
-                </Link>
-            </li>
-             <li>
-                <Link
-                  href="/admin/clients"
-                  className="flex flex-col items-center text-muted-foreground hover:text-foreground"
-                >
-                  <Users className="h-6 w-6" />
-                  <span className="text-xs">Clientes</span>
-                </Link>
-            </li>
-             <li>
-                <Link
-                  href="/admin/promotions"
-                  className="flex flex-col items-center text-muted-foreground hover:text-foreground"
-                >
-                  <Percent className="h-6 w-6" />
-                  <span className="text-xs">Promos</span>
-                </Link>
-            </li>
-            <li>
-                <Link
-                  href="/admin/sales-conditions"
-                  className="flex flex-col items-center text-muted-foreground hover:text-foreground"
-                >
-                  <Landmark className="h-6 w-6" />
-                  <span className="text-xs">Condiciones</span>
-                </Link>
-            </li>
+          <ul className="h-full grid grid-cols-6 justify-around items-center text-center">
+            {mobileNavItems.map(item => (
+                <li key={item.href}>
+                    <Link
+                        href={item.href}
+                        className="flex flex-col items-center text-muted-foreground hover:text-primary"
+                    >
+                        <item.icon className="h-6 w-6" />
+                        <span className="text-[10px]">{item.label}</span>
+                    </Link>
+                </li>
+            ))}
           </ul>
         </nav>
       </footer>
