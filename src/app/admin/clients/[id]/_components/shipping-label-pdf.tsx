@@ -1,32 +1,16 @@
-
 "use client";
 
 import React from 'react';
-import { Page, Text, View, Document, StyleSheet, Image, Font } from '@react-pdf/renderer';
+import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
 import type { Client } from '@/types';
-
-// --- Registrar Fuentes ---
-// Nota: Las rutas deben ser absolutas o relativas al lugar desde donde se sirve.
-// Como estamos en un entorno Next.js, las ponemos en /public.
-// Es crucial que estos archivos de fuente existan en la carpeta /public.
-// Por simplicidad, usaremos fuentes genéricas y especificaremos fallbacks.
-
-Font.register({
-  family: 'Belleza',
-  src: 'https://fonts.gstatic.com/s/belleza/v15/0nkoC9_pYxnY_Uvyw3oz.ttf',
-});
-
-Font.register({
-  family: 'Alegreya',
-  src: 'https://fonts.gstatic.com/s/alegreya/v35/4UacrEBBsYupSs_UpDQssKTT.ttf'
-});
 
 
 // --- Estilos del PDF ---
+// Usaremos fuentes seguras como Helvetica para evitar problemas de carga de red.
 const styles = StyleSheet.create({
   page: {
     padding: 30,
-    fontFamily: 'Alegreya',
+    fontFamily: 'Helvetica',
   },
   label: {
     border: 1,
@@ -52,9 +36,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   logoText: {
-    fontFamily: 'Belleza',
+    fontFamily: 'Helvetica-Bold',
     fontSize: 10,
-    fontWeight: 'bold',
     textAlign: 'center',
   },
   qrCode: {
@@ -63,7 +46,7 @@ const styles = StyleSheet.create({
   },
   clientName: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     color: '#2563eb', // text-blue-600
     textTransform: 'uppercase',
   },
@@ -75,7 +58,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   labelText: {
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
   },
   deliveryWindow: {
     backgroundColor: '#1f2937', // bg-gray-800
@@ -96,7 +79,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#374151', // bg-gray-700
     color: 'white',
     fontSize: 9,
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
@@ -112,7 +95,7 @@ const LabelComponent = ({ client, currentBulto, totalBultos }: { client: Client,
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(client.id)}&qzone=1`;
 
   return (
-    <View style={styles.label}>
+    <View style={styles.label} wrap={false}>
       <View style={styles.row}>
         <View style={styles.leftColumn}>
           <Text style={styles.logoText}>MR. BLONDE</Text>
@@ -130,7 +113,7 @@ const LabelComponent = ({ client, currentBulto, totalBultos }: { client: Client,
             <Text><Text style={styles.labelText}>DIRECCIÓN:</Text> {client.address || "No especificada"}</Text>
           </View>
           <View style={styles.deliveryWindow}>
-            <Text><Text style={styles-labelText}>DÍAS Y HORARIOS:</Text> {client.delivery_window || "No especificado"}</Text>
+            <Text><Text style={styles.labelText}>DÍAS Y HORARIOS:</Text> {client.delivery_window || "No especificado"}</Text>
           </View>
           <View style={styles.notes}>
             <Text><Text style={styles.labelText}>NOTAS:</Text> _____________________________________</Text>
@@ -149,19 +132,10 @@ export const ShippingLabelPDF = ({ client, totalBultos }: ShippingLabelPDFProps)
     // Crea un array con el número de etiquetas a generar
     const labels = Array.from({ length: totalBultos }, (_, i) => i + 1);
 
-    // Agrupa las etiquetas en páginas de 3
-    const pages = labels.reduce<number[][]>((acc, _, i) => {
-        if (i % 3 === 0) {
-            acc.push(labels.slice(i, i + 3));
-        }
-        return acc;
-    }, []);
-
     return (
         <Document>
-        {pages.map((pageLabels, pageIndex) => (
-            <Page key={pageIndex} size="A4" style={styles.page}>
-            {pageLabels.map((bultoNum) => (
+            <Page size="A4" style={styles.page}>
+            {labels.map((bultoNum) => (
                 <LabelComponent 
                     key={bultoNum}
                     client={client} 
@@ -170,7 +144,6 @@ export const ShippingLabelPDF = ({ client, totalBultos }: ShippingLabelPDFProps)
                 />
             ))}
             </Page>
-        ))}
         </Document>
     );
 };

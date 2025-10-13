@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -12,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { ShippingLabelPDF } from "./shipping-label-pdf";
 
 export function ShippingLabel({ client }: { client: Client }) {
-  const [packageInfo, setPackageInfo] = useState("1 de 1");
+  const [packageInfo, setPackageInfo] = useState("1");
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -22,8 +21,19 @@ export function ShippingLabel({ client }: { client: Client }) {
   }, []);
 
   const getBultoCount = () => {
-    const parts = packageInfo.split(' de ');
-    return parseInt(parts[1], 10) || 1;
+    const input = packageInfo.trim();
+    if (!input) return 1;
+
+    // Intenta encontrar un número, ya sea "3", "1 de 3", "bulto 3", etc.
+    const match = input.match(/\d+/g);
+    
+    if (match) {
+        // Si encuentra múltiples números (ej. "2 de 5"), toma el último.
+        // Si encuentra uno (ej. "3"), lo toma.
+        return parseInt(match[match.length - 1], 10) || 1;
+    }
+    
+    return 1;
   };
 
   return (
@@ -36,14 +46,14 @@ export function ShippingLabel({ client }: { client: Client }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="package-info">Información de Bultos</Label>
+          <Label htmlFor="package-info">Número de Bultos</Label>
           <Input 
             id="package-info"
             value={packageInfo}
             onChange={(e) => setPackageInfo(e.target.value)}
-            placeholder="Ej: 1 de 3"
+            placeholder="Ej: 3"
           />
-           <p className="text-xs text-muted-foreground">Define cuántos rótulos generar. Ej: "3", "2 de 5".</p>
+           <p className="text-xs text-muted-foreground">Define cuántos rótulos generar. Ej: "3" generará 3 rótulos.</p>
         </div>
       </CardContent>
       <CardFooter>
@@ -54,7 +64,7 @@ export function ShippingLabel({ client }: { client: Client }) {
             className="w-full"
           >
             {({ loading }) => (
-              <Button disabled={loading} className="w-full">
+              <Button disabled={loading || !packageInfo} className="w-full">
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
