@@ -3,7 +3,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { Product, Agreement, Promotion, DetailedAgreement, AgreementWithCount, Client, PriceList, DetailedPriceList, PriceListItem, DashboardStats, Order, SalesCondition } from "@/types";
+import type { Product, Agreement, Promotion, DetailedAgreement, AgreementWithCount, Client, PriceList, DetailedPriceList, PriceListItem, DashboardStats, Order, SalesCondition, ClientStats } from "@/types";
 
 type UpsertProductPayload = Omit<Product, "id" | "created_at"> & {
   id?: string;
@@ -360,6 +360,42 @@ export async function getClients(): Promise<{ data: Client[] | null, error: any 
     return { data, error: null };
 }
 
+export async function getClientById(id: string): Promise<{ data: Client | null, error: any }> {
+    const supabase = await getSupabaseClientWithAuth();
+    
+    const { data, error } = await supabase
+        .from("clients")
+        .select(`
+            *,
+            agreements ( * )
+        `)
+        .eq('id', id)
+        .single();
+    
+    if (error) {
+        console.error("getClientById error:", error.message);
+        return { data: null, error };
+    }
+    
+    return { data, error: null };
+}
+
+export async function getClientStats(clientId: string): Promise<{ data: ClientStats | null, error: any }> {
+    const supabase = await getSupabaseClientWithAuth();
+    
+    const { data, error } = await supabase
+        .rpc('get_client_stats', { p_client_id: clientId })
+        .single();
+
+    if (error) {
+        console.error("getClientStats error:", error.message);
+        return { data: null, error };
+    }
+    
+    return { data, error: null };
+}
+
+
 export async function createClientOnboardingLink(): Promise<{ data: { onboarding_token: string } | null, error: any }> {
     const supabase = await getSupabaseClientWithAuth();
 
@@ -395,6 +431,7 @@ export async function assignAgreementToClient(payload: { clientId: string, agree
     }
     
     revalidatePath("/admin/clients");
+    revalidatePath(`/admin/clients/${payload.clientId}`);
     revalidatePath("/admin");
     return { error: null };
 }
@@ -571,6 +608,21 @@ export async function getPendingOrders(): Promise<Order[]> {
 
     if (error) {
         console.error("getPendingOrders error:", error.message);
+        return [];
+    }
+    return data;
+}
+
+export async function getClientOrders(clientId: string): Promise<Order[]> {
+    const supabase = await getSupabaseClientWithAuth();
+    const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("client_id", clientId)
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        console.error("getClientOrders error:", error.message);
         return [];
     }
     return data;

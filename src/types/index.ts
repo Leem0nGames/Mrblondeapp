@@ -107,7 +107,7 @@ export type Client = {
     onboarding_token: string;
     agreement_id: string | null;
     created_at: string;
-    agreements?: { agreement_name: string } | null; // Joined data
+    agreements?: Agreement | null; // Joined data
 }
 
 export type Order = {
@@ -124,4 +124,10 @@ export type DashboardStats = {
     total_revenue: number;
     month_revenue: number;
     active_clients: number;
+}
+
+export type ClientStats = {
+    total_spent: number;
+    average_order_value: number;
+    total_orders: number;
 }
