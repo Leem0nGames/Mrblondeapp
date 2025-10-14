@@ -12,9 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { CreateAndAssignPromotionDialog } from "./create-and-assign-promotion-dialog";
 import { AssignSalesConditionDialog } from "./assign-sales-condition-dialog";
-import { CreateAndAssignSalesConditionDialog } from "./create-and-assign-sales-condition-dialog";
 
 type AgreementActionsMenuProps = {
     agreementId: string;
@@ -26,27 +24,17 @@ export function AgreementActionsMenu({ agreementId, type }: AgreementActionsMenu
     const renderMenuContent = () => {
         if (type === 'promotion') {
             return (
-                <>
-                    <AssignPromotionDialog agreementId={agreementId}>
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Asignar Existente</DropdownMenuItem>
-                    </AssignPromotionDialog>
-                    <CreateAndAssignPromotionDialog agreementId={agreementId}>
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Crear y Asignar Nueva</DropdownMenuItem>
-                    </CreateAndAssignPromotionDialog>
-                </>
+                <AssignPromotionDialog agreementId={agreementId}>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Asignar o Crear</DropdownMenuItem>
+                </AssignPromotionDialog>
             );
         }
 
         if (type === 'sales-condition') {
             return (
-                <>
-                    <AssignSalesConditionDialog agreementId={agreementId}>
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Asignar Existente</DropdownMenuItem>
-                    </AssignSalesConditionDialog>
-                    <CreateAndAssignSalesConditionDialog agreementId={agreementId}>
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Crear y Asignar Nueva</DropdownMenuItem>
-                    </CreateAndAssignSalesConditionDialog>
-                </>
+                <AssignSalesConditionDialog agreementId={agreementId}>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Asignar o Crear</DropdownMenuItem>
+                </AssignSalesConditionDialog>
             );
         }
         return null;
