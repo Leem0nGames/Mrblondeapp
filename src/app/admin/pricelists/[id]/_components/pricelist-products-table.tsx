@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useTransition } from "react";
@@ -78,7 +77,6 @@ export function PriceListProductsTable({ items, priceListId }: { items: PriceLis
                 <span className="sr-only">Imagen</span>
             </TableHead>
             <TableHead>Nombre</TableHead>
-            <TableHead>Precio Base</TableHead>
             <TableHead>Precio Lista</TableHead>
             <TableHead>Precio Volumen (&gt;150)</TableHead>
             <TableHead>
@@ -100,7 +98,6 @@ export function PriceListProductsTable({ items, priceListId }: { items: PriceLis
                   />
               </TableCell>
               <TableCell className="font-medium">{item.products.name}</TableCell>
-              <TableCell>{formatCurrency(item.products.base_price)}</TableCell>
               <TableCell>
                 <div><Badge variant="secondary" className="text-base">{formatCurrency(item.price)}</Badge></div>
               </TableCell>
