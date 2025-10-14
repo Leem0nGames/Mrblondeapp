@@ -50,7 +50,7 @@ const formatRule = (rules: any): string => {
     return 'Regla no definida';
   }
 
-  const { type, days, percentage, installments } = rules;
+  const { type, days, percentage, installments, initial_percentage, remaining_days } = rules;
 
   switch (type) {
     case 'net_days':
@@ -59,6 +59,8 @@ const formatRule = (rules: any): string => {
       return `Descuento por pronto pago: ${percentage || 'N/D'}%.`;
     case 'installments':
         return `Financiación: ${installments || 'N/D'} cuotas.`;
+    case 'split_payment':
+        return `${initial_percentage || 'N/D'}% de adelanto, resto a ${remaining_days || 'N/D'} días.`;
     default:
       return 'Regla personalizada.';
   }

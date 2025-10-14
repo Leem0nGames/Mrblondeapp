@@ -35,6 +35,10 @@ export function ClientInfo({ client }: { client: Client }) {
             <p className="font-medium">Estado</p>
             <div><Badge variant={statusMap[client.status].variant}>{statusMap[client.status].label}</Badge></div>
         </div>
+         <div className="space-y-1 text-sm">
+          <p className="font-medium">Email</p>
+          <p className="text-muted-foreground">{client.email ?? "No especificado"}</p>
+        </div>
         <div className="space-y-1 text-sm">
           <p className="font-medium">Convenio Asignado</p>
           <div className="flex items-center gap-2">

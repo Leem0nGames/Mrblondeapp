@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { submitOnboardingForm } from "@/app/actions/user.actions";
 import type { Client } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Zod schema for CUIT validation
 const cuitSchema = z.string().refine(
@@ -45,6 +46,7 @@ const formSchema = z.object({
   delivery_window: z.string().min(5, "Este campo es requerido."),
   email: z.string().email("Debe ser un email válido."),
   instagram: z.string().optional(),
+  fiscal_status: z.string().min(1, "La condición fiscal es requerida"),
 });
 
 type OnboardingFormValues = z.infer<typeof formSchema>;
@@ -64,6 +66,7 @@ export function OnboardingFormDialog({ children, client }: { children: React.Rea
       delivery_window: client.delivery_window ?? "",
       email: client.email ?? "",
       instagram: client.instagram ?? "",
+      fiscal_status: client.fiscal_status ?? "",
     },
   });
 
@@ -103,6 +106,29 @@ export function OnboardingFormDialog({ children, client }: { children: React.Rea
         <ScrollArea className="h-full w-full">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6">
+                 <FormField
+                  control={form.control}
+                  name="fiscal_status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Condición Fiscal</FormLabel>
+                       <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccione una condición..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Responsable Inscripto">Responsable Inscripto (Factura A)</SelectItem>
+                          <SelectItem value="Monotributista">Monotributista (Factura B)</SelectItem>
+                          <SelectItem value="Consumidor Final">Consumidor Final (Factura B)</SelectItem>
+                          <SelectItem value="Exento">Exento (Factura B)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="cuit"

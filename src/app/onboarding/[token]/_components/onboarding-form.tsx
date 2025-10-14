@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { submitOnboardingForm } from "@/app/actions/user.actions";
 import type { Client } from "@/types";
 import { useRouter } from "next/navigation";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Zod schema for CUIT validation
 const cuitSchema = z.string().refine(
@@ -36,6 +37,7 @@ const cuitSchema = z.string().refine(
 );
 
 const formSchema = z.object({
+  fiscal_status: z.string().min(1, "La condición fiscal es requerida"),
   cuit: cuitSchema,
   contact_name: z.string().min(3, "El nombre es requerido."),
   contact_dni: z.string().min(7, "El DNI debe tener entre 7 y 8 dígitos.").max(8, "El DNI debe tener entre 7 y 8 dígitos."),
@@ -55,6 +57,7 @@ export function OnboardingForm({ client }: { client: Client }) {
   const form = useForm<OnboardingFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      fiscal_status: client.fiscal_status ?? "",
       cuit: client.cuit ?? "",
       contact_name: client.contact_name ?? "",
       contact_dni: client.contact_dni ?? "",
@@ -92,6 +95,29 @@ export function OnboardingForm({ client }: { client: Client }) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="fiscal_status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Condición Fiscal</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione su condición frente al IVA..." />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Responsable Inscripto">Responsable Inscripto (para Factura A)</SelectItem>
+                  <SelectItem value="Monotributista">Monotributista (para Factura B)</SelectItem>
+                  <SelectItem value="Consumidor Final">Consumidor Final (para Factura B)</SelectItem>
+                  <SelectItem value="Exento">Exento (para Factura B)</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="cuit"

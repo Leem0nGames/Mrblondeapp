@@ -107,6 +107,7 @@ export type Client = {
     onboarding_token: string;
     agreement_id: string | null;
     created_at: string;
+    fiscal_status: string | null; // Nuevo campo
     agreements?: Agreement | null; // Joined data
 }
 
