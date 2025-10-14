@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -36,18 +37,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: '10pt',
     textAlign: 'center',
+    marginBottom: 10, // Added margin for spacing
   },
   qrCode: {
     width: 80,
     height: 80,
+    marginBottom: 10, // Added margin for spacing
   },
   clientInfoContainer: {
     marginBottom: 6,
   },
   clientName: {
     fontSize: '14pt',
-    fontFamily: 'Helvetica',
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     color: '#2563eb', // text-blue-600
   },
   clientCuit: {
@@ -59,8 +61,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   labelText: {
-    fontFamily: 'Helvetica',
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
   },
   deliveryWindow: {
     backgroundColor: '#1f2937', // bg-gray-800
@@ -83,8 +84,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#374151', // bg-gray-700
     color: 'white',
     fontSize: '9pt',
-    fontFamily: 'Helvetica',
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
@@ -111,14 +111,18 @@ const LabelComponent = ({ client, currentBulto, totalBultos }: { client: Client,
         </View>
         <View style={styles.rightColumn}>
           <View style={styles.clientInfoContainer}>
-            <Text style={styles.clientName}>{client.contact_name?.toUpperCase() || "NOMBRE NO ESPECIFICADO"}</Text>
+             <Text style={styles.clientName}>
+                {(client.contact_name || "NOMBRE NO ESPECIFICADO").toUpperCase()}
+            </Text>
             <Text style={styles.clientCuit}>CUIT/CUIL: {client.cuit || "N/A"}</Text>
           </View>
           <View style={styles.labelSection}>
             <Text><Text style={styles.labelText}>DIRECCIÓN:</Text> {client.address || "No especificada"}</Text>
           </View>
-          <View style={styles.deliveryWindow}>
-            <Text><Text style={styles.labelText}>DÍAS Y HORARIOS:</Text> {client.delivery_window || "No especificado"}</Text>
+           <View style={styles.deliveryWindow}>
+            <Text>
+              <Text style={styles.labelText}>DÍAS Y HORARIOS:</Text> {client.delivery_window || "No especificado"}
+            </Text>
           </View>
           <View style={styles.notes}>
             <Text><Text style={styles.labelText}>NOTAS:</Text> _____________________________________</Text>
