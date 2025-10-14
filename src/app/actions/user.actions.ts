@@ -150,7 +150,7 @@ export async function getOrderPageData(agreementId: string) {
             products(*)
         `)
         .eq('price_list_id', agreement.price_lists.id)
-        .filter('products', 'is', 'not.null'); // Ensure we only get items with valid products
+        .filter('products.id', 'is', 'not.null'); // Ensure we only get items with valid products
 
     if (itemsError) {
         console.error("getOrderPageData (items) error:", itemsError?.message);
