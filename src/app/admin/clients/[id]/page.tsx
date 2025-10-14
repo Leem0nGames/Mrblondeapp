@@ -1,10 +1,9 @@
 
 import Link from "next/link";
-import { ArrowLeft, FileWarning, Info, Landmark } from "lucide-react";
+import { FileWarning } from "lucide-react";
 import { getAgreementById, getClientById, getClientStats, getClientOrders } from "@/app/actions/admin.actions";
 import { Button } from "@/components/ui/button";
 import { ClientDetailsClient } from "./_components/client-details-client";
-
 
 export default async function ClientDetailPage({
   params,
