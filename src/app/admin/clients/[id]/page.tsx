@@ -4,30 +4,8 @@ import Link from "next/link";
 import { ArrowLeft, FileWarning, Info, Landmark } from "lucide-react";
 import { getAgreementById, getClientById, getClientStats, getClientOrders } from "@/app/actions/admin.actions";
 import { Button } from "@/components/ui/button";
-import { ClientHeader } from "./_components/client-header";
 import { ClientDetailsClient } from "./_components/client-details-client";
 
-
-const formatRule = (rules: any): string => {
-  if (!rules || typeof rules !== 'object') {
-    return 'Regla no definida';
-  }
-
-  const { type, days, percentage, installments, initial_percentage, remaining_days } = rules;
-
-  switch (type) {
-    case 'net_days':
-      return `Plazo de pago: ${days || 'N/D'} días netos.`;
-    case 'discount':
-      return `Descuento por pronto pago: ${percentage || 'N/D'}%.`;
-    case 'installments':
-        return `Financiación: ${installments || 'N/D'} cuotas.`;
-    case 'split_payment':
-        return `${initial_percentage || 'N/D'}% de adelanto, resto a ${remaining_days || 'N/D'} días.`;
-    default:
-      return 'Regla personalizada.';
-  }
-};
 
 export default async function ClientDetailPage({
   params,
@@ -66,18 +44,6 @@ export default async function ClientDetailPage({
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
-        <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" className="h-7 w-7" asChild>
-            <Link href="/admin/clients">
-                <ArrowLeft className="h-4 w-4" />
-                <span className="sr-only">Volver</span>
-            </Link>
-            </Button>
-             <h1 className="text-xl font-semibold tracking-tight sm:hidden">
-                {client.contact_name}
-            </h1>
-        </div>
-
         <ClientDetailsClient 
             client={client}
             stats={stats}

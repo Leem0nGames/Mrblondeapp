@@ -31,7 +31,6 @@ const styles = StyleSheet.create({
   rightColumn: {
     width: '75%',
     flexDirection: 'column',
-    gap: 6,
   },
   logoText: {
     fontFamily: 'Helvetica',
@@ -42,6 +41,9 @@ const styles = StyleSheet.create({
   qrCode: {
     width: 80,
     height: 80,
+  },
+  clientInfoContainer: {
+    marginBottom: 6,
   },
   clientName: {
     fontSize: '14pt',
@@ -56,6 +58,7 @@ const styles = StyleSheet.create({
   },
   labelSection: {
     fontSize: '10pt',
+    marginTop: 6,
   },
   labelText: {
     fontFamily: 'Helvetica',
@@ -67,9 +70,11 @@ const styles = StyleSheet.create({
     fontSize: '9pt',
     padding: 6,
     borderRadius: 4,
+    marginTop: 6,
   },
   notes: {
     fontSize: '10pt',
+    marginTop: 6,
   },
   footer: {
     flexDirection: 'row',
@@ -107,7 +112,7 @@ const LabelComponent = ({ client, currentBulto, totalBultos }: { client: Client,
           />
         </View>
         <View style={styles.rightColumn}>
-          <View>
+          <View style={styles.clientInfoContainer}>
             <Text style={styles.clientName}>{client.contact_name?.toUpperCase() || "NOMBRE NO ESPECIFICADO"}</Text>
             <Text style={styles.clientCuit}>CUIT/CUIL: {client.cuit || "N/A"}</Text>
           </View>
