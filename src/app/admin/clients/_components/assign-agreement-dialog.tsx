@@ -38,8 +38,6 @@ import type { Client, AgreementWithCount, Agreement } from "@/types";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { agreementFormConfig } from "../../agreements/_components/form-config";
 import type { FormConfig } from "../../_components/entity-dialog";
-import { PlusCircle } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const formSchema = z.object({
   agreementId: z.string().nullable(),
@@ -115,8 +113,6 @@ export function AssignAgreementDialog({
       upsertAction: upsertActionWithCallback,
   };
   
-  const canAssign = client.status !== 'pending_onboarding';
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -136,14 +132,6 @@ export function AssignAgreementDialog({
         </div> : (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-             {!canAssign && (
-                 <Alert variant="destructive">
-                    <AlertTitle>Acción Requerida</AlertTitle>
-                    <AlertDescription>
-                        No se puede asignar un convenio hasta que el cliente complete su formulario de alta. Primero, comparte el "Link de Alta" con el cliente.
-                    </AlertDescription>
-                </Alert>
-             )}
             <FormField
               control={form.control}
               name="agreementId"
@@ -153,7 +141,6 @@ export function AssignAgreementDialog({
                   <Select 
                     onValueChange={(value) => field.onChange(value === 'null' ? null : value)} 
                     defaultValue={field.value ?? 'null'}
-                    disabled={!canAssign}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -176,7 +163,7 @@ export function AssignAgreementDialog({
             <div className="text-sm">
                 <span>¿El convenio que buscas no existe?</span>
                 <EntityDialog formConfig={newAgreementDialogConfig} entity={undefined}>
-                    <Button variant="link" size="sm" type="button" className="p-1 h-auto" disabled={!canAssign}>
+                    <Button variant="link" size="sm" type="button" className="p-1 h-auto">
                         o, Crear Nuevo Convenio
                     </Button>
                 </EntityDialog>
@@ -185,7 +172,7 @@ export function AssignAgreementDialog({
               <DialogClose asChild>
                 <Button variant="outline" type="button">Cancelar</Button>
               </DialogClose>
-              <Button type="submit" disabled={isPending || !canAssign}>
+              <Button type="submit" disabled={isPending}>
                 {isPending ? "Guardando..." : "Guardar Asignación"}
               </Button>
             </DialogFooter>
