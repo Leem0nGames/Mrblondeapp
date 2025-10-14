@@ -318,5 +318,3 @@ export async function submitOrder(payload: {
 
     return { data: { orderId: order.id }, error: null };
 }
-
-      

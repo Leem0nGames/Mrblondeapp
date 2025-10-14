@@ -112,5 +112,3 @@ export default function AgreementSalesConditionsList({ conditions, agreementId }
     </div>
   );
 }
-
-    

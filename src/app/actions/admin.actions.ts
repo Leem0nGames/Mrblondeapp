@@ -764,7 +764,3 @@ export async function completeOrder(orderId: string, orderTotal: number) {
     revalidatePath('/admin');
     return { error: null };
 }
-
-    
-
-      

@@ -1,5 +1,4 @@
 
-
 import Link from "next/link";
 import { ArrowLeft, FileWarning, Info, Landmark } from "lucide-react";
 import { getAgreementById, getClientById, getClientStats, getClientOrders } from "@/app/actions/admin.actions";
