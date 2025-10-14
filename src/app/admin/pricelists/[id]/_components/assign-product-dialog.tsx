@@ -89,8 +89,8 @@ export function AssignProductToPriceListDialog({
       const selectedProducts = products.filter(p => values.product_ids.includes(p.id));
       const productsToAssign = selectedProducts.map(p => ({
         product_id: p.id,
-        price: p.base_price, // Default to base price
-        volume_price: p.base_price, // Also default to base price
+        price: 0, // Assign with a price of 0, forcing admin to set it.
+        volume_price: null,
       }));
 
       const result = await assignProductsToPriceList({
@@ -101,7 +101,7 @@ export function AssignProductToPriceListDialog({
       if (result.error) {
         toast({ title: "Error", description: result.error.message, variant: "destructive" });
       } else {
-        toast({ title: "Éxito", description: `${productsToAssign.length} producto(s) asignado(s) correctamente.` });
+        toast({ title: "Éxito", description: `${productsToAssign.length} producto(s) asignado(s) correctamente. Recuerda definir sus precios.` });
         setIsOpen(false);
         form.reset();
       }
@@ -116,10 +116,6 @@ export function AssignProductToPriceListDialog({
     }
   };
   
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
-  }
-
   const handleNewProductSuccess = useCallback(async (newProduct: Product) => {
       await fetchUnassignedProducts();
       setValue('product_ids', [...(form.getValues().product_ids || []), newProduct.id], { shouldValidate: true });
@@ -146,7 +142,7 @@ export function AssignProductToPriceListDialog({
         <DialogHeader>
           <DialogTitle>Asignar Productos a la Lista</DialogTitle>
           <DialogDescription>
-            Selecciona productos para asignar. Se añadirán con su precio base como referencia, que puedes editar después.
+            Selecciona los productos para agregar a esta lista. Se añadirán con precio $0, que deberás editar.
           </DialogDescription>
         </DialogHeader>
         {isLoading ? (
@@ -236,7 +232,6 @@ export function AssignProductToPriceListDialog({
                                       <p>{product.name}</p>
                                       <p className="text-xs text-muted-foreground">{product.category}</p>
                                     </div>
-                                    <div><Badge variant="outline">{formatCurrency(product.base_price)}</Badge></div>
                                   </label>
                                 </FormItem>
                               )}

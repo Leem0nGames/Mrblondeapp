@@ -76,10 +76,6 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
     });
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
-  }
-  
   if (products.length === 0) {
     return <>{emptyState}</>;
   }
@@ -109,7 +105,7 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-lg font-bold">{formatCurrency(product.base_price)}</p>
+                <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
             </CardContent>
              <CardFooter className="flex justify-end gap-2">
                  <EntityDialog formConfig={productFormConfig} entity={product}>
@@ -160,7 +156,7 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
                 </TableHead>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Categoría</TableHead>
-                <TableHead>Precio Base</TableHead>
+                <TableHead>Descripción</TableHead>
                 <TableHead>Creado el</TableHead>
                 <TableHead>
                   <span className="sr-only">Acciones</span>
@@ -184,8 +180,8 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
                   <TableCell>
                     {product.category ? <div><Badge variant="outline">{product.category}</Badge></div> : <span className="text-muted-foreground">N/A</span>}
                   </TableCell>
-                  <TableCell>
-                    {formatCurrency(product.base_price)}
+                   <TableCell className="text-sm text-muted-foreground truncate max-w-xs">
+                    {product.description}
                   </TableCell>
                   <TableCell>
                     {formatDate(product.created_at)}

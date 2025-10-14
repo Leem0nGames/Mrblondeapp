@@ -6,7 +6,6 @@ export type Product = {
   id: string;
   name: string;
   description: string | null;
-  base_price: number;
   category: string | null;
   created_at: string;
 };

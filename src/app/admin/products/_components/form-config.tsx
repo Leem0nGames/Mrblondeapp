@@ -12,7 +12,6 @@ import type { FormConfig } from "../../_components/entity-dialog";
 const productSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
   description: z.string().optional(),
-  base_price: z.coerce.number().min(0, "El precio debe ser un número positivo"),
   category: z.string().optional(),
 });
 
@@ -20,7 +19,6 @@ const productSchema = z.object({
 const getProductDefaultValues = (product?: any) => ({
   name: product?.name ?? "",
   description: product?.description ?? "",
-  base_price: product?.base_price ?? 0,
   category: product?.category ?? "",
 });
 
@@ -53,34 +51,19 @@ const renderProductFields = (form: any) => (
         </FormItem>
       )}
     />
-     <div className="grid grid-cols-2 gap-4">
-      <FormField
-        control={form.control}
-        name="base_price"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Precio Base</FormLabel>
-            <FormControl>
-              <Input type="number" step="0.01" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-       <FormField
-        control={form.control}
-        name="category"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Categoría</FormLabel>
-            <FormControl>
-              <Input placeholder="e.g., Ceras, Shampoos" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    </div>
+     <FormField
+      control={form.control}
+      name="category"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Categoría</FormLabel>
+          <FormControl>
+            <Input placeholder="e.g., Ceras, Shampoos" {...field} />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   </>
 );
 
