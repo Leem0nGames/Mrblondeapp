@@ -7,6 +7,7 @@ import { FileText, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EntityDialog } from "../_components/entity-dialog";
 import { agreementFormConfig } from "./_components/form-config";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default async function AgreementsPage() {
   const { data: agreements, error } = await getAgreements();
@@ -46,7 +47,9 @@ export default async function AgreementsPage() {
             </Button>
         </EntityDialog>
       </PageHeader>
-      <AgreementsTable agreements={agreements ?? []} emptyState={emptyState} />
+      <TooltipProvider>
+        <AgreementsTable agreements={agreements ?? []} emptyState={emptyState} />
+      </TooltipProvider>
     </div>
   );
 }
