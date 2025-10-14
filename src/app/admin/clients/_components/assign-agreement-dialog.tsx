@@ -33,7 +33,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { getAgreements, assignAgreementToClient } from "@/app/actions/admin.actions";
+import { getAgreements, assignAgreementToClient } from "@/app/admin/actions/admin.actions";
 import type { Client, AgreementWithCount, Agreement } from "@/types";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { agreementFormConfig } from "../../agreements/_components/form-config";

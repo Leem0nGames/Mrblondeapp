@@ -1,7 +1,7 @@
 
 import Link from "next/link";
 import { FileWarning } from "lucide-react";
-import { getAgreementById, getClientById, getClientStats, getClientOrders } from "@/app/actions/admin.actions";
+import { getAgreementById, getClientById, getClientStats, getClientOrders } from "@/app/admin/actions/admin.actions";
 import { Button } from "@/components/ui/button";
 import { ClientDetailsClient } from "./_components/client-details-client";
 

@@ -1,7 +1,7 @@
 
 import { Landmark, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getSalesConditions } from "@/app/actions/admin.actions";
+import { getSalesConditions } from "@/app/admin/actions/admin.actions";
 import SalesConditionsTable from "./_components/sales-conditions-table";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";

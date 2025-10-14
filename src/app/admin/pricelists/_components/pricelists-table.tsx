@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { deletePriceList } from "@/app/actions/admin.actions";
+import { deletePriceList } from "@/app/admin/actions/admin.actions";
 import type { PriceList } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { EntityDialog } from "../../_components/entity-dialog";

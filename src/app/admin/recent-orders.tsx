@@ -6,7 +6,7 @@ import type { Order } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
-import { completeOrder } from "@/app/actions/admin.actions";
+import { completeOrder } from "@/app/admin/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 

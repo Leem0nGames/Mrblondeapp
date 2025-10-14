@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/table";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { unassignProductFromPriceList } from "@/app/actions/admin.actions";
+import { unassignProductFromPriceList } from "@/app/admin/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { PriceListItemEditDialog } from "./edit-price-dialog";
 import { getImageUrl } from "@/lib/placeholder-images";

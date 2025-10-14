@@ -2,7 +2,7 @@
 "use client";
 
 import { z } from "zod";
-import { upsertPromotion } from "@/app/actions/admin.actions";
+import { upsertPromotion } from "@/app/admin/actions/admin.actions";
 import type { FormConfig } from "../../_components/entity-dialog";
 import { PromotionFormFields } from "./promotion-form-fields";
 

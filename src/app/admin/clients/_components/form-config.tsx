@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { upsertClient, getAgreements } from "@/app/actions/admin.actions";
+import { getAgreements } from "@/app/admin/actions/admin.actions";
 import type { FormConfig } from "../../_components/entity-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
@@ -99,7 +99,7 @@ const RenderClientFields = ({ form }: { form: any }) => {
 export const clientFormConfig: FormConfig<typeof clientSchema> = {
     entityName: "Cliente",
     schema: clientSchema,
-    upsertAction: (values) => upsertClient(values),
+    upsertAction: (values) => { throw new Error("Upsert client not implemented via this form") },
     getDefaultValues: getClientDefaultValues,
     renderFields: (form: any) => <RenderClientFields form={form} />,
 };

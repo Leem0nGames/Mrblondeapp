@@ -153,7 +153,7 @@ export async function getOrderPageData(agreementId: string) {
         .filter('products.id', 'is', 'not.null'); // Ensure we only get items with valid products
 
     if (itemsError) {
-        console.error("getOrderPageData (items) error:", itemsError?.message);
+        console.error("getOrderPageData (items) error:", itemsError.message);
         return { data: null, error: { message: "No se pudieron cargar los productos para este convenio." } };
     }
 
@@ -307,7 +307,7 @@ export async function submitOrder(payload: {
     const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
 
     if (itemsError) {
-        console.error("submitOrder (items) error:", itemsError?.message);
+        console.error("submitOrder (items) error:", itemsError.message);
         // We should probably delete the order we just created for consistency
         await supabase.from('orders').delete().eq('id', order.id);
         return { error: { message: "No se pudieron guardar los productos del pedido." } };

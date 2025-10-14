@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { MoreHorizontal, Trash2, Edit } from "lucide-react";
@@ -43,7 +42,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Product } from "@/types";
-import { deleteProduct } from "@/app/actions/admin.actions";
+import { deleteProduct } from "@/app/admin/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
 import { getImageUrl } from "@/lib/placeholder-images";

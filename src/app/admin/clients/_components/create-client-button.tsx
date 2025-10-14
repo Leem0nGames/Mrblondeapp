@@ -4,7 +4,7 @@
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { createPlaceholderClient } from "@/app/actions/admin.actions";
+import { createPlaceholderClient } from "@/app/admin/actions/admin.actions";
 import { PlusCircle } from "lucide-react";
 
 export function CreateClientButton() {

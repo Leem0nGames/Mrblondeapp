@@ -1,5 +1,5 @@
 
-import { getClientsWithPendingAgreements, getDashboardStats, getPendingOrders } from "@/app/actions/admin.actions";
+import { getClientsWithPendingAgreements, getDashboardStats, getPendingOrders } from "@/app/admin/actions/admin.actions";
 import { PageHeader } from "@/components/shared/page-header";
 import { 
     Card,

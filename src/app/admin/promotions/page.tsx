@@ -1,7 +1,7 @@
 
 import { Percent, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getPromotions } from "@/app/actions/admin.actions";
+import { getPromotions } from "@/app/admin/actions/admin.actions";
 import PromotionsTable from "./_components/promotions-table";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
