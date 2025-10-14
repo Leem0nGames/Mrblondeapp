@@ -1,376 +1,347 @@
 
--- 📜 Supabase Schema: Blonde Orders
--- Versión: 1.5
--- Este script es IDEMPOTENTE. Puedes ejecutarlo de forma segura en cualquier momento.
--- Se encarga de limpiar y reconfigurar las tablas, vistas y funciones.
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+-- SCHEMAS, EXTENSIONS, and TYPES
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- -----------------------------------------------------------------------------
--- 1. EXTENSIONES Y CONFIGURACIONES INICIALES
--- -----------------------------------------------------------------------------
+-- Enum for client type in agreements
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'client_type_enum') THEN
+        CREATE TYPE public.client_type_enum AS ENUM ('barberia', 'distribuidor', 'especial');
+    END IF;
+END $$;
 
--- Habilitar extensiones necesarias
-create extension if not exists "uuid-ossp" with schema "extensions";
+-- Enum for client status
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'client_status_enum') THEN
+        CREATE TYPE public.client_status_enum AS ENUM ('pending_onboarding', 'pending_agreement', 'active', 'archived');
+    END IF;
+END $$;
 
--- -----------------------------------------------------------------------------
--- 2. LIMPIEZA INICIAL (DROP EVERYTHING)
--- -----------------------------------------------------------------------------
+-- Enum for order status
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status_enum') THEN
+        CREATE TYPE public.order_status_enum AS ENUM ('pending', 'completed');
+    END IF;
+END $$;
 
--- Deshabilitar notificaciones para evitar errores en cascada durante el borrado
-alter table if exists "public"."products" drop constraint if exists "products_pkey";
-alter table if exists "public"."price_lists" drop constraint if exists "price_lists_pkey";
-alter table if exists "public"."price_list_items" drop constraint if exists "price_list_items_pkey";
-alter table if exists "public"."promotions" drop constraint if exists "promotions_pkey";
-alter table if exists "public"."sales_conditions" drop constraint if exists "sales_conditions_pkey";
-alter table if exists "public"."agreements" drop constraint if exists "agreements_pkey";
-alter table if exists "public"."clients" drop constraint if exists "clients_pkey";
-alter table if exists "public"."orders" drop constraint if exists "orders_pkey";
-
--- Borrar vistas
-drop view if exists public.agreements_with_counts;
-drop view if exists public.dashboard_stats;
-
--- Borrar funciones
-drop function if exists public.get_client_stats(uuid);
-drop function if exists public.increment_total_revenue(numeric);
-drop function if exists public.handle_new_user();
-
-
--- Borrar tablas en orden de dependencia inversa
-drop table if exists public.order_items;
-drop table if exists public.orders;
-drop table if exists public.agreement_promotions;
-drop table if exists public.agreement_sales_conditions;
-drop table if exists public.price_list_items;
-drop table if exists public.clients;
-drop table if exists public.agreements;
-drop table if exists public.price_lists;
-drop table if exists public.promotions;
-drop table if exists public.sales_conditions;
-drop table if exists public.products;
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+-- DROP EXISTING OBJECTS (Idempotent Script)
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+-- Drop views, functions, and tables with CASCADE to handle dependencies automatically.
+-- This makes the script more robust.
+DROP VIEW IF EXISTS public.agreements_with_counts;
+DROP VIEW IF EXISTS public.dashboard_stats;
+DROP FUNCTION IF EXISTS public.get_client_stats(uuid);
+DROP FUNCTION IF EXISTS public.increment_total_revenue(numeric);
+DROP TABLE IF EXISTS public.order_items CASCADE;
+DROP TABLE IF EXISTS public.orders CASCADE;
+DROP TABLE IF EXISTS public.agreement_promotions CASCADE;
+DROP TABLE IF EXISTS public.agreement_sales_conditions CASCADE;
+DROP TABLE IF EXISTS public.price_list_items CASCADE;
+DROP TABLE IF EXISTS public.clients CASCADE;
+DROP TABLE IF EXISTS public.agreements CASCADE;
+DROP TABLE IF EXISTS public.promotions CASCADE;
+DROP TABLE IF EXISTS public.sales_conditions CASCADE;
+DROP TABLE IF EXISTS public.price_lists CASCADE;
+DROP TABLE IF EXISTS public.products CASCADE;
+DROP TABLE IF EXISTS public.schema_migrations CASCADE;
 
 
--- -----------------------------------------------------------------------------
--- 3. CREACIÓN DE TABLAS
--- -----------------------------------------------------------------------------
-
--- Tabla de Productos
-create table public.products (
-    id uuid default extensions.uuid_generate_v4() not null primary key,
-    name character varying not null,
-    description text,
-    category character varying,
-    image_url text,
-    created_at timestamp with time zone default now() not null
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+-- TABLE: PRODUCTS
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+CREATE TABLE public.products (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    description TEXT,
+    category TEXT,
+    image_url TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-comment on table public.products is 'Catálogo de todos los productos disponibles.';
+COMMENT ON TABLE public.products IS 'Catalogs all products offered.';
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 
--- Tabla de Promociones
-create table public.promotions (
-    id uuid default extensions.uuid_generate_v4() not null primary key,
-    name character varying not null,
-    description text,
-    rules jsonb,
-    created_at timestamp with time zone default now() not null
+
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+-- TABLE: PRICE LISTS & ITEMS
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+CREATE TABLE public.price_lists (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL UNIQUE,
+    prices_include_vat BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-comment on table public.promotions is 'Define promociones reutilizables (ej. 8+2, envío gratis).';
+COMMENT ON TABLE public.price_lists IS 'Reusable price lists for different agreements.';
+ALTER TABLE public.price_lists ENABLE ROW LEVEL SECURITY;
 
--- Tabla de Condiciones de Venta
-create table public.sales_conditions (
-    id uuid default extensions.uuid_generate_v4() not null primary key,
-    name character varying not null,
-    description text,
-    rules jsonb,
-    created_at timestamp with time zone default now() not null
+CREATE TABLE public.price_list_items (
+    price_list_id UUID NOT NULL REFERENCES public.price_lists(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+    price NUMERIC(10, 2) NOT NULL,
+    volume_price NUMERIC(10, 2),
+    PRIMARY KEY (price_list_id, product_id)
 );
-comment on table public.sales_conditions is 'Define condiciones comerciales (ej. pago a 30 días, descuento).';
+COMMENT ON TABLE public.price_list_items IS 'Defines the price of a product in a specific price list.';
+ALTER TABLE public.price_list_items ENABLE ROW LEVEL SECURITY;
 
 
--- Tabla de Listas de Precios
-create table public.price_lists (
-    id uuid default extensions.uuid_generate_v4() not null primary key,
-    name character varying not null unique,
-    prices_include_vat boolean default true not null,
-    created_at timestamp with time zone default now() not null
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+-- TABLE: PROMOTIONS & SALES CONDITIONS
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+CREATE TABLE public.promotions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    rules JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-comment on table public.price_lists is 'Contenedores para diferentes listas de precios (ej. Precios Minorista, Precios Mayorista).';
+COMMENT ON TABLE public.promotions IS 'Reusable promotions like "Buy X, Get Y Free".';
+ALTER TABLE public.promotions ENABLE ROW LEVEL SECURITY;
 
--- Tabla de Items de Listas de Precios (pivote)
-create table public.price_list_items (
-    price_list_id uuid not null references public.price_lists(id) on delete cascade,
-    product_id uuid not null references public.products(id) on delete cascade,
-    price numeric(10, 2) not null,
-    volume_price numeric(10,2),
-    primary key (price_list_id, product_id)
+CREATE TABLE public.sales_conditions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    rules JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-comment on table public.price_list_items is 'Asigna un precio específico a un producto dentro de una lista.';
+COMMENT ON TABLE public.sales_conditions IS 'Reusable sales conditions like payment terms.';
+ALTER TABLE public.sales_conditions ENABLE ROW LEVEL SECURITY;
 
 
--- Tabla de Convenios
-create table public.agreements (
-    id uuid default extensions.uuid_generate_v4() not null primary key,
-    agreement_name character varying not null unique,
-    client_type public.client_type not null,
-    price_list_id uuid references public.price_lists(id) on delete set null,
-    created_at timestamp with time zone default now() not null
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+-- TABLE: AGREEMENTS
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+CREATE TABLE public.agreements (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    agreement_name TEXT NOT NULL UNIQUE,
+    client_type public.client_type_enum NOT NULL,
+    price_list_id UUID REFERENCES public.price_lists(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-comment on table public.agreements is 'Define las reglas comerciales para un grupo de clientes.';
+COMMENT ON TABLE public.agreements IS 'Defines a commercial agreement for a client type.';
+ALTER TABLE public.agreements ENABLE ROW LEVEL SECURITY;
 
 
--- Tabla de Clientes
-create table public.clients (
-    id uuid default extensions.uuid_generate_v4() not null primary key,
-    cuit character varying(11) unique,
-    contact_name text,
-    contact_dni text,
-    address text,
-    delivery_window text,
-    email character varying unique,
-    instagram text,
-    status public.client_status default 'pending_onboarding'::public.client_status not null,
-    onboarding_token uuid default extensions.uuid_generate_v4() not null unique,
-    agreement_id uuid references public.agreements(id) on delete set null,
-    created_at timestamp with time zone default now() not null,
-    fiscal_status text
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+-- JUNCTION TABLES FOR AGREEMENTS
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+CREATE TABLE public.agreement_promotions (
+    agreement_id UUID NOT NULL REFERENCES public.agreements(id) ON DELETE CASCADE,
+    promotion_id UUID NOT NULL REFERENCES public.promotions(id) ON DELETE CASCADE,
+    PRIMARY KEY (agreement_id, promotion_id)
 );
-comment on table public.clients is 'Almacena la información de los clientes y su estado.';
+ALTER TABLE public.agreement_promotions ENABLE ROW LEVEL SECURITY;
 
-
--- Tabla de Pedidos
-create table public.orders (
-    id uuid default extensions.uuid_generate_v4() not null primary key,
-    client_id uuid not null references public.clients(id) on delete restrict,
-    agreement_id uuid not null references public.agreements(id) on delete restrict,
-    created_at timestamp with time zone default now() not null,
-    total_amount numeric(10, 2) not null,
-    status public.order_status default 'pending'::public.order_status not null,
-    client_name_cache text not null
+CREATE TABLE public.agreement_sales_conditions (
+    agreement_id UUID NOT NULL REFERENCES public.agreements(id) ON DELETE CASCADE,
+    sales_condition_id UUID NOT NULL REFERENCES public.sales_conditions(id) ON DELETE CASCADE,
+    PRIMARY KEY (agreement_id, sales_condition_id)
 );
-comment on table public.orders is 'Registra cada pedido realizado.';
+ALTER TABLE public.agreement_sales_conditions ENABLE ROW LEVEL SECURITY;
 
 
--- Tabla de Items de Pedido (pivote)
-create table public.order_items (
-    id bigint generated by default as identity not null primary key,
-    order_id uuid not null references public.orders(id) on delete cascade,
-    product_id uuid not null references public.products(id) on delete restrict,
-    quantity integer not null,
-    price_per_unit numeric(10, 2) not null
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+-- TABLE: CLIENTS
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+CREATE TABLE public.clients (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    cuit TEXT UNIQUE,
+    contact_name TEXT,
+    contact_dni TEXT,
+    address TEXT,
+    delivery_window TEXT,
+    email TEXT UNIQUE,
+    instagram TEXT,
+    fiscal_status TEXT,
+    status public.client_status_enum NOT NULL DEFAULT 'pending_onboarding',
+    onboarding_token UUID NOT NULL DEFAULT uuid_generate_v4(),
+    agreement_id UUID REFERENCES public.agreements(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-comment on table public.order_items is 'Detalle de los productos en cada pedido.';
+COMMENT ON TABLE public.clients IS 'Stores information about each client.';
+ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
+CREATE INDEX idx_clients_status ON public.clients(status);
 
 
--- Tabla pivote: Convenios y Promociones
-create table public.agreement_promotions (
-    agreement_id uuid not null references public.agreements(id) on delete cascade,
-    promotion_id uuid not null references public.promotions(id) on delete cascade,
-    primary key (agreement_id, promotion_id)
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+-- TABLE: ORDERS & ITEMS
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+CREATE TABLE public.orders (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    client_id UUID NOT NULL REFERENCES public.clients(id) ON DELETE RESTRICT,
+    agreement_id UUID NOT NULL REFERENCES public.agreements(id) ON DELETE RESTRICT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    total_amount NUMERIC(10, 2) NOT NULL,
+    status public.order_status_enum NOT NULL DEFAULT 'pending',
+    client_name_cache TEXT NOT NULL
 );
-comment on table public.agreement_promotions is 'Asigna promociones a un convenio.';
+COMMENT ON TABLE public.orders IS 'Represents an order placed by a client.';
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+CREATE INDEX idx_orders_status ON public.orders(status);
 
-
--- Tabla pivote: Convenios y Condiciones de Venta
-create table public.agreement_sales_conditions (
-    agreement_id uuid not null references public.agreements(id) on delete cascade,
-    sales_condition_id uuid not null references public.sales_conditions(id) on delete cascade,
-    primary key (agreement_id, sales_condition_id)
+CREATE TABLE public.order_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE RESTRICT,
+    quantity INTEGER NOT NULL,
+    price_per_unit NUMERIC(10, 2) NOT NULL
 );
-comment on table public.agreement_sales_conditions is 'Asigna condiciones de venta a un convenio.';
+COMMENT ON TABLE public.order_items IS 'Details each product within an order.';
+ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 
 
--- -----------------------------------------------------------------------------
--- 4. CREACIÓN DE VISTAS
--- -----------------------------------------------------------------------------
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+-- VIEWS
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+CREATE OR REPLACE VIEW public.agreements_with_counts AS
+SELECT 
+    a.*,
+    (SELECT COUNT(*) FROM public.agreement_promotions ap WHERE ap.agreement_id = a.id) as promotion_count,
+    (SELECT COUNT(*) FROM public.agreement_sales_conditions asc WHERE asc.agreement_id = a.id) as sales_condition_count
+FROM public.agreements a;
 
--- Vista para obtener convenios con conteo de promociones y condiciones
-create or replace view public.agreements_with_counts as
-select
-    a.id,
-    a.agreement_name,
-    a.client_type,
-    a.price_list_id,
-    a.created_at,
-    (select count(*) from public.agreement_promotions where agreement_id = a.id) as promotion_count,
-    (select count(*) from public.agreement_sales_conditions where agreement_id = a.id) as sales_condition_count
-from
-    public.agreements a;
+CREATE OR REPLACE VIEW public.dashboard_stats AS
+SELECT 
+    (SELECT COALESCE(SUM(total_amount), 0) FROM public.orders WHERE status = 'completed') as total_revenue,
+    (SELECT COALESCE(SUM(total_amount), 0) FROM public.orders WHERE status = 'completed' AND created_at >= date_trunc('month', NOW())) as month_revenue,
+    (SELECT COUNT(*) FROM public.clients WHERE status = 'active') as active_clients;
 
--- Vista para estadísticas del Dashboard
-create or replace view public.dashboard_stats as
-select
-    (select coalesce(sum(total_amount), 0) from public.orders where status = 'completed') as total_revenue,
-    (select coalesce(sum(total_amount), 0) from public.orders where status = 'completed' and created_at >= date_trunc('month', current_date)) as month_revenue,
-    (select count(*) from public.clients where status = 'active') as active_clients;
-    
 
--- -----------------------------------------------------------------------------
--- 5. CREACIÓN DE FUNCIONES (RPC)
--- -----------------------------------------------------------------------------
-
--- Función para obtener estadísticas de un cliente específico
-create or replace function public.get_client_stats(p_client_id uuid)
-returns table(total_spent numeric, average_order_value numeric, total_orders bigint)
-language sql
-security definer
-as $$
-    select
-        coalesce(sum(o.total_amount), 0) as total_spent,
-        coalesce(avg(o.total_amount), 0) as average_order_value,
-        count(o.id) as total_orders
-    from public.orders as o
-    where o.client_id = p_client_id and o.status = 'completed';
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+-- DATABASE FUNCTIONS (RPC)
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+CREATE OR REPLACE FUNCTION public.get_client_stats(p_client_id uuid)
+RETURNS TABLE(total_spent numeric, average_order_value numeric, total_orders bigint)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        COALESCE(SUM(o.total_amount), 0) AS total_spent,
+        COALESCE(AVG(o.total_amount), 0) AS average_order_value,
+        COUNT(o.id) AS total_orders
+    FROM
+        public.orders o
+    WHERE
+        o.client_id = p_client_id AND o.status = 'completed';
+END;
 $$;
 
 
--- Función para incrementar el total de ingresos de forma segura
-create or replace function public.increment_total_revenue(amount_to_add numeric)
-returns void
-language sql
-security definer
-as $$
-    -- Esta función es un placeholder. En una app real, se usaría un método
-    -- más robusto para actualizar estadísticas, como una tabla separada o
-    -- un trigger que actualice una vista materializada.
-    -- La vista dashboard_stats se recalculará en la próxima lectura.
+-- This function is not used in the app, but is an example of how to securely increment values.
+CREATE OR REPLACE FUNCTION public.increment_total_revenue(amount_to_add numeric)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- This function is a placeholder. In a real app, you would update an aggregated statistics table.
+  -- For this demo, the dashboard_stats view calculates this on the fly.
+  -- Example of what it could do:
+  -- UPDATE public.stats_table SET total_revenue = total_revenue + amount_to_add;
+END;
 $$;
 
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+-- STORAGE
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+-- Create a bucket for product images
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('product_images', 'product_images', TRUE)
+ON CONFLICT (id) DO UPDATE SET public = TRUE;
 
--- -----------------------------------------------------------------------------
--- 6. POLÍTICAS DE SEGURIDAD (RLS)
--- -----------------------------------------------------------------------------
+-- Create policies for the product_images bucket
+-- Allow public read access
+CREATE POLICY "Public read access for product images"
+ON storage.objects FOR SELECT
+USING ( bucket_id = 'product_images' );
 
--- Habilitar RLS en todas las tablas
-alter table public.products enable row level security;
-alter table public.promotions enable row level security;
-alter table public.sales_conditions enable row level security;
-alter table public.price_lists enable row level security;
-alter table public.price_list_items enable row level security;
-alter table public.agreements enable row level security;
-alter table public.clients enable row level security;
-alter table public.orders enable row level security;
-alter table public.order_items enable row level security;
-alter table public.agreement_promotions enable row level security;
-alter table public.agreement_sales_conditions enable row level security;
+-- Allow authenticated users to upload, update, delete
+CREATE POLICY "Authenticated users can manage product images"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK ( bucket_id = 'product_images' );
+
+CREATE POLICY "Authenticated users can update product images"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING ( bucket_id = 'product_images' );
+
+CREATE POLICY "Authenticated users can delete product images"
+ON storage.objects FOR DELETE
+TO authenticated
+USING ( bucket_id = 'product_images' );
 
 
--- Políticas para usuarios autenticados (administradores)
-create policy "Allow all access to authenticated users"
-on public.products for all
-to authenticated using (true) with check (true);
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+-- ROW LEVEL SECURITY (RLS)
+-- ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+-- Policies for 'products' table
+CREATE POLICY "Allow public read-only access to products"
+ON public.products FOR SELECT USING (true);
+CREATE POLICY "Allow admin full access to products"
+ON public.products FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
-create policy "Allow all access to authenticated users"
-on public.promotions for all
-to authenticated using (true) with check (true);
+-- Policies for 'price_lists' table
+CREATE POLICY "Allow public read-only access to price_lists"
+ON public.price_lists FOR SELECT USING (true);
+CREATE POLICY "Allow admin full access to price_lists"
+ON public.price_lists FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
-create policy "Allow all access to authenticated users"
-on public.sales_conditions for all
-to authenticated using (true) with check (true);
+-- Policies for 'price_list_items' table
+CREATE POLICY "Allow public read-only access to price_list_items"
+ON public.price_list_items FOR SELECT USING (true);
+CREATE POLICY "Allow admin full access to price_list_items"
+ON public.price_list_items FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
-create policy "Allow all access to authenticated users"
-on public.price_lists for all
-to authenticated using (true) with check (true);
+-- Policies for 'promotions' table
+CREATE POLICY "Allow public read-only access to promotions"
+ON public.promotions FOR SELECT USING (true);
+CREATE POLICY "Allow admin full access to promotions"
+ON public.promotions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
-create policy "Allow all access to authenticated users"
-on public.price_list_items for all
-to authenticated using (true) with check (true);
+-- Policies for 'sales_conditions' table
+CREATE POLICY "Allow public read-only access to sales_conditions"
+ON public.sales_conditions FOR SELECT USING (true);
+CREATE POLICY "Allow admin full access to sales_conditions"
+ON public.sales_conditions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
-create policy "Allow all access to authenticated users"
-on public.agreements for all
-to authenticated using (true) with check (true);
+-- Policies for 'agreements' table
+CREATE POLICY "Allow public read-only access to agreements"
+ON public.agreements FOR SELECT USING (true);
+CREATE POLICY "Allow admin full access to agreements"
+ON public.agreements FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
-create policy "Allow all access to authenticated users"
-on public.clients for all
-to authenticated using (true) with check (true);
+-- Policies for 'agreement_promotions' table
+CREATE POLICY "Allow public read-only access to agreement_promotions"
+ON public.agreement_promotions FOR SELECT USING (true);
+CREATE POLICY "Allow admin full access to agreement_promotions"
+ON public.agreement_promotions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
-create policy "Allow all access to authenticated users"
-on public.orders for all
-to authenticated using (true) with check (true);
+-- Policies for 'agreement_sales_conditions' table
+CREATE POLICY "Allow public read-only access to agreement_sales_conditions"
+ON public.agreement_sales_conditions FOR SELECT USING (true);
+CREATE POLICY "Allow admin full access to agreement_sales_conditions"
+ON public.agreement_sales_conditions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
-create policy "Allow all access to authenticated users"
-on public.order_items for all
-to authenticated using (true) with check (true);
+-- Policies for 'clients' table
+CREATE POLICY "Allow public read access to certain client data based on token"
+ON public.clients FOR SELECT USING (onboarding_token::text = current_setting('request.headers', true)::json->>'x-onboarding-token');
+CREATE POLICY "Allow public update access for onboarding"
+ON public.clients FOR UPDATE USING (onboarding_token::text = current_setting('request.headers', true)::json->>'x-onboarding-token');
+CREATE POLICY "Allow admin full access to clients"
+ON public.clients FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
-create policy "Allow all access to authenticated users"
-on public.agreement_promotions for all
-to authenticated using (true) with check (true);
+-- Policies for 'orders' table
+CREATE POLICY "Allow admin full access to orders"
+ON public.orders FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow anonymous user to insert their own order"
+ON public.orders FOR INSERT WITH CHECK (true);
 
-create policy "Allow all access to authenticated users"
-on public.agreement_sales_conditions for all
-to authenticated using (true) with check (true);
-
--- Políticas para acceso anónimo (público) - MUY RESTRINGIDO
--- Solo se permite leer datos necesarios para la página de pedido y onboarding.
-
-create policy "Allow public read access for order page"
-on public.agreements for select
-to anon using (true);
-
-create policy "Allow public read access for order page"
-on public.price_lists for select
-to anon using (true);
-
-create policy "Allow public read access for order page"
-on public.price_list_items for select
-to anon using (true);
-
-create policy "Allow public read access for order page"
-on public.products for select
-to anon using (true);
-
-create policy "Allow public read access for order page"
-on public.agreement_promotions for select
-to anon using (true);
-
-create policy "Allow public read access for order page"
-on public.promotions for select
-to anon using (true);
-
-create policy "Allow public read for onboarding by token"
-on public.clients for select
-to anon using (onboarding_token = (current_setting('request.jwt.claims', true)::jsonb ->> 'token')::uuid);
-
-create policy "Allow public update for onboarding form"
-on public.clients for update
-to anon using (onboarding_token = (current_setting('request.jwt.claims', true)::jsonb ->> 'token')::uuid) with check (onboarding_token = (current_setting('request.jwt.claims', true)::jsonb ->> 'token')::uuid);
-
-create policy "Allow public insert for orders"
-on public.orders for insert
-to anon with check (true);
-
-create policy "Allow public insert for order items"
-on public.order_items for insert
-to anon with check (true);
-
--- -----------------------------------------------------------------------------
--- 7. CONFIGURACIÓN DE ALMACENAMIENTO (STORAGE)
--- -----------------------------------------------------------------------------
-
--- Crear bucket para imágenes de productos si no existe
-insert into storage.buckets (id, name, public)
-values ('product_images', 'product_images', true)
-on conflict (id) do update set public = true;
-
--- Políticas de acceso para el bucket de imágenes
--- Permitir lectura pública de imágenes
-create policy "Allow public read access"
-on storage.objects for select
-using ( bucket_id = 'product_images' );
-
--- Permitir a los administradores subir imágenes
-create policy "Allow authenticated users to upload"
-on storage.objects for insert
-to authenticated
-with check ( bucket_id = 'product_images' );
-
--- Permitir a los administradores actualizar/eliminar sus propias imágenes
-create policy "Allow authenticated users to update/delete their images"
-on storage.objects for update
-to authenticated
-using ( auth.uid() = owner and bucket_id = 'product_images' );
-
-create policy "Allow authenticated users to delete their images"
-on storage.objects for delete
-to authenticated
-using ( auth.uid() = owner and bucket_id = 'product_images' );
-
--- Mensaje final
-select 'Blonde Orders schema v1.5 loaded successfully.' as status;
+-- Policies for 'order_items' table
+CREATE POLICY "Allow admin full access to order_items"
+ON public.order_items FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow anonymous user to insert their own order items"
+ON public.order_items FOR INSERT WITH CHECK (true);
