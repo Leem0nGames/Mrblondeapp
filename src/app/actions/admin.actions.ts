@@ -1,27 +1,10 @@
 
+
 "use server";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { Product, Agreement, Promotion, DetailedAgreement, AgreementWithCount, Client, PriceList, DetailedPriceList, PriceListItem, DashboardStats, Order, SalesCondition, ClientStats } from "@/types";
-
-type UpsertProductPayload = Omit<Product, "id" | "created_at"> & {
-  id?: string;
-};
-
-type UpsertAgreementPayload = Pick<Agreement, "agreement_name" | "client_type" | "price_list_id"> & {
-  id?: string;
-};
-
-type UpsertPromotionPayload = Omit<Promotion, "id" | "created_at" | "rules"> & {
-  id?: string;
-  rules: any;
-};
-
-type UpsertSalesConditionPayload = Omit<SalesCondition, "id" | "created_at" | "rules"> & {
-  id?: string;
-  rules: any;
-};
 
 // --- Generic Helpers ---
 
@@ -87,8 +70,59 @@ export async function getProducts() {
   return { data, error };
 }
 
-export async function upsertProduct(payload: UpsertProductPayload) {
-  return await upsertEntity("products", payload, ["/admin/products"]);
+export async function upsertProduct(formData: FormData) {
+  const supabase = await getSupabaseClientWithAuth();
+  const id = formData.get('id') as string | null;
+  const name = formData.get('name') as string;
+  const description = formData.get('description') as string | null;
+  const category = formData.get('category') as string | null;
+  const imageFile = formData.get('image') as File | null;
+  const image_url = formData.get('image_url') as string | null;
+  
+  let finalImageUrl = image_url;
+
+  if (imageFile && imageFile.size > 0) {
+    const fileExt = imageFile.name.split('.').pop();
+    const fileName = `${id || crypto.randomUUID()}-${Date.now()}.${fileExt}`;
+    const filePath = `products/${fileName}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('product_images')
+      .upload(filePath, imageFile, { upsert: true });
+
+    if (uploadError) {
+      console.error("upsertProduct (upload) error:", uploadError.message);
+      return { data: null, error: { message: "Error al subir la imagen." } };
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('product_images')
+      .getPublicUrl(filePath);
+
+    finalImageUrl = publicUrlData.publicUrl;
+  }
+  
+  const productData = {
+      name,
+      description,
+      category,
+      image_url: finalImageUrl
+  };
+  
+  const query = supabase.from("products");
+  const { data: result, error } = id
+      ? await query.update(productData).eq("id", id).select().single()
+      : await query.insert(productData).select().single();
+
+  if (error) {
+      console.error(`upsertProduct error:`, error.message);
+      return { data: null, error };
+  }
+
+  revalidatePath("/admin/products");
+  revalidatePath("/admin/pricelists");
+  
+  return { data: result, error: null };
 }
 
 export async function deleteProduct(id: string) {
@@ -147,6 +181,9 @@ export async function getAgreementById(id: string): Promise<{ data: DetailedAgre
     return { data: detailedAgreement, error: null };
 }
 
+type UpsertAgreementPayload = Pick<Agreement, "agreement_name" | "client_type" | "price_list_id"> & {
+  id?: string;
+};
 
 export async function upsertAgreement(payload: UpsertAgreementPayload) {
   const result = await upsertEntity("agreements", payload, ["/admin/agreements", "/admin/clients"]);
@@ -172,6 +209,11 @@ export async function getPromotions() {
   return { data, error };
 }
 
+type UpsertPromotionPayload = Omit<Promotion, "id" | "created_at" | "rules"> & {
+  id?: string;
+  rules: any;
+};
+
 export async function upsertPromotion(payload: UpsertPromotionPayload) {
   return await upsertEntity("promotions", payload, ["/admin/promotions", "/admin/agreements"]);
 }
@@ -192,6 +234,11 @@ export async function getSalesConditions() {
   }
   return { data, error };
 }
+
+type UpsertSalesConditionPayload = Omit<SalesCondition, "id" | "created_at" | "rules"> & {
+  id?: string;
+  rules: any;
+};
 
 export async function upsertSalesCondition(payload: UpsertSalesConditionPayload) {
   return await upsertEntity("sales_conditions", payload, ["/admin/sales-conditions", "/admin/agreements"]);
@@ -491,8 +538,8 @@ export async function getPriceListById(id: string): Promise<{ data: DetailedPric
     return { data: detailedPriceList, error: null };
 }
 
-
-export async function upsertPriceList(payload: { name: string, prices_include_vat: boolean, id?: string }) {
+type UpsertPriceListPayload = { name: string, prices_include_vat: boolean, id?: string };
+export async function upsertPriceList(payload: UpsertPriceListPayload) {
   const result = await upsertEntity("price_lists", payload, ["/admin/pricelists"]);
    if (result.error && result.error.code === '23505') { // Unique constraint violation
       return { data: null, error: { ...result.error, message: `El nombre '${payload.name}' ya existe.` } };

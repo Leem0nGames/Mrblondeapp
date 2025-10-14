@@ -1,18 +1,22 @@
 
+
 "use client";
 
 import { z } from "zod";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { upsertProduct } from "@/app/actions/admin.actions";
 import type { FormConfig } from "../../_components/entity-dialog";
+import Image from "next/image";
+import { Label } from "@/components/ui/label";
 
 // 1. Esquema de validación para Producto
 const productSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
   description: z.string().optional(),
   category: z.string().optional(),
+  image: z.any().optional(),
 });
 
 // 2. Función para obtener los valores por defecto del formulario de Producto
@@ -20,11 +24,53 @@ const getProductDefaultValues = (product?: any) => ({
   name: product?.name ?? "",
   description: product?.description ?? "",
   category: product?.category ?? "",
+  image_url: product?.image_url ?? null,
+  image: undefined,
 });
 
 // 3. Función para renderizar los campos del formulario de Producto
-const renderProductFields = (form: any) => (
+const renderProductFields = (form: any) => {
+  const currentImageUrl = form.watch("image_url");
+
+  return (
   <>
+    <FormField
+        control={form.control}
+        name="image"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Imagen del Producto</FormLabel>
+            <FormControl>
+                <Input 
+                    type="file" 
+                    accept="image/png, image/jpeg, image/webp" 
+                    onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
+                />
+            </FormControl>
+            <FormDescription>
+                Sube una imagen para el producto (recomendado: formato cuadrado).
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+    {currentImageUrl && (
+        <div className="space-y-2">
+            <Label>Imagen Actual</Label>
+            <div className="relative w-24 h-24">
+                <Image 
+                    src={currentImageUrl}
+                    alt="Imagen actual del producto"
+                    fill
+                    className="rounded-md object-cover"
+                />
+            </div>
+            <p className="text-xs text-muted-foreground">
+                Sube una nueva imagen para reemplazar la actual.
+            </p>
+        </div>
+    )}
     <FormField
       control={form.control}
       name="name"
@@ -65,13 +111,26 @@ const renderProductFields = (form: any) => (
       )}
     />
   </>
-);
+)};
+
+
+// Wrapper action to convert form data for the server action
+const handleUpsertProduct = async (payload: z.infer<typeof productSchema> & { id?: string }) => {
+    const formData = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+            formData.append(key, value);
+        }
+    });
+
+    return upsertProduct(formData);
+}
 
 // 4. Configuración completa para el formulario de Producto
 export const productFormConfig: FormConfig<typeof productSchema> = {
   entityName: "Producto",
   schema: productSchema,
-  upsertAction: upsertProduct,
+  upsertAction: handleUpsertProduct,
   getDefaultValues: getProductDefaultValues,
   renderFields: renderProductFields,
 };

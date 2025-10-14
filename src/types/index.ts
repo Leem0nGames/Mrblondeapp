@@ -1,4 +1,5 @@
 
+
 // These types are manually created to match the Supabase schema.
 // For a more robust solution, you can use `supabase gen types typescript`.
 
@@ -7,6 +8,7 @@ export type Product = {
   name: string;
   description: string | null;
   category: string | null;
+  image_url: string | null;
   created_at: string;
 };
 

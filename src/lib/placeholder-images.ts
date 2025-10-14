@@ -16,7 +16,14 @@ const placeholderSources: Record<ImageType, (params: ImageParams) => string> = {
     summary_item: ({ id, width, height }) => `https://picsum.photos/seed/${id}/${width}/${height}`,
 }
 
-export function getImageUrl(type: ImageType, params: ImageParams): string {
+export function getImageUrl(
+    type: ImageType, 
+    params: ImageParams,
+    realImageUrl?: string | null
+): string {
+    if (realImageUrl) {
+        return realImageUrl;
+    }
     const sourceFn = placeholderSources[type];
     if (!sourceFn) {
         // Fallback for an unknown type
