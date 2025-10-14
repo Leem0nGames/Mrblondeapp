@@ -165,9 +165,13 @@ export async function getOrderPageData(agreementId: string) {
         .eq('status', 'active')
         .maybeSingle();
 
-    if (clientError || !client) {
-         console.error("getOrderPageData (client) error:", clientError?.message);
-        return { data: null, error: { message: "Este convenio no está asignado a ningún cliente activo." } };
+    if (clientError) {
+         console.error("getOrderPageData (client) error:", clientError.message);
+        return { data: null, error: { message: "Error al buscar el cliente para este convenio." } };
+    }
+
+    if (!client) {
+         return { data: null, error: { message: "Este convenio no está asignado a ningún cliente activo." } };
     }
     
     // 4. Format products and group them by category
@@ -314,3 +318,5 @@ export async function submitOrder(payload: {
 
     return { data: { orderId: order.id }, error: null };
 }
+
+      

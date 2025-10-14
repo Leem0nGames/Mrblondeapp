@@ -491,18 +491,15 @@ export async function assignAgreementToClient(payload: { clientId: string, agree
         return { error: { message: 'Client not found.' } };
     }
     
-    let newStatus = client.status;
-    // Only change status if it makes sense. If a client is pending onboarding, they stay that way
-    // even if an agreement is pre-assigned. They become active *after* onboarding.
-    if (client.status === 'pending_agreement' && !payload.agreementId) {
-        // This case is unlikely but handles removing an agreement before onboarding
-        newStatus = 'pending_agreement';
-    } else if (client.status === 'active' && !payload.agreementId) {
-        // An active client with their agreement removed goes back to pending
-        newStatus = 'pending_agreement';
-    } else if (client.status === 'pending_agreement' && payload.agreementId) {
-        // This client was waiting for an agreement, now they are active
-        newStatus = 'active';
+    let newStatus = client.status as Client['status'];
+    // If a client is pending onboarding, they stay that way even if an agreement is pre-assigned.
+    // They become active only after onboarding is submitted.
+    if (client.status !== 'pending_onboarding') {
+        if (payload.agreementId) {
+            newStatus = 'active'; // A client with an agreement is active
+        } else {
+            newStatus = 'pending_agreement'; // A client without an agreement is pending one
+        }
     }
 
 
@@ -769,3 +766,5 @@ export async function completeOrder(orderId: string, orderTotal: number) {
 }
 
     
+
+      
