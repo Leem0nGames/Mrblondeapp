@@ -4,7 +4,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Info, Landmark, ArrowLeft } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ClientHeader } from "./client-header";
 import { ClientInfo } from "./client-info";
