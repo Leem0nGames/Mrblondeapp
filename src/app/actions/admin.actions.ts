@@ -445,44 +445,42 @@ export async function getClientStats(clientId: string): Promise<{ data: ClientSt
     return { data, error: null };
 }
 
-type UpsertClientPayload = {
-    id?: string;
-    contact_name: string;
-    email: string;
-    agreement_id: string | null;
+export async function createPlaceholderClient(): Promise<{ data: Client | null, error: any }> {
+    const supabase = await getSupabaseClientWithAuth();
+    
+    // 1. Create a client with just the minimum required fields
+    const { data: client, error } = await supabase
+        .from('clients')
+        .insert({
+            status: 'pending_onboarding',
+            onboarding_token: crypto.randomUUID(),
+        })
+        .select('id, onboarding_token')
+        .single();
+
+    if (error || !client) {
+        console.error("createPlaceholderClient error:", error?.message);
+        return { data: null, error: { message: 'No se pudo crear el cliente.' } };
+    }
+
+    // 2. Update the client with a descriptive placeholder name
+    const placeholderName = `Cliente Pendiente #${client.id.slice(0, 4)}`;
+    const { data: updatedClient, error: updateError } = await supabase
+        .from('clients')
+        .update({ contact_name: placeholderName })
+        .eq('id', client.id)
+        .select()
+        .single();
+    
+    if (updateError) {
+        console.error("createPlaceholderClient (update) error:", updateError.message);
+        // If the update fails, we still have the client, but it's less descriptive.
+        // We'll proceed but log the error.
+    }
+
+    revalidatePath("/admin/clients");
+    return { data: updatedClient, error: null };
 }
-
-export async function upsertClient(payload: UpsertClientPayload) {
-    const revalidationPaths = ["/admin/clients"];
-    if (payload.id) {
-        revalidationPaths.push(`/admin/clients/${payload.id}`);
-    }
-
-    const { id, ...dataToUpsert } = payload;
-    const upsertData: Partial<Client> = {
-        ...dataToUpsert
-    };
-
-    // If an agreement is being assigned, but the client is still pending onboarding,
-    // we change their status to 'pending_agreement' so they stay in the main list.
-    // If no agreement is assigned, we don't touch the status.
-    if (!id) { // This is a new client
-        upsertData.status = payload.agreement_id ? 'pending_agreement' : 'pending_onboarding';
-    }
-
-    const result = await upsertEntity("clients", { id, ...upsertData }, revalidationPaths);
-
-    if (result.error && result.error.code === '23505') { // Unique constraint violation
-        if (result.error.message.includes('cuit')) {
-            return { data: null, error: { ...result.error, message: 'El CUIT ingresado ya está registrado.' }};
-        }
-        if (result.error.message.includes('email')) {
-            return { data: null, error: { ...result.error, message: 'El email ingresado ya está registrado.' }};
-        }
-    }
-    return result;
-}
-
 
 export async function assignAgreementToClient(payload: { clientId: string, agreementId: string | null }): Promise<{ error: any }> {
     const supabase = await getSupabaseClientWithAuth();
@@ -494,10 +492,17 @@ export async function assignAgreementToClient(payload: { clientId: string, agree
     }
     
     let newStatus = client.status;
-    if (client.status === 'pending_onboarding' && payload.agreementId) {
+    // Only change status if it makes sense. If a client is pending onboarding, they stay that way
+    // even if an agreement is pre-assigned. They become active *after* onboarding.
+    if (client.status === 'pending_agreement' && !payload.agreementId) {
+        // This case is unlikely but handles removing an agreement before onboarding
         newStatus = 'pending_agreement';
-    } else if (client.status !== 'pending_onboarding') {
-        newStatus = payload.agreementId ? 'active' : 'pending_agreement';
+    } else if (client.status === 'active' && !payload.agreementId) {
+        // An active client with their agreement removed goes back to pending
+        newStatus = 'pending_agreement';
+    } else if (client.status === 'pending_agreement' && payload.agreementId) {
+        // This client was waiting for an agreement, now they are active
+        newStatus = 'active';
     }
 
 

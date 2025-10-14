@@ -200,7 +200,7 @@ export async function submitOnboardingForm(payload: Omit<Client, 'id' | 'created
 
     const { data: existingClient, error: fetchError } = await supabase
         .from('clients')
-        .select('agreement_id')
+        .select('agreement_id, status')
         .eq('onboarding_token', onboarding_token)
         .single();
     
@@ -209,7 +209,10 @@ export async function submitOnboardingForm(payload: Omit<Client, 'id' | 'created
     }
 
     // Determine the new status after form submission
-    const newStatus = existingClient.agreement_id ? 'active' : 'pending_agreement';
+    let newStatus = existingClient.status;
+    if (existingClient.status === 'pending_onboarding') {
+        newStatus = existingClient.agreement_id ? 'active' : 'pending_agreement';
+    }
     
     const { error } = await supabase
         .from('clients')

@@ -19,14 +19,9 @@ export default async function ClientsPage() {
     <EmptyState
       icon={Users}
       title="No hay clientes"
-      description="Aún no tienes clientes. ¡Crea el primero para empezar!"
+      description="Aún no tienes clientes. ¡Crea el primero para generar un enlace de alta!"
     >
-        <CreateClientButton>
-            <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Crear Cliente
-            </Button>
-        </CreateClientButton>
+        <CreateClientButton />
     </EmptyState>
   );
 
@@ -36,14 +31,7 @@ export default async function ClientsPage() {
         title="Clientes"
         description="Gestiona tus clientes, asígnales convenios y genera enlaces de alta."
       >
-        <CreateClientButton>
-            <Button size="sm" className="h-8 gap-1">
-                <PlusCircle className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    Crear Cliente
-                </span>
-            </Button>
-        </CreateClientButton>
+        <CreateClientButton />
       </PageHeader>
       <ClientsTable clients={clients ?? []} emptyState={emptyState} />
     </div>

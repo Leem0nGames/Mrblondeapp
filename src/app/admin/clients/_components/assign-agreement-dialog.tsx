@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition, useEffect, useCallback } from "react";
@@ -38,6 +39,7 @@ import { EntityDialog } from "../../_components/entity-dialog";
 import { agreementFormConfig } from "../../agreements/_components/form-config";
 import type { FormConfig } from "../../_components/entity-dialog";
 import { PlusCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const formSchema = z.object({
   agreementId: z.string().nullable(),
@@ -113,7 +115,6 @@ export function AssignAgreementDialog({
       upsertAction: upsertActionWithCallback,
   };
   
-  // The dialog can always be opened, but the assignment action depends on the client's status
   const canAssign = client.status !== 'pending_onboarding';
 
   return (
@@ -136,9 +137,12 @@ export function AssignAgreementDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
              {!canAssign && (
-                <div className="p-4 bg-destructive/10 border border-destructive/50 text-destructive-foreground rounded-md text-sm">
-                    No se puede asignar un convenio hasta que el cliente complete su formulario de alta.
-                </div>
+                 <Alert variant="destructive">
+                    <AlertTitle>Acción Requerida</AlertTitle>
+                    <AlertDescription>
+                        No se puede asignar un convenio hasta que el cliente complete su formulario de alta. Primero, comparte el "Link de Alta" con el cliente.
+                    </AlertDescription>
+                </Alert>
              )}
             <FormField
               control={form.control}
