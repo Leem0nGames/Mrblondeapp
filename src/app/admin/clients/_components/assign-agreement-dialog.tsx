@@ -75,8 +75,10 @@ export function AssignAgreementDialog({
   useEffect(() => {
     if (isOpen) {
       fetchAgreements();
+      // Reset form with client's current agreement when opening
+      form.reset({ agreementId: client.agreement_id ?? null });
     }
-  }, [isOpen, fetchAgreements]);
+  }, [isOpen, fetchAgreements, client.agreement_id, form]);
 
   const onSubmit = (values: FormValues) => {
     startTransition(async () => {
@@ -111,21 +113,8 @@ export function AssignAgreementDialog({
       upsertAction: upsertActionWithCallback,
   };
   
-  if (client.status === 'pending_onboarding') {
-    return (
-        <Dialog>
-            <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Acción no disponible</DialogTitle>
-                    <DialogDescription>
-                        No se puede asignar un convenio hasta que el cliente complete su formulario de alta.
-                    </DialogDescription>
-                </DialogHeader>
-            </DialogContent>
-        </Dialog>
-    )
-  }
+  // The dialog can always be opened, but the assignment action depends on the client's status
+  const canAssign = client.status !== 'pending_onboarding';
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -146,13 +135,22 @@ export function AssignAgreementDialog({
         </div> : (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+             {!canAssign && (
+                <div className="p-4 bg-destructive/10 border border-destructive/50 text-destructive-foreground rounded-md text-sm">
+                    No se puede asignar un convenio hasta que el cliente complete su formulario de alta.
+                </div>
+             )}
             <FormField
               control={form.control}
               name="agreementId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Convenio</FormLabel>
-                  <Select onValueChange={(value) => field.onChange(value === 'null' ? null : value)} defaultValue={field.value ?? 'null'}>
+                  <Select 
+                    onValueChange={(value) => field.onChange(value === 'null' ? null : value)} 
+                    defaultValue={field.value ?? 'null'}
+                    disabled={!canAssign}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecciona un convenio..." />
@@ -174,7 +172,7 @@ export function AssignAgreementDialog({
             <div className="text-sm">
                 <span>¿El convenio que buscas no existe?</span>
                 <EntityDialog formConfig={newAgreementDialogConfig} entity={undefined}>
-                    <Button variant="link" size="sm" type="button" className="p-1 h-auto">
+                    <Button variant="link" size="sm" type="button" className="p-1 h-auto" disabled={!canAssign}>
                         o, Crear Nuevo Convenio
                     </Button>
                 </EntityDialog>
@@ -183,7 +181,7 @@ export function AssignAgreementDialog({
               <DialogClose asChild>
                 <Button variant="outline" type="button">Cancelar</Button>
               </DialogClose>
-              <Button type="submit" disabled={isPending}>
+              <Button type="submit" disabled={isPending || !canAssign}>
                 {isPending ? "Guardando..." : "Guardar Asignación"}
               </Button>
             </DialogFooter>

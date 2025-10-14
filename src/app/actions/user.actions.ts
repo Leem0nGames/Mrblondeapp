@@ -197,12 +197,25 @@ export async function submitOnboardingForm(payload: Omit<Client, 'id' | 'created
     const supabase = createClient();
     
     const { onboarding_token, ...clientData } = payload;
+
+    const { data: existingClient, error: fetchError } = await supabase
+        .from('clients')
+        .select('agreement_id')
+        .eq('onboarding_token', onboarding_token)
+        .single();
+    
+    if (fetchError || !existingClient) {
+        return { error: { message: 'Enlace de alta inválido.' } };
+    }
+
+    // Determine the new status after form submission
+    const newStatus = existingClient.agreement_id ? 'active' : 'pending_agreement';
     
     const { error } = await supabase
         .from('clients')
         .update({ 
             ...clientData, 
-            status: 'pending_agreement' 
+            status: newStatus
         })
         .eq('onboarding_token', onboarding_token);
 

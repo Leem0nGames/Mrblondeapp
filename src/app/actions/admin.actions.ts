@@ -445,33 +445,67 @@ export async function getClientStats(clientId: string): Promise<{ data: ClientSt
     return { data, error: null };
 }
 
-
-export async function createClientOnboardingLink(): Promise<{ data: { onboarding_token: string } | null, error: any }> {
-    const supabase = await getSupabaseClientWithAuth();
-
-    const { data, error } = await supabase
-        .from("clients")
-        .insert({})
-        .select("onboarding_token")
-        .single();
-    
-    if (error) {
-        console.error("createClientOnboardingLink error:", error.message);
-        return { data: null, error };
-    }
-    
-    revalidatePath("/admin/clients");
-    return { data, error: null };
+type UpsertClientPayload = {
+    id?: string;
+    contact_name: string;
+    email: string;
+    agreement_id: string | null;
 }
+
+export async function upsertClient(payload: UpsertClientPayload) {
+    const revalidationPaths = ["/admin/clients"];
+    if (payload.id) {
+        revalidationPaths.push(`/admin/clients/${payload.id}`);
+    }
+
+    const { id, ...dataToUpsert } = payload;
+    const upsertData: Partial<Client> = {
+        ...dataToUpsert
+    };
+
+    // If an agreement is being assigned, but the client is still pending onboarding,
+    // we change their status to 'pending_agreement' so they stay in the main list.
+    // If no agreement is assigned, we don't touch the status.
+    if (!id) { // This is a new client
+        upsertData.status = payload.agreement_id ? 'pending_agreement' : 'pending_onboarding';
+    }
+
+    const result = await upsertEntity("clients", { id, ...upsertData }, revalidationPaths);
+
+    if (result.error && result.error.code === '23505') { // Unique constraint violation
+        if (result.error.message.includes('cuit')) {
+            return { data: null, error: { ...result.error, message: 'El CUIT ingresado ya está registrado.' }};
+        }
+        if (result.error.message.includes('email')) {
+            return { data: null, error: { ...result.error, message: 'El email ingresado ya está registrado.' }};
+        }
+    }
+    return result;
+}
+
 
 export async function assignAgreementToClient(payload: { clientId: string, agreementId: string | null }): Promise<{ error: any }> {
     const supabase = await getSupabaseClientWithAuth();
+
+    const { data: client } = await supabase.from('clients').select('status').eq('id', payload.clientId).single();
+
+    if (!client) {
+        return { error: { message: 'Client not found.' } };
+    }
+    
+    let newStatus = client.status;
+    if (client.status === 'pending_onboarding' && payload.agreementId) {
+        newStatus = 'pending_agreement';
+    } else if (client.status !== 'pending_onboarding') {
+        newStatus = payload.agreementId ? 'active' : 'pending_agreement';
+    }
+
 
     const { error } = await supabase
         .from("clients")
         .update({ 
             agreement_id: payload.agreementId,
-            status: payload.agreementId ? 'active' : 'pending_agreement' 
+            status: newStatus
         })
         .eq("id", payload.clientId);
     

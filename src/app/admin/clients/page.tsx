@@ -19,12 +19,12 @@ export default async function ClientsPage() {
     <EmptyState
       icon={Users}
       title="No hay clientes"
-      description="Aún no tienes clientes. ¡Genera un enlace de invitación para empezar!"
+      description="Aún no tienes clientes. ¡Crea el primero para empezar!"
     >
         <CreateClientButton>
             <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Invitar Cliente
+                Crear Cliente
             </Button>
         </CreateClientButton>
     </EmptyState>
@@ -34,13 +34,13 @@ export default async function ClientsPage() {
     <div className="grid flex-1 items-start gap-4 md:gap-8">
        <PageHeader
         title="Clientes"
-        description="Gestiona tus clientes, genera enlaces de alta y asígnales convenios."
+        description="Gestiona tus clientes, asígnales convenios y genera enlaces de alta."
       >
         <CreateClientButton>
             <Button size="sm" className="h-8 gap-1">
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    Invitar Cliente
+                    Crear Cliente
                 </span>
             </Button>
         </CreateClientButton>
