@@ -36,7 +36,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   logoText: {
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Helvetica',
+    fontWeight: 'bold',
     fontSize: 10,
     textAlign: 'center',
   },
@@ -46,7 +47,8 @@ const styles = StyleSheet.create({
   },
   clientName: {
     fontSize: 14,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Helvetica',
+    fontWeight: 'bold',
     color: '#2563eb', // text-blue-600
     textTransform: 'uppercase',
   },
@@ -58,7 +60,8 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   labelText: {
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Helvetica',
+    fontWeight: 'bold',
   },
   deliveryWindow: {
     backgroundColor: '#1f2937', // bg-gray-800
@@ -79,7 +82,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#374151', // bg-gray-700
     color: 'white',
     fontSize: 9,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Helvetica',
+    fontWeight: 'bold',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
