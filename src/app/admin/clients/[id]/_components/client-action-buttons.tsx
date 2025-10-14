@@ -15,15 +15,14 @@ import {
 import { Button } from "@/components/ui/button";
 import type { Client } from "@/types";
 import { Archive, Edit, FilePen, Link as LinkIcon } from "lucide-react";
-import { AssignAgreementDialog } from "../../_components/assign-agreement-dialog";
-import { OnboardingFormDialog } from "./onboarding-form-dialog";
 
 type ClientActionButtonsProps = {
-    client: Client;
     onArchive: () => void;
     isArchiving: boolean;
     onCopyLink: (link: string, message: string) => void;
     orderLink: string | null;
+    editDialog: React.ReactNode;
+    agreementDialog: React.ReactNode;
 }
 
 const ActionButton = ({ children, ...props }: React.ComponentProps<typeof Button>) => (
@@ -36,22 +35,12 @@ const ActionButton = ({ children, ...props }: React.ComponentProps<typeof Button
     </Button>
 );
 
-export function ClientActionButtons({ client, onArchive, isArchiving, onCopyLink, orderLink }: ClientActionButtonsProps) {
+export function ClientActionButtons({ client, onArchive, isArchiving, onCopyLink, orderLink, editDialog, agreementDialog }: ClientActionButtonsProps) {
     return (
         <div className="grid grid-cols-4 gap-2">
-            <OnboardingFormDialog client={client}>
-                <ActionButton>
-                    <Edit className="h-6 w-6" />
-                    <span>Editar Datos</span>
-                </ActionButton>
-            </OnboardingFormDialog>
+            {editDialog}
             
-            <AssignAgreementDialog client={client}>
-                 <ActionButton>
-                    <FilePen className="h-6 w-6" />
-                    <span>Convenio</span>
-                </ActionButton>
-            </AssignAgreementDialog>
+            {agreementDialog}
 
             <ActionButton disabled={!orderLink} onClick={() => onCopyLink(orderLink!, 'Enlace de pedido copiado!')}>
                 <LinkIcon className="h-6 w-6" />
@@ -83,3 +72,11 @@ export function ClientActionButtons({ client, onArchive, isArchiving, onCopyLink
         </div>
     )
 }
+
+const ActionButtonWrapper = ({ children }: { children: React.ReactNode }) => (
+     <ActionButton>
+        {children}
+    </ActionButton>
+);
+
+export { ActionButtonWrapper, ActionButton };

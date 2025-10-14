@@ -3,7 +3,8 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { Info, Landmark, ArrowLeft } from "lucide-react";
+import { useTransition, useCallback, useEffect, useState } from "react";
+import { Info, Landmark, ArrowLeft, Edit, FilePen } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ClientHeader } from "./client-header";
@@ -12,6 +13,12 @@ import { ClientStats } from "./client-stats";
 import { ClientOrders } from "./client-orders";
 import type { Client, ClientStats as StatsType, Order, AgreementSalesCondition } from "@/types";
 import { Skeleton } from '@/components/ui/skeleton';
+import { deleteClient } from "@/app/admin/actions/admin.actions";
+import { useToast } from "@/hooks/use-toast";
+import { OnboardingFormDialog } from './onboarding-form-dialog';
+import { AssignAgreementDialog } from '../../_components/assign-agreement-dialog';
+import { ActionButton, ActionButtonWrapper } from './client-action-buttons';
+
 
 const ShippingLabel = dynamic(
   () => import('./shipping-label').then(mod => mod.ShippingLabel),
@@ -61,6 +68,55 @@ type ClientDetailsClientProps = {
 }
 
 export function ClientDetailsClient({ client, stats, orders, salesConditions }: ClientDetailsClientProps) {
+  const { toast } = useToast();
+  const [isPending, startTransition] = useTransition();
+
+  const [orderLink, setOrderLink] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (client.agreement_id && client.status === 'active') {
+      setOrderLink(`${window.location.origin}/pedido/${client.agreement_id}`);
+    }
+  }, [client.agreement_id, client.status]);
+
+  const copyToClipboard = useCallback((textToCopy: string | null, toastMessage: string, errorMessage?: string) => {
+    if (!textToCopy) {
+      toast({ title: "No hay enlace para copiar", description: errorMessage || "El recurso no está disponible.", variant: "destructive"});
+      return;
+    }
+    navigator.clipboard.writeText(textToCopy);
+    toast({ title: toastMessage });
+  }, [toast]);
+
+  const handleArchive = () => {
+    startTransition(async () => {
+      const result = await deleteClient(client.id);
+      if (result.error) {
+        toast({ title: "Error", description: result.error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Éxito", description: "Cliente archivado correctamente." });
+      }
+    });
+  };
+
+  const editDialog = (
+    <OnboardingFormDialog client={client}>
+      <ActionButtonWrapper>
+        <Edit className="h-6 w-6" />
+        <span>Editar Datos</span>
+      </ActionButtonWrapper>
+    </OnboardingFormDialog>
+  );
+
+  const agreementDialog = (
+    <AssignAgreementDialog client={client}>
+      <ActionButtonWrapper>
+        <FilePen className="h-6 w-6" />
+        <span>Convenio</span>
+      </ActionButtonWrapper>
+    </AssignAgreementDialog>
+  );
+
   return (
     <>
       <div className="flex items-center gap-4">
@@ -75,7 +131,15 @@ export function ClientDetailsClient({ client, stats, orders, salesConditions }: 
             </h1>
       </div>
 
-      <ClientHeader client={client} />
+      <ClientHeader 
+        client={client}
+        onArchive={handleArchive}
+        isArchiving={isPending}
+        onCopyLink={copyToClipboard}
+        orderLink={orderLink}
+        editDialog={editDialog}
+        agreementDialog={agreementDialog}
+      />
 
       {stats && <div><ClientStats stats={stats} /></div>}
       

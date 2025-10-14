@@ -24,6 +24,8 @@ import { submitOnboardingForm } from "@/app/actions/user.actions";
 import type { Client } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ActionButton } from "./client-action-buttons";
+import { Edit } from "lucide-react";
 
 // Zod schema for CUIT validation
 const cuitSchema = z.string().refine(
@@ -108,7 +110,9 @@ export function OnboardingFormDialog({ children, client }: { children: React.Rea
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
       <DialogContent className="sm:max-w-lg grid-rows-[auto_1fr_auto] p-0 max-h-[90vh]">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle>Editar Datos del Cliente</DialogTitle>

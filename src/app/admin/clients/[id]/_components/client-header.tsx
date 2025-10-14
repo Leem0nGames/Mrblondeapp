@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useCallback, useMemo, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Client } from "@/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -13,9 +13,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
-import { AssignAgreementDialog } from "../../_components/assign-agreement-dialog";
-import { OnboardingFormDialog } from "./onboarding-form-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,49 +24,34 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useTransition } from "react";
-import { deleteClient } from "@/app/actions/admin.actions";
 import { ClientActionButtons } from "./client-action-buttons";
 
 
-export function ClientHeader({ client }: { client: Client }) {
-  const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
-
-  const [orderLink, setOrderLink] = useState<string | null>(null);
+export function ClientHeader({ 
+    client, 
+    onArchive, 
+    isArchiving, 
+    onCopyLink, 
+    orderLink,
+    editDialog,
+    agreementDialog,
+}: { 
+    client: Client;
+    onArchive: () => void;
+    isArchiving: boolean;
+    onCopyLink: (link: string, message: string, errorMessage?: string) => void;
+    orderLink: string | null;
+    editDialog: React.ReactNode;
+    agreementDialog: React.ReactNode;
+ }) {
   const [onboardingLink, setOnboardingLink] = useState<string | null>(null);
 
   useEffect(() => {
-    // These values depend on `window.location.origin`, which is only available on the client.
-    // We set them in an effect to avoid hydration mismatches.
-    if (client.agreement_id && client.status === 'active') {
-      setOrderLink(`${window.location.origin}/pedido/${client.agreement_id}`);
-    }
     if (client.onboarding_token) {
       setOnboardingLink(`${window.location.origin}/onboarding/${client.onboarding_token}`);
     }
-  }, [client.agreement_id, client.status, client.onboarding_token]);
+  }, [client.onboarding_token]);
 
-
-  const copyToClipboard = useCallback((textToCopy: string | null, toastMessage: string, errorMessage?: string) => {
-    if (!textToCopy) {
-      toast({ title: "No hay enlace para copiar", description: errorMessage || "El recurso no está disponible.", variant: "destructive"});
-      return;
-    }
-    navigator.clipboard.writeText(textToCopy);
-    toast({ title: toastMessage });
-  }, [toast]);
-
-  const handleArchive = () => {
-    startTransition(async () => {
-      const result = await deleteClient(client.id);
-      if (result.error) {
-        toast({ title: "Error", description: result.error.message, variant: "destructive" });
-      } else {
-        toast({ title: "Éxito", description: "Cliente archivado correctamente." });
-      }
-    });
-  };
 
   return (
     <div className="w-full">
@@ -82,27 +64,22 @@ export function ClientHeader({ client }: { client: Client }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-               <OnboardingFormDialog client={client}>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Editar Datos
-                    </DropdownMenuItem>
-                </OnboardingFormDialog>
-                <AssignAgreementDialog client={client}>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <FilePen className="mr-2 h-4 w-4" />
-                        Asignar Convenio
-                    </DropdownMenuItem>
-                </AssignAgreementDialog>
+               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  {editDialog}
+               </DropdownMenuItem>
+               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  {agreementDialog}
+               </DropdownMenuItem>
+
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
-                    onClick={() => copyToClipboard(orderLink, 'Enlace de pedido copiado!', 'El cliente debe estar activo para tener un enlace de pedido.')} 
+                    onClick={() => onCopyLink(orderLink!, 'Enlace de pedido copiado!', 'El cliente debe estar activo para tener un enlace de pedido.')} 
                     disabled={!orderLink}>
                     <LinkIcon className="mr-2 h-4 w-4" />
                     Copiar Link Pedido
                 </DropdownMenuItem>
                  <DropdownMenuItem 
-                    onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!', 'Este cliente ya completó el alta.')}
+                    onClick={() => onCopyLink(onboardingLink, 'Enlace de alta copiado!', 'Este cliente ya completó el alta.')}
                     disabled={client.status !== 'pending_onboarding'}
                  >
                     <Copy className="mr-2 h-4 w-4" />
@@ -125,8 +102,8 @@ export function ClientHeader({ client }: { client: Client }) {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleArchive} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
-                                {isPending ? "Archivando..." : "Confirmar Archivo"}
+                            <AlertDialogAction onClick={onArchive} disabled={isArchiving} className="bg-destructive hover:bg-destructive/90">
+                                {isArchiving ? "Archivando..." : "Confirmar Archivo"}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
@@ -147,10 +124,12 @@ export function ClientHeader({ client }: { client: Client }) {
         <div className="w-full pt-4">
              <ClientActionButtons 
                 client={client}
-                onArchive={handleArchive}
-                isArchiving={isPending}
-                onCopyLink={copyToClipboard}
+                onArchive={onArchive}
+                isArchiving={isArchiving}
+                onCopyLink={onCopyLink}
                 orderLink={orderLink}
+                editDialog={editDialog}
+                agreementDialog={agreementDialog}
             />
         </div>
       </div>
