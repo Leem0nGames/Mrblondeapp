@@ -147,7 +147,7 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
       </div>
 
       {/* Desktop View */}
-      <Card className="hidden sm:block">
+      <div className="hidden sm:block">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -156,7 +156,6 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
                   <span className="sr-only">Imagen</span>
                 </TableHead>
                 <TableHead>Nombre</TableHead>
-                <TableHead>Categoría</TableHead>
                 <TableHead>Descripción</TableHead>
                 <TableHead>Creado el</TableHead>
                 <TableHead>
@@ -178,9 +177,6 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
                     />
                   </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>
-                    {product.category ? <div><Badge variant="outline">{product.category}</Badge></div> : <span className="text-muted-foreground">N/A</span>}
-                  </TableCell>
                    <TableCell className="text-sm text-muted-foreground truncate max-w-xs">
                     {product.description}
                   </TableCell>
@@ -248,7 +244,7 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
             <strong>{products.length}</strong> productos
           </div>
         </CardFooter>
-      </Card>
+      </div>
     </>
   );
 }
