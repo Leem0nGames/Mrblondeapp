@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -14,27 +15,53 @@ export function ShippingLabel({ client }: { client: Client }) {
   const [packageInfo, setPackageInfo] = useState("1");
   const [isClient, setIsClient] = useState(false);
 
+  // This effect is necessary to signal that we are on the client
+  // and that @react-pdf/renderer can start its work.
   useEffect(() => {
-    // PDFDownloadLink solo debe renderizarse en el cliente,
-    // así que usamos este estado para evitar errores de hidratación.
     setIsClient(true);
   }, []);
-
+  
   const getBultoCount = () => {
     const input = packageInfo.trim();
     if (!input) return 1;
-
-    // Intenta encontrar un número, ya sea "3", "1 de 3", "bulto 3", etc.
     const match = input.match(/\d+/g);
-    
     if (match) {
-        // Si encuentra múltiples números (ej. "2 de 5"), toma el último.
-        // Si encuentra uno (ej. "3"), lo toma.
         return parseInt(match[match.length - 1], 10) || 1;
     }
-    
     return 1;
   };
+
+  if (!isClient) {
+     return (
+       <Card>
+        <CardHeader>
+          <CardTitle>Rótulo de Envío</CardTitle>
+          <CardDescription>
+            Genera un PDF con los rótulos para el paquete del cliente.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="package-info">Número de Bultos</Label>
+            <Input 
+              id="package-info"
+              value={packageInfo}
+              onChange={(e) => setPackageInfo(e.target.value)}
+              placeholder="Ej: 3"
+              disabled
+            />
+             <p className="text-xs text-muted-foreground">Define cuántos rótulos generar. Ej: "3" generará 3 rótulos.</p>
+          </div>
+        </CardContent>
+        <CardFooter>
+           <Button disabled className="w-full">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Cargando Generador...
+            </Button>
+        </CardFooter>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -57,34 +84,27 @@ export function ShippingLabel({ client }: { client: Client }) {
         </div>
       </CardContent>
       <CardFooter>
-        {isClient ? (
-          <PDFDownloadLink
-            document={<ShippingLabelPDF client={client} totalBultos={getBultoCount()} />}
-            fileName={`rotulos-${client.contact_name?.replace(/\s/g, '_') || client.id}.pdf`}
-            className="w-full"
-          >
-            {({ loading }) => (
-              <Button disabled={loading || !packageInfo} className="w-full">
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generando PDF...
-                  </>
-                ) : (
-                  <>
-                    <FileDown className="mr-2 h-4 w-4" />
-                    Descargar PDF de Rótulos
-                  </>
-                )}
-              </Button>
-            )}
-          </PDFDownloadLink>
-        ) : (
-          <Button disabled className="w-full">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Cargando...
-          </Button>
-        )}
+        <PDFDownloadLink
+          document={<ShippingLabelPDF client={client} totalBultos={getBultoCount()} />}
+          fileName={`rotulos-${client.contact_name?.replace(/\s/g, '_') || client.id}.pdf`}
+          className="w-full"
+        >
+          {({ loading }) => (
+            <Button disabled={loading || !packageInfo} className="w-full">
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generando PDF...
+                </>
+              ) : (
+                <>
+                  <FileDown className="mr-2 h-4 w-4" />
+                  Descargar PDF de Rótulos
+                </>
+              )}
+            </Button>
+          )}
+        </PDFDownloadLink>
       </CardFooter>
     </Card>
   );
