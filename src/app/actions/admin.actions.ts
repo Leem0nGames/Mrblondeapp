@@ -166,10 +166,13 @@ export async function getAgreementById(id: string): Promise<{ data: DetailedAgre
             clients ( id, contact_name )
         `)
         .eq("id", id)
-        .single();
+        .maybeSingle();
     if (error) {
         console.error("getAgreementById error:", error.message);
         return { data: null, error };
+    }
+     if (!data) {
+        return { data: null, error: { message: "Agreement not found." } };
     }
     const detailedAgreement: DetailedAgreement = {
         ...data,
@@ -526,10 +529,13 @@ export async function getPriceListById(id: string): Promise<{ data: DetailedPric
             )
         `)
         .eq("id", id)
-        .single();
+        .maybeSingle();
     if (error) {
         console.error("getPriceListById error:", error.message);
         return { data: null, error };
+    }
+    if (!data) {
+        return { data: null, error: { message: "Price list not found." } };
     }
     const detailedPriceList: DetailedPriceList = {
         ...data,
@@ -722,3 +728,5 @@ export async function completeOrder(orderId: string, orderTotal: number) {
     revalidatePath('/admin');
     return { error: null };
 }
+
+    
