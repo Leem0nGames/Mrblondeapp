@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -50,7 +49,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica',
     fontWeight: 'bold',
     color: '#2563eb', // text-blue-600
-    textTransform: 'uppercase',
   },
   clientCuit: {
     fontSize: '9pt',
@@ -58,7 +56,7 @@ const styles = StyleSheet.create({
   },
   labelSection: {
     fontSize: '10pt',
-    marginTop: 6,
+    marginTop: 12,
   },
   labelText: {
     fontFamily: 'Helvetica',
@@ -70,16 +68,16 @@ const styles = StyleSheet.create({
     fontSize: '9pt',
     padding: 6,
     borderRadius: 4,
-    marginTop: 6,
+    marginTop: 12,
   },
   notes: {
     fontSize: '10pt',
-    marginTop: 6,
+    marginTop: 12,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: 8,
+    marginTop: 'auto',
   },
   bultoText: {
     backgroundColor: '#374151', // bg-gray-700
