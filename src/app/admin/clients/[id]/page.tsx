@@ -1,6 +1,7 @@
 
 
 import Link from "next/link";
+import dynamic from 'next/dynamic';
 import { ArrowLeft, FileWarning, Info, Landmark } from "lucide-react";
 import { getAgreementById, getClientById, getClientStats, getClientOrders } from "@/app/actions/admin.actions";
 import { Button } from "@/components/ui/button";
@@ -8,9 +9,17 @@ import { ClientHeader } from "./_components/client-header";
 import { ClientInfo } from "./_components/client-info";
 import { ClientStats } from "./_components/client-stats";
 import { ClientOrders } from "./_components/client-orders";
-import { ShippingLabel } from "./_components/shipping-label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+
+const ShippingLabel = dynamic(
+  () => import('./_components/shipping-label').then(mod => mod.ShippingLabel),
+  { 
+    ssr: false,
+    loading: () => <p className="text-sm text-muted-foreground p-4">Cargando generador de rótulos...</p> 
+  }
+);
+
 
 const formatRule = (rules: any): string => {
   if (!rules || typeof rules !== 'object') {
