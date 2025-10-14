@@ -13,18 +13,22 @@ import { ShippingLabelPDF } from "./shipping-label-pdf";
 
 export function ShippingLabel({ client }: { client: Client }) {
   const [packageCount, setPackageCount] = useState(1);
+  
+  // El hook usePDF se inicializa con el componente del documento.
   const [instance, updateInstance] = usePDF({
     document: <ShippingLabelPDF client={client} totalBultos={packageCount} />,
   });
 
-  // Re-generates the PDF when the package count changes
+  // Este efecto se asegura de que el PDF se regenere cada vez que cambia el número de bultos.
   useEffect(() => {
     updateInstance();
   }, [packageCount, client, updateInstance]);
 
   const handlePrint = () => {
     if (instance.url && !instance.loading) {
+      // Abre el PDF en una nueva pestaña
       const printWindow = window.open(instance.url);
+      // Espera a que cargue y luego llama a la función de impresión del navegador
       printWindow?.addEventListener('load', function() {
         printWindow.print();
       });

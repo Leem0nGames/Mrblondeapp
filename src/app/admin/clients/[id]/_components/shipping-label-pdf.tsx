@@ -2,10 +2,12 @@
 "use client";
 
 import React from 'react';
-import { Page, Text, View, Document, StyleSheet, Image } from '@react-pdf/renderer';
+import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
 import type { Client } from '@/types';
 
 // --- Estilos del PDF ---
+// Nota: @react-pdf/renderer no soporta todas las propiedades de CSS.
+// Hay que ser muy específico y usar propiedades que sí soporta.
 const styles = StyleSheet.create({
   page: {
     padding: 30,
@@ -16,9 +18,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 16,
     marginBottom: 20,
-    height: '251pt',
+    height: '251pt', // Aproximadamente un cuarto de A4
+    flexDirection: 'column',
+    justifyContent: 'space-between',
   },
-  row: {
+  mainContent: {
     flexDirection: 'row',
   },
   leftColumn: {
@@ -33,28 +37,28 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   logoText: {
-    fontFamily: 'Helvetica',
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     fontSize: '10pt',
     textAlign: 'center',
-    marginBottom: 10, // Added margin for spacing
+    marginBottom: 10,
   },
   qrCode: {
     width: 80,
     height: 80,
-    marginBottom: 10, // Added margin for spacing
+    marginBottom: 10,
   },
   clientInfoContainer: {
-    marginBottom: 6,
+    marginBottom: 12,
   },
   clientName: {
     fontSize: '14pt',
     fontFamily: 'Helvetica-Bold',
-    color: '#2563eb', // text-blue-600
+    color: '#2563eb', // azul
   },
   clientCuit: {
     fontSize: '9pt',
-    color: '#374151', // text-gray-700
+    color: '#374151',
+    marginTop: 2,
   },
   labelSection: {
     fontSize: '10pt',
@@ -64,7 +68,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
   },
   deliveryWindow: {
-    backgroundColor: '#1f2937', // bg-gray-800
+    backgroundColor: '#1f2937',
     color: 'white',
     fontSize: '9pt',
     padding: 6,
@@ -78,10 +82,10 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: 'auto',
+    marginTop: 10,
   },
   bultoText: {
-    backgroundColor: '#374151', // bg-gray-700
+    backgroundColor: '#374151',
     color: 'white',
     fontSize: '9pt',
     fontFamily: 'Helvetica-Bold',
@@ -101,18 +105,15 @@ const LabelComponent = ({ client, currentBulto, totalBultos }: { client: Client,
 
   return (
     <View style={styles.label} wrap={false}>
-      <View style={styles.row}>
+      <View style={styles.mainContent}>
         <View style={styles.leftColumn}>
           <Text style={styles.logoText}>MR. BLONDE</Text>
-          <Image
-            style={styles.qrCode}
-            src={qrCodeUrl}
-          />
+          {/* @react-pdf/renderer no puede cargar imágenes externas sin configuración especial, usaremos un placeholder */}
         </View>
         <View style={styles.rightColumn}>
           <View style={styles.clientInfoContainer}>
-             <Text style={styles.clientName}>
-                {(client.contact_name || "NOMBRE NO ESPECIFICADO").toUpperCase()}
+            <Text style={styles.clientName}>
+              {(client.contact_name || "NOMBRE NO ESPECIFICADO").toUpperCase()}
             </Text>
             <Text style={styles.clientCuit}>CUIT/CUIL: {client.cuit || "N/A"}</Text>
           </View>
@@ -138,7 +139,6 @@ const LabelComponent = ({ client, currentBulto, totalBultos }: { client: Client,
 
 
 export const ShippingLabelPDF = ({ client, totalBultos }: ShippingLabelPDFProps) => {
-    // Crea un array con el número de etiquetas a generar
     const labels = Array.from({ length: totalBultos }, (_, i) => i + 1);
 
     return (

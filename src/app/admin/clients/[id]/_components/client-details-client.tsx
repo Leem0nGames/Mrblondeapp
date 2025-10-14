@@ -11,12 +11,24 @@ import { ClientInfo } from "./client-info";
 import { ClientStats } from "./client-stats";
 import { ClientOrders } from "./client-orders";
 import type { Client, ClientStats as StatsType, Order, AgreementSalesCondition } from "@/types";
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ShippingLabel = dynamic(
   () => import('./shipping-label').then(mod => mod.ShippingLabel),
   { 
     ssr: false,
-    loading: () => <p className="text-sm text-muted-foreground p-4">Cargando generador de rótulos...</p> 
+    loading: () => <Card>
+        <CardHeader>
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+        </CardHeader>
+        <CardContent>
+            <Skeleton className="h-10 w-full" />
+        </CardContent>
+         <CardFooter>
+            <Skeleton className="h-10 w-full" />
+        </CardFooter>
+    </Card>
   }
 );
 
@@ -63,9 +75,7 @@ export function ClientDetailsClient({ client, stats, orders, salesConditions }: 
             </h1>
       </div>
 
-      <div>
-          <ClientHeader client={client} />
-      </div>
+      <ClientHeader client={client} />
 
       {stats && <div><ClientStats stats={stats} /></div>}
       
@@ -106,12 +116,8 @@ export function ClientDetailsClient({ client, stats, orders, salesConditions }: 
               <ClientOrders orders={orders} />
           </div>
           <div className="md:col-span-1 grid gap-4 auto-rows-min">
-              <div>
-                  <ShippingLabel client={client} />
-              </div>
-              <div>
-                  <ClientInfo client={client} />
-              </div>
+              <ShippingLabel client={client} />
+              <ClientInfo client={client} />
           </div>
       </div>
     </>
