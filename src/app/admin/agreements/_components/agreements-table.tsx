@@ -46,53 +46,11 @@ import { deleteAgreement } from "@/app/actions/admin.actions";
 import type { AgreementWithCount } from "@/types";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { agreementFormConfig } from "../_components/form-config";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface AgreementsTableProps {
     agreements: AgreementWithCount[];
     emptyState: React.ReactNode;
 }
-
-const CopyLinkButton = ({ agreement }: { agreement: AgreementWithCount }) => {
-  const { toast } = useToast();
-  const hasPriceList = !!agreement.price_list_id;
-
-  const copyToClipboard = useCallback(() => {
-    if (!agreement.id) {
-        toast({ title: "Error", description: "Este convenio no tiene un ID.", variant: "destructive"});
-        return;
-    }
-    const host = window.location.host;
-    const protocol = window.location.protocol;
-    const link = `${protocol}//${host}/pedido/${agreement.id}`;
-    navigator.clipboard.writeText(link);
-    toast({ title: "Enlace copiado al portapapeles!" });
-  }, [agreement.id, toast]);
-
-  const button = (
-    <Button variant="outline" size="sm" onClick={copyToClipboard} disabled={!hasPriceList} className="w-full">
-        <Copy className="mr-2 h-4 w-4" />
-        Copiar Link
-    </Button>
-  );
-
-  if (!hasPriceList) {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {/* We need a wrapper div for the tooltip to work on a disabled button */}
-          <div className="w-full">{button}</div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Asigna una lista de precios para activar el enlace.</p>
-        </TooltipContent>
-      </Tooltip>
-    );
-  }
-
-  return button;
-}
-
 
 export default function AgreementsTable({ agreements, emptyState }: AgreementsTableProps) {
   const [isPending, startTransition] = useTransition();
@@ -115,18 +73,6 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
       }
     });
   };
-
-  const copyToClipboard = useCallback((agreementId: string | null) => {
-    if (!agreementId) {
-        toast({ title: "Error", description: "Este convenio no tiene un ID.", variant: "destructive"});
-        return;
-    }
-    const host = window.location.host;
-    const protocol = window.location.protocol;
-    const link = `${protocol}//${host}/pedido/${agreementId}`;
-    navigator.clipboard.writeText(link);
-    toast({ title: "Enlace copiado al portapapeles!" });
-  }, [toast]);
   
   if (agreements.length === 0) {
     return <>{emptyState}</>;
@@ -161,7 +107,6 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                     </div>
                 </CardContent>
                 <CardFooter className="flex flex-col items-stretch gap-2">
-                    <CopyLinkButton agreement={agreement} />
                      <EntityDialog formConfig={agreementFormConfig} entity={agreement}>
                         <Button variant="outline" size="sm" className="w-full"><Edit className="mr-2 h-4 w-4" /> Editar</Button>
                     </EntityDialog>
@@ -236,7 +181,6 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
                 <TableCell>{agreement.sales_condition_count ?? 0}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
-                      <CopyLinkButton agreement={agreement} />
                       <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                           <Button aria-haspopup="true" size="icon" variant="ghost">

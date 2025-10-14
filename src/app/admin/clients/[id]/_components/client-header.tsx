@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import type { Client } from "@/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { AssignAgreementDialog } from "../../_components/assign-agreement-dialog";
 import { OnboardingFormDialog } from "./onboarding-form-dialog";
-import { ClientActionButtons } from "./client-action-buttons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,22 +29,28 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useTransition } from "react";
 import { deleteClient } from "@/app/actions/admin.actions";
+import { ClientActionButtons } from "./client-action-buttons";
 
 
 export function ClientHeader({ client }: { client: Client }) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
-   const getOrderLink = useCallback((agreementId: string | null) => {
-    if (!agreementId) return null;
-    const host = window.location.host;
-    const protocol = window.location.protocol;
-    return `${protocol}//${host}/pedido/${agreementId}`;
-  }, []);
+  const orderLink = useMemo(() => {
+    if (!client.agreement_id || client.status !== 'active') return null;
+    if (typeof window === 'undefined') return null;
+    return `${window.location.origin}/pedido/${client.agreement_id}`;
+  }, [client.agreement_id, client.status]);
+  
+  const onboardingLink = useMemo(() => {
+    if (!client.onboarding_token || typeof window === 'undefined') return null;
+     return `${window.location.origin}/onboarding/${client.onboarding_token}`;
+  }, [client.onboarding_token]);
 
-  const copyToClipboard = useCallback((textToCopy: string, toastMessage: string) => {
+
+  const copyToClipboard = useCallback((textToCopy: string | null, toastMessage: string, errorMessage?: string) => {
     if (!textToCopy) {
-      toast({ title: "No hay enlace para copiar", description: "Es posible que el cliente no tenga un convenio asignado.", variant: "destructive"});
+      toast({ title: "No hay enlace para copiar", description: errorMessage || "El recurso no está disponible.", variant: "destructive"});
       return;
     }
     navigator.clipboard.writeText(textToCopy);
@@ -62,10 +67,6 @@ export function ClientHeader({ client }: { client: Client }) {
       }
     });
   };
-
-  const orderLink = getOrderLink(client.agreement_id);
-  const onboardingLink = `${window.location.origin}/onboarding/${client.onboarding_token}`;
-
 
   return (
     <div className="w-full">
@@ -91,11 +92,16 @@ export function ClientHeader({ client }: { client: Client }) {
                     </DropdownMenuItem>
                 </AssignAgreementDialog>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => copyToClipboard(orderLink!, 'Enlace de pedido copiado!')} disabled={!orderLink}>
+                <DropdownMenuItem 
+                    onClick={() => copyToClipboard(orderLink, 'Enlace de pedido copiado!', 'El cliente debe estar activo para tener un enlace de pedido.')} 
+                    disabled={!orderLink}>
                     <LinkIcon className="mr-2 h-4 w-4" />
                     Copiar Link Pedido
                 </DropdownMenuItem>
-                 <DropdownMenuItem onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!')}>
+                 <DropdownMenuItem 
+                    onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!', 'Este cliente ya completó el alta.')}
+                    disabled={client.status !== 'pending_onboarding'}
+                 >
                     <Copy className="mr-2 h-4 w-4" />
                     Copiar Link Alta
                 </DropdownMenuItem>

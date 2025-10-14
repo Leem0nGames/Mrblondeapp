@@ -119,7 +119,7 @@ export async function logout() {
 export async function getOrderPageData(agreementId: string) {
     const supabase = createClient();
 
-    // 1. Get Agreement, Price List, and Products
+    // 1. Get Agreement and related Price List
     const { data: agreement, error: agreementError } = await supabase
         .from('agreements')
         .select(`
@@ -127,16 +127,7 @@ export async function getOrderPageData(agreementId: string) {
             agreement_promotions(
                 promotions(*)
             ),
-            price_lists(
-                id,
-                name,
-                prices_include_vat,
-                price_list_items(
-                    price,
-                    volume_price,
-                    products(*)
-                )
-            )
+            price_lists(id, name, prices_include_vat)
         `)
         .eq('id', agreementId)
         .single();
@@ -145,11 +136,28 @@ export async function getOrderPageData(agreementId: string) {
         console.error("getOrderPageData (agreement) error:", agreementError?.message);
         return { data: null, error: { message: "El convenio no es válido o ha expirado." } };
     }
+
     if (!agreement.price_lists) {
-      return { data: null, error: { message: "Este convenio no tiene una lista de precios asignada." } };
+        return { data: null, error: { message: "Este convenio no tiene una lista de precios asignada." } };
     }
 
-    // 2. Get the client assigned to this agreement
+    // 2. Get Products with their specific prices from the assigned Price List
+    const { data: priceListItems, error: itemsError } = await supabase
+        .from('price_list_items')
+        .select(`
+            price,
+            volume_price,
+            products(*)
+        `)
+        .eq('price_list_id', agreement.price_lists.id)
+        .filter('products', 'is', 'not.null'); // Ensure we only get items with valid products
+
+    if (itemsError) {
+        console.error("getOrderPageData (items) error:", itemsError?.message);
+        return { data: null, error: { message: "No se pudieron cargar los productos para este convenio." } };
+    }
+
+    // 3. Get the client assigned to this agreement
     const { data: client, error: clientError } = await supabase
         .from('clients')
         .select('id, contact_name')
@@ -161,8 +169,9 @@ export async function getOrderPageData(agreementId: string) {
          console.error("getOrderPageData (client) error:", clientError?.message);
         return { data: null, error: { message: "Este convenio no está asignado a ningún cliente activo." } };
     }
-
-    const products = agreement.price_lists.price_list_items.map(pli => ({
+    
+    // 4. Format products and group them by category
+    const products = priceListItems.map(pli => ({
         ...pli.products!,
         price: pli.price,
         volume_price: pli.volume_price,
@@ -233,7 +242,8 @@ export async function submitOnboardingForm(payload: Omit<Client, 'id' | 'created
         .from('clients')
         .update({ 
             ...clientData, 
-            status: newStatus
+            status: newStatus,
+            contact_name: payload.contact_name // Ensure name is updated from placeholder
         })
         .eq('onboarding_token', onboarding_token);
 

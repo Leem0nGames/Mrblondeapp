@@ -37,18 +37,15 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean) => {
 
   let subtotal = 0;
   
-  // This is the core logic fix: The final price calculation must respect the volume pricing.
   items.forEach(item => {
-    const basePrice = (isVolumePricingActive && item.product.volume_price) 
+    const basePrice = (isVolumePricingActive && item.product.volume_price != null && item.product.volume_price < item.product.price) 
         ? item.product.volume_price 
         : item.product.price;
     
     if (pricesIncludeVat) {
-        // If the price from the DB already has VAT, we need to extract the subtotal.
         const singleItemSubtotal = basePrice / (1 + VAT_RATE);
         subtotal += singleItemSubtotal * item.quantity;
     } else {
-        // If the price from the DB is pre-tax, it's our subtotal.
         const singleItemSubtotal = basePrice;
         subtotal += singleItemSubtotal * item.quantity;
     }
