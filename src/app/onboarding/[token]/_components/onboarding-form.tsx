@@ -27,11 +27,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const cuitSchema = z.string().refine(
   (cuit) => {
     if (!/^\d{11}$/.test(cuit)) return false;
-    const [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11] = cuit.split("").map(Number);
-    const sum = p1 * 5 + p2 * 4 + p3 * 3 + p4 * 2 + p5 * 7 + p6 * 6 + p7 * 5 + p8 * 4 + p9 * 3 + p10 * 2;
-    const rest = sum % 11;
-    const digit = rest === 0 ? 0 : rest === 1 ? 9 : 11 - rest;
-    return digit === p11;
+    const coeficientes = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+    const digitos = cuit.split('').map(Number);
+    const digitoVerificador = digitos.pop();
+
+    let acumulado = 0;
+    for (let i = 0; i < digitos.length; i++) {
+        acumulado += digitos[i] * coeficientes[i];
+    }
+
+    const resto = acumulado % 11;
+    let digitoCalculado = 11 - resto;
+    if (digitoCalculado === 11) {
+        digitoCalculado = 0;
+    } else if (digitoCalculado === 10) {
+        return false; // CUIT inválido
+    }
+
+    return digitoVerificador === digitoCalculado;
   },
   { message: "CUIT inválido. Debe tener 11 dígitos sin guiones y ser válido." }
 );
