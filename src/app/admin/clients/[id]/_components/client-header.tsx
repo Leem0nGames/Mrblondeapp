@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useEffect, useState } from "react";
 import type { Client } from "@/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -36,16 +36,19 @@ export function ClientHeader({ client }: { client: Client }) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
-  const orderLink = useMemo(() => {
-    if (!client.agreement_id || client.status !== 'active') return null;
-    if (typeof window === 'undefined') return null;
-    return `${window.location.origin}/pedido/${client.agreement_id}`;
-  }, [client.agreement_id, client.status]);
-  
-  const onboardingLink = useMemo(() => {
-    if (!client.onboarding_token || typeof window === 'undefined') return null;
-     return `${window.location.origin}/onboarding/${client.onboarding_token}`;
-  }, [client.onboarding_token]);
+  const [orderLink, setOrderLink] = useState<string | null>(null);
+  const [onboardingLink, setOnboardingLink] = useState<string | null>(null);
+
+  useEffect(() => {
+    // These values depend on `window.location.origin`, which is only available on the client.
+    // We set them in an effect to avoid hydration mismatches.
+    if (client.agreement_id && client.status === 'active') {
+      setOrderLink(`${window.location.origin}/pedido/${client.agreement_id}`);
+    }
+    if (client.onboarding_token) {
+      setOnboardingLink(`${window.location.origin}/onboarding/${client.onboarding_token}`);
+    }
+  }, [client.agreement_id, client.status, client.onboarding_token]);
 
 
   const copyToClipboard = useCallback((textToCopy: string | null, toastMessage: string, errorMessage?: string) => {

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useTransition, useCallback } from "react";
+import { useTransition, useCallback, useEffect, useState } from "react";
 import { MoreHorizontal, Trash2, Copy, Link as LinkIcon, Archive, Edit } from "lucide-react";
 import Link from "next/link";
 import {
@@ -55,6 +55,12 @@ interface ClientsTableProps {
 export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    // This hook ensures that code depending on `window` only runs on the client
+    setIsClient(true);
+  }, []);
 
   const handleArchive = (clientId: string) => {
     startTransition(async () => {
@@ -67,7 +73,11 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
     });
   };
 
-  const copyToClipboard = useCallback((textToCopy: string, toastMessage: string) => {
+  const copyToClipboard = useCallback((textToCopy: string | null, toastMessage: string, errorMessage?: string) => {
+    if (!textToCopy) {
+      toast({ title: "No hay enlace para copiar", description: errorMessage || "El recurso no está disponible.", variant: "destructive"});
+      return;
+    }
     navigator.clipboard.writeText(textToCopy);
     toast({ title: toastMessage });
   }, [toast]);
@@ -80,7 +90,9 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
     <>
       {/* Mobile View: Cards */}
       <div className="grid gap-4 sm:hidden">
-        {clients.map((client) => (
+        {clients.map((client) => {
+          const onboardingLink = isClient ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
+          return (
           <Card key={client.id}>
              <Link href={`/admin/clients/${client.id}`}>
                 <CardHeader>
@@ -110,8 +122,8 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                 <Button 
                     variant="secondary"
                     size="sm"
-                    onClick={() => copyToClipboard(`${window.location.origin}/onboarding/${client.onboarding_token}`, 'Enlace de alta copiado!')}
-                    disabled={client.status !== 'pending_onboarding'}
+                    onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!')}
+                    disabled={client.status !== 'pending_onboarding' || !isClient}
                 >
                     <Copy className="mr-2 h-4 w-4" />
                     Copiar Link de Alta
@@ -143,7 +155,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                 </AlertDialog>
             </CardFooter>
           </Card>
-        ))}
+        )})}
       </div>
 
       {/* Desktop View: Table */}
@@ -162,7 +174,9 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {clients.map((client) => (
+              {clients.map((client) => {
+                const onboardingLink = isClient ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
+                return (
                 <TableRow key={client.id} className="cursor-pointer" onClick={() => window.location.href = `/admin/clients/${client.id}`}>
                   <TableCell className="font-medium">{client.contact_name || "Cliente pendiente..."}</TableCell>
                   <TableCell>{client.email}</TableCell>
@@ -193,8 +207,8 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Asignar Convenio</DropdownMenuItem>
                         </AssignAgreementDialog>
                         <DropdownMenuItem 
-                            onClick={() => copyToClipboard(`${window.location.origin}/onboarding/${client.onboarding_token}`, 'Enlace de alta copiado!')}
-                            disabled={client.status !== 'pending_onboarding'}
+                            onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!')}
+                            disabled={client.status !== 'pending_onboarding' || !isClient}
                         >
                             <Copy className="mr-2 h-4 w-4" />
                             Copiar Link de Alta
@@ -233,7 +247,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              )})}
             </TableBody>
           </Table>
         </CardContent>
