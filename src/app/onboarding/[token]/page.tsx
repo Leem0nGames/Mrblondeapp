@@ -1,9 +1,12 @@
 
+
 import { getOnboardingClient } from "@/app/actions/user.actions";
 import { OnboardingForm } from "./_components/onboarding-form";
 import { Logo } from "@/components/logo";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default async function OnboardingPage({ params }: { params: { token: string } }) {
   const { data: client, error } = await getOnboardingClient(params.token);
@@ -47,13 +50,26 @@ export default async function OnboardingPage({ params }: { params: { token: stri
               ¡Ya estás registrado!
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-col items-center gap-4">
             <p className="text-lg text-muted-foreground">
               Tus datos ya fueron completados.
             </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Pronto recibirás tu enlace para realizar pedidos. ¡Gracias!
-            </p>
+            {client.agreement_id ? (
+                <>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        ¡Buenas noticias! Ya tienes un portal de pedidos activo.
+                    </p>
+                    <Button asChild className="w-full">
+                        <Link href={`/pedido/${client.agreement_id}`}>
+                            Ir a mi Portal de Pedidos
+                        </Link>
+                    </Button>
+                </>
+            ) : (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Pronto recibirás tu enlace para realizar pedidos. ¡Gracias!
+                </p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -83,3 +99,4 @@ export default async function OnboardingPage({ params }: { params: { token: stri
     </div>
   );
 }
+
