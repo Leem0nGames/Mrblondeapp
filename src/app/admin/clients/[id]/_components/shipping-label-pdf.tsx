@@ -6,19 +6,17 @@ import type { Client } from '@/types';
 
 
 // --- Estilos del PDF ---
-// Usaremos fuentes seguras como Helvetica para evitar problemas de carga de red.
 const styles = StyleSheet.create({
   page: {
     padding: 30,
     fontFamily: 'Helvetica',
   },
   label: {
-    border: 1,
-    borderColor: '#e5e7eb',
+    border: '1pt solid #e5e7eb',
     borderRadius: 8,
     padding: 16,
     marginBottom: 20,
-    height: '251pt', // Aprox 1/3 de una página A4 menos márgenes
+    height: '251pt',
   },
   row: {
     flexDirection: 'row',
@@ -38,7 +36,7 @@ const styles = StyleSheet.create({
   logoText: {
     fontFamily: 'Helvetica',
     fontWeight: 'bold',
-    fontSize: 10,
+    fontSize: '10pt',
     textAlign: 'center',
   },
   qrCode: {
@@ -46,18 +44,18 @@ const styles = StyleSheet.create({
     height: 80,
   },
   clientName: {
-    fontSize: 14,
+    fontSize: '14pt',
     fontFamily: 'Helvetica',
     fontWeight: 'bold',
     color: '#2563eb', // text-blue-600
     textTransform: 'uppercase',
   },
   clientCuit: {
-    fontSize: 9,
+    fontSize: '9pt',
     color: '#374151', // text-gray-700
   },
   labelSection: {
-    fontSize: 10,
+    fontSize: '10pt',
   },
   labelText: {
     fontFamily: 'Helvetica',
@@ -66,12 +64,12 @@ const styles = StyleSheet.create({
   deliveryWindow: {
     backgroundColor: '#1f2937', // bg-gray-800
     color: 'white',
-    fontSize: 9,
+    fontSize: '9pt',
     padding: 6,
     borderRadius: 4,
   },
   notes: {
-    fontSize: 10,
+    fontSize: '10pt',
   },
   footer: {
     flexDirection: 'row',
@@ -81,7 +79,7 @@ const styles = StyleSheet.create({
   bultoText: {
     backgroundColor: '#374151', // bg-gray-700
     color: 'white',
-    fontSize: 9,
+    fontSize: '9pt',
     fontFamily: 'Helvetica',
     fontWeight: 'bold',
     paddingHorizontal: 8,
