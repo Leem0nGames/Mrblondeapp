@@ -119,6 +119,7 @@ export async function logout() {
 export async function getOrderPageData(agreementId: string) {
     const supabase = createClient();
 
+    // 1. Get Agreement, Price List, and Products
     const { data: agreement, error: agreementError } = await supabase
         .from('agreements')
         .select(`
@@ -135,16 +136,30 @@ export async function getOrderPageData(agreementId: string) {
                     volume_price,
                     products(*)
                 )
-            ),
-            clients (id, contact_name)
+            )
         `)
         .eq('id', agreementId)
         .single();
         
-
-    if (agreementError || !agreement || !agreement.price_lists) {
+    if (agreementError || !agreement) {
         console.error("getOrderPageData (agreement) error:", agreementError?.message);
-        return { data: null, error: { message: "El convenio no es válido, ha expirado o no tiene una lista de precios asignada." } };
+        return { data: null, error: { message: "El convenio no es válido o ha expirado." } };
+    }
+    if (!agreement.price_lists) {
+      return { data: null, error: { message: "Este convenio no tiene una lista de precios asignada." } };
+    }
+
+    // 2. Get the client assigned to this agreement
+    const { data: client, error: clientError } = await supabase
+        .from('clients')
+        .select('id, contact_name')
+        .eq('agreement_id', agreementId)
+        .eq('status', 'active')
+        .maybeSingle();
+
+    if (clientError || !client) {
+         console.error("getOrderPageData (client) error:", clientError?.message);
+        return { data: null, error: { message: "Este convenio no está asignado a ningún cliente activo." } };
     }
 
     const products = agreement.price_lists.price_list_items.map(pli => ({
@@ -169,7 +184,7 @@ export async function getOrderPageData(agreementId: string) {
                 ...agreement,
                 agreement_promotions: agreement.agreement_promotions ?? [],
             }, 
-            products,
+            client,
             productsByCategory
         }, 
         error: null 
@@ -209,7 +224,7 @@ export async function submitOnboardingForm(payload: Omit<Client, 'id' | 'created
     }
 
     // Determine the new status after form submission
-    let newStatus = existingClient.status;
+    let newStatus: Client['status'] = existingClient.status as Client['status'];
     if (existingClient.status === 'pending_onboarding') {
         newStatus = existingClient.agreement_id ? 'active' : 'pending_agreement';
     }

@@ -45,11 +45,8 @@ export default async function OrderPage({
     );
   }
 
-  const { agreement, productsByCategory } = data;
+  const { agreement, client, productsByCategory } = data;
   const categories = Object.keys(productsByCategory);
-
-  // El cliente asociado a este convenio (debería ser solo uno)
-  const client = agreement.clients[0];
 
   return (
     <div className="min-h-screen bg-muted/20">
