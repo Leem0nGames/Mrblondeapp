@@ -1,12 +1,11 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
 import { z } from "zod";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { upsertAgreement, getPriceLists } from "@/app/admin/actions/admin.actions";
+import { upsertAgreement, getPriceLists } from "@/app/admin/agreements/actions/admin.actions";
 import type { FormConfig } from "../../_components/entity-dialog";
 import type { PriceList } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -20,42 +19,17 @@ const agreementSchema = z.object({
   price_list_id: z.string().nullable(),
 });
 
-// We need to wrap the render function to pass the form control to it
-const renderAgreementFields = (form: any) => {
-  return <AgreementFormFields form={form} />;
-};
+// We need a new component to handle its own state and props
+const AgreementFormFields = ({ form, priceLists, onPriceListCreated }: { form: any, priceLists: PriceList[], onPriceListCreated: (newPriceList: PriceList) => void }) => {
 
-// We create a new component to handle its own state
-const AgreementFormFields = ({ form }: { form: any }) => {
-  const [priceLists, setPriceLists] = useState<PriceList[]>([]);
-  const [isPriceListDialogOpen, setIsPriceListDialogOpen] = useState(false);
-  
-  const fetchPriceLists = async () => {
-    const { data } = await getPriceLists();
-    setPriceLists(data ?? []);
-  };
-
-  useEffect(() => {
-    fetchPriceLists();
-  }, []);
-  
-  const handleNewPriceListSuccess = async (newPriceList: PriceList) => {
-      await fetchPriceLists(); // Refreshes the list
-      form.setValue('price_list_id', newPriceList.id, { shouldValidate: true });
-      setIsPriceListDialogOpen(false);
-  };
-  
-  // A wrapper for the original upsert action to include the success callback
   const upsertPriceListActionWithCallback = async (payload: any) => {
     const result = await priceListFormConfig.upsertAction(payload);
     if (!result.error && result.data) {
-        // This assumes the upsert action returns the created/updated entity
-        await handleNewPriceListSuccess(result.data);
+        onPriceListCreated(result.data);
     }
     return result;
   };
   
-  // We need to create a *new* config object for the dialog to override the action
   const priceListDialogConfig: FormConfig<any> = {
       ...priceListFormConfig,
       upsertAction: upsertPriceListActionWithCallback,
@@ -153,5 +127,5 @@ export const agreementFormConfig: FormConfig<typeof agreementSchema> = {
   schema: agreementSchema,
   upsertAction: (values) => upsertAgreement(values),
   getDefaultValues: getAgreementDefaultValues,
-  renderFields: renderAgreementFields,
+  renderFields: (form: any, { priceLists, onPriceListCreated }: any) => <AgreementFormFields form={form} priceLists={priceLists} onPriceListCreated={onPriceListCreated} />,
 };

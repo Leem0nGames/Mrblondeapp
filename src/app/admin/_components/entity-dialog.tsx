@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useMemo } from "react";
 import { z } from "zod";
-import { useForm, UseFormReturn } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
@@ -15,12 +15,12 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Promotion } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { AgreementFormFieldsWrapper } from "../agreements/_components/form-config-wrapper";
 
 
 export interface FormConfig<T extends z.ZodType<any, any>> {
@@ -28,7 +28,8 @@ export interface FormConfig<T extends z.ZodType<any, any>> {
   schema: T;
   upsertAction: (payload: any) => Promise<{ data: any; error: any }>;
   getDefaultValues: (entity?: any) => z.infer<T>;
-  renderFields: (form: UseFormReturn<z.infer<T>>) => React.ReactNode;
+  renderFields: (form: any, props?: any) => React.ReactNode;
+  wrapper?: React.ComponentType<{ renderFields: (form: any, props?: any) => React.ReactNode }>;
 }
 
 interface EntityDialogProps {
@@ -52,11 +53,14 @@ export function EntityDialog({
     upsertAction,
     getDefaultValues,
     renderFields,
+    wrapper: FormWrapper
   } = formConfig;
 
+  // Use useMemo to avoid re-creating the form object on every render
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: getDefaultValues(entity),
+    // Memoize default values to prevent unnecessary form state updates
+    defaultValues: useMemo(() => getDefaultValues(entity), [entity, getDefaultValues]),
   });
 
   useEffect(() => {
@@ -90,6 +94,13 @@ export function EntityDialog({
     ? `Actualiza los detalles de este ${entityName.toLowerCase()}.`
     : `Completa los detalles para el nuevo ${entityName.toLowerCase()}.`;
 
+  const renderFormContent = () => {
+    if (FormWrapper) {
+      return <FormWrapper renderFields={renderFields} />;
+    }
+    return renderFields(form);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -100,15 +111,15 @@ export function EntityDialog({
         </DialogHeader>
         <div className="grid gap-4 overflow-y-auto">
           <ScrollArea className="h-full w-full">
-            <Form {...form}>
+            <FormProvider {...form}>
               <form
                 id={`entity-form-${entityName}`}
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-4 px-6"
               >
-                {renderFields(form)}
+                {renderFormContent()}
               </form>
-            </Form>
+            </FormProvider>
           </ScrollArea>
         </div>
         <DialogFooter className="p-6 pt-2 border-t">
