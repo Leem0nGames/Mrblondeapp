@@ -11,6 +11,7 @@ import type { PriceList } from "@/types";
 import { Button } from "@/components/ui/button";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { priceListFormConfig } from "../../pricelists/_components/form-config";
+import { AgreementFormFieldsWrapper } from "./form-config-wrapper";
 
 const agreementSchema = z.object({
   agreement_name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
