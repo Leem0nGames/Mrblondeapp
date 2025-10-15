@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useTransition } from "react";
-import { useCartStore, type CartItem } from "@/hooks/use-cart-store";
+import { useCartStore, type CartItem, type BonusInfo } from "@/hooks/use-cart-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -20,7 +20,7 @@ function formatWhatsAppMessage(
   totalPrice: number,
   orderId: string,
   appliedPromotions: Promotion[],
-  bonusItems: number,
+  bonusInfo: BonusInfo,
 ) {
   const itemsText = cartItems
     .map((item) => `- ${item.quantity}x ${item.product.name}`)
@@ -35,17 +35,25 @@ function formatWhatsAppMessage(
   ];
   
   if (appliedPromotions.length > 0) {
+    const bonusText = Object.values(bonusInfo).map(info => 
+        `+${info.bonusQuantity} un. de ${info.productName}`
+    ).join('\n');
+
     const promotionsText = appliedPromotions.map(promo => {
-        if (promo.rules.type === 'buy_x_get_y_free') {
-            return `🎁 Bonificación: ${bonusItems} producto/s de regalo.`;
+        if (promo.rules.type === 'buy_x_get_y_free' && bonusText) {
+            return `🎁 *Bonificaciones:*\n${bonusText}`;
         }
         if (promo.rules.type === 'free_shipping') {
             return `🚚 Envío Gratis.`;
         }
-        return `✅ ${promo.name}`;
-    }).join('\n');
-    messageParts.push(`🎉 *Promociones Aplicadas:*\n${promotionsText}\n`);
+        return ``;
+    }).filter(Boolean).join('\n\n');
+
+    if (promotionsText) {
+      messageParts.push(`${promotionsText}\n`);
+    }
   }
+
 
   messageParts.push(
     `*Resumen de Pago:*\n` +
@@ -60,31 +68,50 @@ function formatWhatsAppMessage(
 }
 
 function AppliedPromotions() {
-    const { appliedPromotions, bonusItems } = useCartStore();
+    const { appliedPromotions, bonusInfo } = useCartStore();
 
     if (appliedPromotions.length === 0) {
         return null;
     }
 
+    const bonusEntries = Object.values(bonusInfo);
+
     return (
-        <div className="space-y-3">
-            {appliedPromotions.map(promo => (
-                <div key={promo.id} className="flex items-center gap-3 p-3 bg-primary/10 border border-primary/20 rounded-lg">
-                    {promo.rules.type === 'buy_x_get_y_free' ? (
-                        <Gift className="h-8 w-8 text-primary" />
-                    ) : (
-                        <Truck className="h-8 w-8 text-primary" />
-                    )}
-                    <div>
-                        <p className="font-semibold text-primary">{promo.name}</p>
-                        {promo.rules.type === 'buy_x_get_y_free' ? (
-                             <p className="text-sm text-muted-foreground">¡Ganaste <span className="font-bold">{bonusItems}</span> producto(s) de regalo!</p>
-                        ) : (
-                             <p className="text-sm text-muted-foreground">{promo.description}</p>
-                        )}
-                    </div>
-                </div>
-            ))}
+        <div className="space-y-4 w-full">
+            {appliedPromotions.map(promo => {
+                if (promo.rules.type === 'buy_x_get_y_free' && bonusEntries.length > 0) {
+                    return (
+                        <div key={promo.id} className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                            <div className="flex items-start gap-3">
+                                <Gift className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
+                                <div>
+                                    <p className="font-semibold text-primary">{promo.name}</p>
+                                    <p className="text-sm text-muted-foreground">Bonificación aplicada:</p>
+                                    <ul className="mt-2 list-disc list-inside text-sm space-y-1">
+                                        {bonusEntries.map(info => (
+                                            <li key={info.productName}>
+                                                <span className="font-bold">+{info.bonusQuantity} un.</span> de {info.productName}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
+                 if (promo.rules.type === 'free_shipping') {
+                    return (
+                        <div key={promo.id} className="flex items-center gap-3 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                            <Truck className="h-8 w-8 text-primary" />
+                            <div>
+                                <p className="font-semibold text-primary">{promo.name}</p>
+                                <p className="text-sm text-muted-foreground">{promo.description}</p>
+                            </div>
+                        </div>
+                    )
+                 }
+                return null;
+            })}
         </div>
     )
 }
@@ -103,7 +130,7 @@ export function OrderSummary({
   pricesIncludeVat: boolean;
   promotions: Promotion[];
 }) {
-  const { items, totalItems, subtotal, vatAmount, totalPrice, clearCart, setAgreement, appliedPromotions, bonusItems } = useCartStore();
+  const { items, totalItems, subtotal, vatAmount, totalPrice, clearCart, setAgreement, appliedPromotions, bonusInfo } = useCartStore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
@@ -153,7 +180,7 @@ export function OrderSummary({
             totalPrice,
             result.data.orderId,
             appliedPromotions,
-            bonusItems
+            bonusInfo
         );
         const whatsappUrl = `https://wa.me/${whatsAppNumber}?text=${message}`;
         window.open(whatsappUrl, "_blank");

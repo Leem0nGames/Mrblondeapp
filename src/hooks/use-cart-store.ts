@@ -3,18 +3,19 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { ProductWithPrice, Promotion } from "@/types";
+import type { ProductWithPrice, Promotion, CartItem as CartItemType } from "@/types";
 
-export type CartItem = {
-  product: ProductWithPrice;
-  quantity: number;
-};
-
+export type BonusInfo = {
+    [productId: string]: {
+        productName: string;
+        bonusQuantity: number;
+    }
+}
 const VOLUME_THRESHOLD = 150;
 const VAT_RATE = 0.21; // 21%
 
 type CartState = {
-  items: CartItem[];
+  items: CartItemType[];
   totalItems: number;
   subtotal: number;
   vatAmount: number;
@@ -22,7 +23,7 @@ type CartState = {
   isVolumePricingActive: boolean;
   promotions: Promotion[];
   appliedPromotions: Promotion[];
-  bonusItems: number;
+  bonusInfo: BonusInfo;
   agreementId: string | null;
   pricesIncludeVat: boolean;
   setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[]) => void;
@@ -33,23 +34,31 @@ type CartState = {
   clearCart: () => void;
 };
 
-const calculatePromotions = (items: CartItem[], promotions: Promotion[]) => {
+const calculatePromotions = (items: CartItemType[], promotions: Promotion[]) => {
     const totalItems = items.reduce((total, item) => total + item.quantity, 0);
     const appliedPromotions: Promotion[] = [];
-    let bonusItems = 0;
+    const bonusInfo: BonusInfo = {};
 
     promotions.forEach(promo => {
         if (!promo.rules || !promo.rules.type) return;
 
         switch (promo.rules.type) {
             case 'buy_x_get_y_free':
-                if (totalItems >= promo.rules.buy) {
-                    const times = Math.floor(totalItems / promo.rules.buy);
-                    bonusItems += times * promo.rules.get;
-                    if (!appliedPromotions.find(p => p.id === promo.id)) {
-                       appliedPromotions.push(promo);
+                items.forEach(item => {
+                    if (item.quantity >= promo.rules.buy) {
+                        const times = Math.floor(item.quantity / promo.rules.buy);
+                        const bonusQuantity = times * promo.rules.get;
+                        if (bonusQuantity > 0) {
+                            bonusInfo[item.product.id] = {
+                                productName: item.product.name,
+                                bonusQuantity: bonusQuantity
+                            };
+                            if (!appliedPromotions.find(p => p.id === promo.id)) {
+                                appliedPromotions.push(promo);
+                            }
+                        }
                     }
-                }
+                });
                 break;
             case 'free_shipping':
                 if (totalItems >= promo.rules.min_units) {
@@ -62,13 +71,12 @@ const calculatePromotions = (items: CartItem[], promotions: Promotion[]) => {
                 break;
         }
     });
-
-    return { appliedPromotions, bonusItems };
+    return { appliedPromotions, bonusInfo };
 }
 
 
 // The single source of truth for all calculations.
-const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, promotions: Promotion[]) => {
+const calculateAll = (items: CartItemType[], pricesIncludeVat: boolean, promotions: Promotion[]) => {
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
   const isVolumePricingActive = totalItems >= VOLUME_THRESHOLD;
 
@@ -91,9 +99,9 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, promotions: 
   const vatAmount = subtotal * VAT_RATE;
   const totalPrice = subtotal + vatAmount;
   
-  const { appliedPromotions, bonusItems } = calculatePromotions(items, promotions);
+  const { appliedPromotions, bonusInfo } = calculatePromotions(items, promotions);
 
-  return { totalItems, subtotal, vatAmount, totalPrice, isVolumePricingActive, appliedPromotions, bonusItems };
+  return { totalItems, subtotal, vatAmount, totalPrice, isVolumePricingActive, appliedPromotions, bonusInfo };
 };
 
 export const useCartStore = create<CartState>()(
@@ -107,7 +115,7 @@ export const useCartStore = create<CartState>()(
       isVolumePricingActive: false,
       promotions: [],
       appliedPromotions: [],
-      bonusItems: 0,
+      bonusInfo: {},
       agreementId: null,
       pricesIncludeVat: true,
       
@@ -125,7 +133,7 @@ export const useCartStore = create<CartState>()(
                 totalPrice: 0,
                 isVolumePricingActive: false,
                 appliedPromotions: [],
-                bonusItems: 0,
+                bonusInfo: {},
             });
         } else {
              const { items } = get();
@@ -199,7 +207,7 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => {
-        set({ items: [], totalItems: 0, subtotal: 0, vatAmount: 0, totalPrice: 0, isVolumePricingActive: false, appliedPromotions: [], bonusItems: 0 });
+        set({ items: [], totalItems: 0, subtotal: 0, vatAmount: 0, totalPrice: 0, isVolumePricingActive: false, appliedPromotions: [], bonusInfo: {} });
       },
     }),
     {
@@ -208,7 +216,7 @@ export const useCartStore = create<CartState>()(
       // Prevent persisting promotions, as they should be fetched on page load.
       partialize: (state) =>
         Object.fromEntries(
-          Object.entries(state).filter(([key]) => !['promotions', 'appliedPromotions', 'bonusItems'].includes(key))
+          Object.entries(state).filter(([key]) => !['promotions', 'appliedPromotions', 'bonusInfo'].includes(key))
         ),
       onRehydrateStorage: () => (state, error) => {
         if (state) {
@@ -221,7 +229,7 @@ export const useCartStore = create<CartState>()(
             state.isVolumePricingActive = isVolumePricingActive;
             state.promotions = [];
             state.appliedPromotions = [];
-            state.bonusItems = 0;
+            state.bonusInfo = {};
         }
       }
     }
