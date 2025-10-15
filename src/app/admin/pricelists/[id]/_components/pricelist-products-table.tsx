@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useTransition } from "react";
@@ -100,10 +99,20 @@ export function PriceListProductsTable({ items, priceListId }: { items: PriceLis
               </TableCell>
               <TableCell className="font-medium">{item.products.name}</TableCell>
               <TableCell>
-                <div><Badge variant="secondary" className="text-base">{formatCurrency(item.price)}</Badge></div>
+                <PriceListItemEditDialog 
+                  priceListId={priceListId}
+                  item={item}
+                >
+                  <Badge variant="secondary" className="text-base cursor-pointer hover:bg-secondary/80">{formatCurrency(item.price)}</Badge>
+                </PriceListItemEditDialog>
               </TableCell>
                <TableCell>
-                <div><Badge variant="outline" className="text-base">{formatCurrency(item.volume_price)}</Badge></div>
+                <PriceListItemEditDialog 
+                  priceListId={priceListId}
+                  item={item}
+                >
+                  <Badge variant="outline" className="text-base cursor-pointer hover:bg-muted">{formatCurrency(item.volume_price)}</Badge>
+                </PriceListItemEditDialog>
               </TableCell>
               <TableCell>
                 <DropdownMenu>
