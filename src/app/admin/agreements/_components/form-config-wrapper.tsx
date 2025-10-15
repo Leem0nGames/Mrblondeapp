@@ -1,15 +1,15 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, cloneElement } from "react";
 import type { PriceList } from "@/types";
-import { getPriceLists } from "@/app/admin/agreements/actions/admin.actions";
+import { getPriceLists } from "@/app/admin/actions/admin.actions";
 import { useFormContext } from "react-hook-form";
 
 // This is a new wrapper component to contain the client-side logic
 // of fetching data for the agreement form.
 
-export function AgreementFormFieldsWrapper({ renderFields }: { renderFields: (form: any, props: any) => React.ReactNode }) {
+export function AgreementFormFieldsWrapper({ children }: { children: React.ReactNode }) {
   const [priceLists, setPriceLists] = useState<PriceList[]>([]);
   const form = useFormContext();
 
@@ -28,5 +28,5 @@ export function AgreementFormFieldsWrapper({ renderFields }: { renderFields: (fo
   }, [form]);
 
   // We pass the fetched data and the callback down to the actual render function
-  return renderFields(form, { priceLists, onPriceListCreated: handlePriceListCreated });
+  return cloneElement(children as React.ReactElement, { priceLists, onPriceListCreated: handlePriceListCreated });
 }

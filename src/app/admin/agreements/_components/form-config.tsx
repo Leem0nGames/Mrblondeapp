@@ -5,13 +5,12 @@ import { z } from "zod";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { upsertAgreement, getPriceLists } from "@/app/admin/agreements/actions/admin.actions";
+import { upsertAgreement } from "@/app/admin/actions/admin.actions";
 import type { FormConfig } from "../../_components/entity-dialog";
 import type { PriceList } from "@/types";
 import { Button } from "@/components/ui/button";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { priceListFormConfig } from "../../pricelists/_components/form-config";
-import { PlusCircle } from "lucide-react";
 
 const agreementSchema = z.object({
   agreement_name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
@@ -20,7 +19,7 @@ const agreementSchema = z.object({
 });
 
 // We need a new component to handle its own state and props
-const AgreementFormFields = ({ form, priceLists, onPriceListCreated }: { form: any, priceLists: PriceList[], onPriceListCreated: (newPriceList: PriceList) => void }) => {
+const AgreementFormFields = ({ form, priceLists = [], onPriceListCreated = () => {} }: { form: any, priceLists: PriceList[], onPriceListCreated: (newPriceList: PriceList) => void }) => {
 
   const upsertPriceListActionWithCallback = async (payload: any) => {
     const result = await priceListFormConfig.upsertAction(payload);
@@ -127,5 +126,6 @@ export const agreementFormConfig: FormConfig<typeof agreementSchema> = {
   schema: agreementSchema,
   upsertAction: (values) => upsertAgreement(values),
   getDefaultValues: getAgreementDefaultValues,
-  renderFields: (form: any, { priceLists, onPriceListCreated }: any) => <AgreementFormFields form={form} priceLists={priceLists} onPriceListCreated={onPriceListCreated} />,
+  renderFields: (form: any, props: any) => <AgreementFormFields form={form} {...props} />,
+  wrapper: AgreementFormFieldsWrapper,
 };

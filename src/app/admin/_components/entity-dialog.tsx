@@ -29,7 +29,7 @@ export interface FormConfig<T extends z.ZodType<any, any>> {
   upsertAction: (payload: any) => Promise<{ data: any; error: any }>;
   getDefaultValues: (entity?: any) => z.infer<T>;
   renderFields: (form: any, props?: any) => React.ReactNode;
-  wrapper?: React.ComponentType<{ renderFields: (form: any, props?: any) => React.ReactNode }>;
+  wrapper?: React.ComponentType<{ children: React.ReactNode }>;
 }
 
 interface EntityDialogProps {
@@ -96,9 +96,10 @@ export function EntityDialog({
 
   const renderFormContent = () => {
     if (FormWrapper) {
-      return <FormWrapper renderFields={renderFields} />;
+      return <FormWrapper>{renderFields(form)}</FormWrapper>;
     }
-    return renderFields(form);
+    // Pass an empty object to ensure props are never undefined
+    return renderFields(form, {});
   };
 
   return (
