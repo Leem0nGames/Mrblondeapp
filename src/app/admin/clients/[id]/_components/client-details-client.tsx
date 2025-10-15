@@ -13,7 +13,7 @@ import { ClientStats } from "./client-stats";
 import { ClientOrders } from "./client-orders";
 import type { Client, ClientStats as StatsType, Order, AgreementSalesCondition } from "@/types";
 import { Skeleton } from '@/components/ui/skeleton';
-import { deleteClient } from "@/app/actions/admin.actions";
+import { deleteClient, getAgreementSalesConditions } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { OnboardingFormDialog } from './onboarding-form-dialog';
 import { AssignAgreementDialog } from '../../_components/assign-agreement-dialog';
@@ -23,7 +23,7 @@ import { ActionButton, ActionButtonWrapper } from './client-action-buttons';
 const ShippingLabel = dynamic(
   () => import('./shipping-label').then(mod => mod.ShippingLabel),
   { 
-    ssr: false, // Deshabilitar SSR para este componente es crucial
+    ssr: false,
     loading: () => (
       <Card>
         <CardHeader>
@@ -66,20 +66,39 @@ type ClientDetailsClientProps = {
     client: Client;
     stats: StatsType | null;
     orders: Order[];
-    salesConditions: AgreementSalesCondition[];
 }
 
-export function ClientDetailsClient({ client, stats, orders, salesConditions }: ClientDetailsClientProps) {
+export function ClientDetailsClient({ client, stats, orders }: ClientDetailsClientProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const [salesConditions, setSalesConditions] = useState<AgreementSalesCondition[]>([]);
+  const [isLoadingConditions, setIsLoadingConditions] = useState(true);
 
   const [orderLink, setOrderLink] = useState<string | null>(null);
 
   useEffect(() => {
-    if (client.agreement_id && client.status === 'active') {
+    if (typeof window !== 'undefined' && client.agreement_id && client.status === 'active') {
       setOrderLink(`${window.location.origin}/pedido/${client.agreement_id}`);
     }
   }, [client.agreement_id, client.status]);
+
+  useEffect(() => {
+    if (client.agreement_id) {
+      setIsLoadingConditions(true);
+      getAgreementSalesConditions(client.agreement_id)
+        .then(({ data, error }) => {
+          if (error) {
+            toast({ title: "Error", description: "No se pudieron cargar las condiciones de venta." });
+          } else {
+            setSalesConditions(data || []);
+          }
+        })
+        .finally(() => setIsLoadingConditions(false));
+    } else {
+      setIsLoadingConditions(false);
+    }
+  }, [client.agreement_id, toast]);
+
 
   const copyToClipboard = useCallback((textToCopy: string | null, toastMessage: string, errorMessage?: string) => {
     if (!textToCopy) {
@@ -160,7 +179,7 @@ export function ClientDetailsClient({ client, stats, orders, salesConditions }: 
               </div>
                <div className="space-y-2 rounded-lg bg-background p-4">
                   <p className="text-sm font-medium text-muted-foreground">Condiciones de Venta (del Convenio)</p>
-                   {salesConditions.length > 0 ? (
+                   {isLoadingConditions ? <Skeleton className="h-8 w-3/4" /> : salesConditions.length > 0 ? (
                       <ul className="space-y-2 text-sm">
                           {salesConditions.map(sc => (
                               <li key={sc.sales_conditions.id} className="flex items-center gap-2">

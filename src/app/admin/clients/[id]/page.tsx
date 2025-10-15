@@ -1,7 +1,7 @@
 
 import Link from "next/link";
 import { FileWarning } from "lucide-react";
-import { getAgreementById, getClientById, getClientStats, getClientOrders } from "@/app/admin/actions/admin.actions";
+import { getClientById, getClientStats, getClientOrders } from "@/app/admin/actions/admin.actions";
 import { Button } from "@/components/ui/button";
 import { ClientDetailsClient } from "./_components/client-details-client";
 
@@ -37,16 +37,12 @@ export default async function ClientDetailPage({
   const stats = statsResult.data;
   const orders = ordersResult;
 
-  const agreementDetails = client.agreements ? await getAgreementById(client.agreements.id) : null;
-  const salesConditions = agreementDetails?.data?.agreement_sales_conditions ?? [];
-
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
         <ClientDetailsClient 
             client={client}
             stats={stats}
             orders={orders}
-            salesConditions={salesConditions}
         />
     </div>
   );
