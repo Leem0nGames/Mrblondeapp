@@ -183,8 +183,12 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                 const onboardingLink = isClient ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
                 const orderLink = isClient && client.agreement_id && client.status === 'active' ? `${window.location.origin}/pedido/${client.agreement_id}` : null;
                 return (
-                <TableRow key={client.id} className="cursor-pointer" onClick={() => window.location.href = `/admin/clients/${client.id}`}>
-                  <TableCell className="font-medium">{client.contact_name || "Cliente pendiente..."}</TableCell>
+                <TableRow key={client.id}>
+                  <TableCell className="font-medium">
+                    <Link href={`/admin/clients/${client.id}`} className="hover:underline">
+                      {client.contact_name || "Cliente pendiente..."}
+                    </Link>
+                  </TableCell>
                   <TableCell>{client.email}</TableCell>
                   <TableCell>
                       {client.agreements?.agreement_name || <span className="text-muted-foreground">Sin asignar</span>}
@@ -196,7 +200,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                         </Badge>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                  <TableCell className="text-right">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                         <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -206,8 +210,8 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                        <DropdownMenuItem onSelect={() => window.location.href = `/admin/clients/${client.id}`}>
-                            Ver Detalles
+                        <DropdownMenuItem asChild>
+                           <Link href={`/admin/clients/${client.id}`}>Ver Detalles</Link>
                         </DropdownMenuItem>
                         <AssignAgreementDialog client={client}>
                             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Asignar Convenio</DropdownMenuItem>

@@ -1,5 +1,8 @@
 
+"use client";
+
 import Link from "next/link";
+import { usePathname } from 'next/navigation'
 import {
   Package,
   LogOut,
@@ -12,7 +15,7 @@ import {
   Home,
   Menu,
 } from "lucide-react";
-
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -48,6 +51,8 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
@@ -64,8 +69,11 @@ export default function AdminLayout({
                  <Tooltip key={item.href}>
                     <TooltipTrigger asChild>
                         <Link
-                        href={item.href}
-                        className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                          href={item.href}
+                          className={cn(
+                            "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
+                            pathname === item.href && "bg-accent text-accent-foreground"
+                          )}
                         >
                         <item.icon className="h-5 w-5" />
                         <span className="sr-only">{item.label}</span>
@@ -82,7 +90,10 @@ export default function AdminLayout({
               <TooltipTrigger asChild>
                 <Link
                     href="/admin/settings"
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+                    className={cn(
+                      "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
+                       pathname === "/admin/settings" && "bg-accent text-accent-foreground"
+                    )}
                     >
                     <Settings className="h-5 w-5" />
                     <span className="sr-only">Configuración</span>
@@ -140,14 +151,20 @@ export default function AdminLayout({
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                className="text-muted-foreground hover:text-foreground"
+                                className={cn(
+                                  "hover:text-foreground",
+                                  pathname === item.href ? "text-foreground" : "text-muted-foreground"
+                                )}
                             >
                                 {item.label}
                             </Link>
                         ))}
                          <Link
                             href="/admin/settings"
-                            className="text-muted-foreground hover:text-foreground"
+                            className={cn(
+                              "hover:text-foreground",
+                               pathname === "/admin/settings" ? "text-foreground" : "text-muted-foreground"
+                            )}
                          >
                             Configuración
                         </Link>
@@ -172,7 +189,10 @@ export default function AdminLayout({
                 <li key={item.href}>
                     <Link
                         href={item.href}
-                        className="flex flex-col items-center text-muted-foreground hover:text-primary"
+                        className={cn(
+                          "flex flex-col items-center gap-1 transition-colors",
+                          pathname === item.href ? "text-primary" : "text-muted-foreground hover:text-primary"
+                        )}
                     >
                         <item.icon className="h-6 w-6" />
                         <span className="text-[10px]">{item.label}</span>

@@ -1,7 +1,7 @@
 
 import { Package, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getProducts } from "@/app/admin/actions/admin.actions";
+import { getProducts } from "@/app/actions/admin.actions";
 import ProductsTable from "./_components/products-table";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
