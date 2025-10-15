@@ -92,6 +92,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
       <div className="grid gap-4 sm:hidden">
         {clients.map((client) => {
           const onboardingLink = isClient ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
+          const orderLink = isClient && client.agreement_id && client.status === 'active' ? `${window.location.origin}/pedido/${client.agreement_id}` : null;
           return (
           <Card key={client.id}>
              <Link href={`/admin/clients/${client.id}`}>
@@ -114,11 +115,15 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                 </CardContent>
             </Link>
             <CardFooter className="flex flex-col gap-2 items-stretch">
-                <AssignAgreementDialog client={client}>
-                    <Button variant="default" size="sm">
-                       <Edit className="mr-2 h-4 w-4"/> Asignar Convenio
-                    </Button>
-                </AssignAgreementDialog>
+                <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyToClipboard(orderLink, 'Enlace de pedido copiado!')}
+                    disabled={!orderLink}
+                >
+                    <LinkIcon className="mr-2 h-4 w-4" />
+                    Copiar Link de Pedido
+                </Button>
                 <Button 
                     variant="secondary"
                     size="sm"
@@ -176,6 +181,7 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
             <TableBody>
               {clients.map((client) => {
                 const onboardingLink = isClient ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
+                const orderLink = isClient && client.agreement_id && client.status === 'active' ? `${window.location.origin}/pedido/${client.agreement_id}` : null;
                 return (
                 <TableRow key={client.id} className="cursor-pointer" onClick={() => window.location.href = `/admin/clients/${client.id}`}>
                   <TableCell className="font-medium">{client.contact_name || "Cliente pendiente..."}</TableCell>
@@ -206,6 +212,14 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                         <AssignAgreementDialog client={client}>
                             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Asignar Convenio</DropdownMenuItem>
                         </AssignAgreementDialog>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                            onClick={() => copyToClipboard(orderLink, 'Enlace de pedido copiado!', 'El cliente debe estar activo para tener un enlace de pedido.')}
+                            disabled={!orderLink}
+                        >
+                            <LinkIcon className="mr-2 h-4 w-4" />
+                            Copiar Link Pedido
+                        </DropdownMenuItem>
                         <DropdownMenuItem 
                             onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!')}
                             disabled={client.status !== 'pending_onboarding' || !isClient}
