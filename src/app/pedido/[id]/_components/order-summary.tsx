@@ -4,11 +4,12 @@
 import { useEffect, useTransition } from "react";
 import { useCartStore, type CartItem } from "@/hooks/use-cart-store";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Gift, Truck } from "lucide-react";
 import { submitOrder } from "@/app/actions/user.actions";
+import type { Promotion } from "@/types";
 
 function formatWhatsAppMessage(
   clientName: string,
@@ -17,7 +18,9 @@ function formatWhatsAppMessage(
   subtotal: number,
   vatAmount: number,
   totalPrice: number,
-  orderId: string
+  orderId: string,
+  appliedPromotions: Promotion[],
+  bonusItems: number,
 ) {
   const itemsText = cartItems
     .map((item) => `- ${item.quantity}x ${item.product.name}`)
@@ -31,6 +34,19 @@ function formatWhatsAppMessage(
     `📦 *Productos:* (${totalItems} unidades)\n${itemsText}\n`,
   ];
   
+  if (appliedPromotions.length > 0) {
+    const promotionsText = appliedPromotions.map(promo => {
+        if (promo.rules.type === 'buy_x_get_y_free') {
+            return `🎁 Bonificación: ${bonusItems} producto/s de regalo.`;
+        }
+        if (promo.rules.type === 'free_shipping') {
+            return `🚚 Envío Gratis.`;
+        }
+        return `✅ ${promo.name}`;
+    }).join('\n');
+    messageParts.push(`🎉 *Promociones Aplicadas:*\n${promotionsText}\n`);
+  }
+
   messageParts.push(
     `*Resumen de Pago:*\n` +
     `Subtotal: ${formatCurrency(subtotal)}\n` +
@@ -43,19 +59,51 @@ function formatWhatsAppMessage(
   return encodeURIComponent(message);
 }
 
+function AppliedPromotions() {
+    const { appliedPromotions, bonusItems } = useCartStore();
+
+    if (appliedPromotions.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="space-y-3">
+            {appliedPromotions.map(promo => (
+                <div key={promo.id} className="flex items-center gap-3 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                    {promo.rules.type === 'buy_x_get_y_free' ? (
+                        <Gift className="h-8 w-8 text-primary" />
+                    ) : (
+                        <Truck className="h-8 w-8 text-primary" />
+                    )}
+                    <div>
+                        <p className="font-semibold text-primary">{promo.name}</p>
+                        {promo.rules.type === 'buy_x_get_y_free' ? (
+                             <p className="text-sm text-muted-foreground">¡Ganaste <span className="font-bold">{bonusItems}</span> producto(s) de regalo!</p>
+                        ) : (
+                             <p className="text-sm text-muted-foreground">{promo.description}</p>
+                        )}
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
 
 export function OrderSummary({
   agreementId,
   clientId,
   clientName,
   pricesIncludeVat,
+  promotions,
 }: {
   agreementId: string;
   clientId: string;
   clientName: string;
   pricesIncludeVat: boolean;
+  promotions: Promotion[];
 }) {
-  const { items, totalItems, subtotal, vatAmount, totalPrice, clearCart, setAgreement } = useCartStore();
+  const { items, totalItems, subtotal, vatAmount, totalPrice, clearCart, setAgreement, appliedPromotions, bonusItems } = useCartStore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
@@ -64,8 +112,8 @@ export function OrderSummary({
 
   useEffect(() => {
     // Set agreement details in the store, which will also trigger a cart reset if the agreement changes.
-    setAgreement(agreementId, pricesIncludeVat);
-  }, [agreementId, pricesIncludeVat, setAgreement]);
+    setAgreement(agreementId, pricesIncludeVat, promotions);
+  }, [agreementId, pricesIncludeVat, promotions, setAgreement]);
 
 
   const handleSend = () => {
@@ -103,7 +151,9 @@ export function OrderSummary({
             subtotal,
             vatAmount,
             totalPrice,
-            result.data.orderId
+            result.data.orderId,
+            appliedPromotions,
+            bonusItems
         );
         const whatsappUrl = `https://wa.me/${whatsAppNumber}?text=${message}`;
         window.open(whatsappUrl, "_blank");
@@ -164,6 +214,15 @@ export function OrderSummary({
                   <p className="text-center text-muted-foreground py-4">Tu carrito está vacío.</p>
               )}
           </CardContent>
+           {hasItems && appliedPromotions.length > 0 && (
+            <>
+              <Separator />
+              <CardFooter className="flex-col items-start gap-4 p-6">
+                  <h3 className="font-semibold text-foreground">Promociones Aplicadas</h3>
+                  <AppliedPromotions />
+              </CardFooter>
+            </>
+          )}
       </Card>
   );
 }

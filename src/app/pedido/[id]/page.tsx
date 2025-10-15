@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/accordion";
 import { OrderSummary } from "./_components/order-summary";
 import { Suspense } from "react";
+import { AgreementPromotion } from "@/types";
 
 
 export default async function OrderPage({
@@ -47,6 +48,7 @@ export default async function OrderPage({
 
   const { agreement, client, productsByCategory } = data;
   const categories = Object.keys(productsByCategory);
+  const promotions = agreement.agreement_promotions.map((ap: AgreementPromotion) => ap.promotions);
 
   return (
     <div className="min-h-screen bg-muted/20">
@@ -112,6 +114,7 @@ export default async function OrderPage({
               clientId={client.id}
               clientName={client.contact_name ?? "Cliente"}
               pricesIncludeVat={agreement.price_lists?.prices_include_vat ?? true}
+              promotions={promotions}
             />
           </Suspense>
         </div>

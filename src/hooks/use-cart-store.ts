@@ -20,9 +20,12 @@ type CartState = {
   vatAmount: number;
   totalPrice: number;
   isVolumePricingActive: boolean;
+  promotions: Promotion[];
+  appliedPromotions: Promotion[];
+  bonusItems: number;
   agreementId: string | null;
   pricesIncludeVat: boolean;
-  setAgreement: (id: string, pricesIncludeVat: boolean) => void;
+  setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[]) => void;
   addItem: (product: ProductWithPrice, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -30,8 +33,42 @@ type CartState = {
   clearCart: () => void;
 };
 
+const calculatePromotions = (items: CartItem[], promotions: Promotion[]) => {
+    const totalItems = items.reduce((total, item) => total + item.quantity, 0);
+    const appliedPromotions: Promotion[] = [];
+    let bonusItems = 0;
+
+    promotions.forEach(promo => {
+        if (!promo.rules || !promo.rules.type) return;
+
+        switch (promo.rules.type) {
+            case 'buy_x_get_y_free':
+                if (totalItems >= promo.rules.buy) {
+                    const times = Math.floor(totalItems / promo.rules.buy);
+                    bonusItems += times * promo.rules.get;
+                    if (!appliedPromotions.find(p => p.id === promo.id)) {
+                       appliedPromotions.push(promo);
+                    }
+                }
+                break;
+            case 'free_shipping':
+                if (totalItems >= promo.rules.min_units) {
+                     if (!appliedPromotions.find(p => p.id === promo.id)) {
+                       appliedPromotions.push(promo);
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    });
+
+    return { appliedPromotions, bonusItems };
+}
+
+
 // The single source of truth for all calculations.
-const calculateAll = (items: CartItem[], pricesIncludeVat: boolean) => {
+const calculateAll = (items: CartItem[], pricesIncludeVat: boolean, promotions: Promotion[]) => {
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
   const isVolumePricingActive = totalItems >= VOLUME_THRESHOLD;
 
@@ -53,8 +90,10 @@ const calculateAll = (items: CartItem[], pricesIncludeVat: boolean) => {
 
   const vatAmount = subtotal * VAT_RATE;
   const totalPrice = subtotal + vatAmount;
+  
+  const { appliedPromotions, bonusItems } = calculatePromotions(items, promotions);
 
-  return { totalItems, subtotal, vatAmount, totalPrice, isVolumePricingActive };
+  return { totalItems, subtotal, vatAmount, totalPrice, isVolumePricingActive, appliedPromotions, bonusItems };
 };
 
 export const useCartStore = create<CartState>()(
@@ -66,33 +105,40 @@ export const useCartStore = create<CartState>()(
       vatAmount: 0,
       totalPrice: 0,
       isVolumePricingActive: false,
+      promotions: [],
+      appliedPromotions: [],
+      bonusItems: 0,
       agreementId: null,
       pricesIncludeVat: true,
       
-      setAgreement: (id: string, pricesIncludeVat: boolean) => {
+      setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[]) => {
         const currentAgreementId = get().agreementId;
         if (id !== currentAgreementId) {
             set({ 
                 agreementId: id, 
-                pricesIncludeVat: pricesIncludeVat, 
+                pricesIncludeVat: pricesIncludeVat,
+                promotions: promotions,
                 items: [], 
                 totalItems: 0, 
                 subtotal: 0, 
                 vatAmount: 0, 
                 totalPrice: 0,
                 isVolumePricingActive: false,
+                appliedPromotions: [],
+                bonusItems: 0,
             });
-        } else if (pricesIncludeVat !== get().pricesIncludeVat) {
+        } else {
              const { items } = get();
              set({ 
-                pricesIncludeVat: pricesIncludeVat, 
-                ...calculateAll(items, pricesIncludeVat)
+                pricesIncludeVat: pricesIncludeVat,
+                promotions: promotions,
+                ...calculateAll(items, pricesIncludeVat, promotions)
             });
         }
       },
 
       addItem: (product: ProductWithPrice, quantity: number = 1) => {
-        const { items, pricesIncludeVat } = get();
+        const { items, pricesIncludeVat, promotions } = get();
         const existingItem = items.find(
           (item) => item.product.id === product.id
         );
@@ -109,11 +155,11 @@ export const useCartStore = create<CartState>()(
         }
 
         updatedItems = updatedItems.filter(item => item.quantity > 0);
-        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat) });
+        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat, promotions) });
       },
 
       removeItem: (productId: string) => {
-        const { items, pricesIncludeVat } = get();
+        const { items, pricesIncludeVat, promotions } = get();
         const existingItem = items.find(item => item.product.id === productId);
 
         if (!existingItem) return;
@@ -129,11 +175,11 @@ export const useCartStore = create<CartState>()(
             updatedItems = items.filter(item => item.product.id !== productId);
         }
 
-        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat) });
+        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat, promotions) });
       },
 
       updateQuantity: (productId: string, quantity: number) => {
-        const { pricesIncludeVat } = get();
+        const { pricesIncludeVat, promotions } = get();
         let updatedItems;
         if (quantity <= 0) {
           updatedItems = get().items.filter(
@@ -144,7 +190,7 @@ export const useCartStore = create<CartState>()(
             item.product.id === productId ? { ...item, quantity } : item
           );
         }
-        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat) });
+        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat, promotions) });
       },
       
       getItemQuantity: (productId: string) => {
@@ -153,20 +199,29 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => {
-        set({ items: [], totalItems: 0, subtotal: 0, vatAmount: 0, totalPrice: 0, isVolumePricingActive: false });
+        set({ items: [], totalItems: 0, subtotal: 0, vatAmount: 0, totalPrice: 0, isVolumePricingActive: false, appliedPromotions: [], bonusItems: 0 });
       },
     }),
     {
       name: 'cart-storage',
       storage: createJSONStorage(() => localStorage),
+      // Prevent persisting promotions, as they should be fetched on page load.
+      partialize: (state) =>
+        Object.fromEntries(
+          Object.entries(state).filter(([key]) => !['promotions', 'appliedPromotions', 'bonusItems'].includes(key))
+        ),
       onRehydrateStorage: () => (state, error) => {
         if (state) {
-            const { totalItems, subtotal, vatAmount, totalPrice, isVolumePricingActive } = calculateAll(state.items, state.pricesIncludeVat);
+            // Recalculate totals on rehydration, but with an empty promotions array
+            const { totalItems, subtotal, vatAmount, totalPrice, isVolumePricingActive } = calculateAll(state.items, state.pricesIncludeVat, []);
             state.totalItems = totalItems;
             state.subtotal = subtotal;
             state.vatAmount = vatAmount;
             state.totalPrice = totalPrice;
             state.isVolumePricingActive = isVolumePricingActive;
+            state.promotions = [];
+            state.appliedPromotions = [];
+            state.bonusItems = 0;
         }
       }
     }
