@@ -112,7 +112,9 @@ export default async function AgreementDetailPage({
                                         <AvatarFallback>{client.contact_name?.charAt(0) ?? 'C'}</AvatarFallback>
                                     </Avatar>
                                     <div className="grid gap-1">
-                                        <p className="text-sm font-medium leading-none">{client.contact_name}</p>
+                                        <Link href={`/admin/clients/${client.id}`} className="text-sm font-medium leading-none hover:underline">
+                                            {client.contact_name}
+                                        </Link>
                                     </div>
                                 </div>
                             ))}
