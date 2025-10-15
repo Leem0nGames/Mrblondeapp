@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
+import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer';
 import type { Client } from '@/types';
 
 // --- Estilos del PDF ---
@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   logoText: {
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     fontSize: '10pt',
     textAlign: 'center',
     marginBottom: 10,
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   },
   clientName: {
     fontSize: '14pt',
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     color: '#2563eb', // azul
   },
   clientCuit: {
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   labelText: {
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
   },
   deliveryWindow: {
     backgroundColor: '#1f2937',
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#374151',
     color: 'white',
     fontSize: '9pt',
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
