@@ -1,14 +1,34 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/hooks/use-cart-store";
 import type { ProductWithPrice } from "@/types";
 import { Minus, Plus } from "lucide-react";
 
 export function QuantitySelector({ product }: { product: ProductWithPrice }) {
-  const { items, addItem, removeItem, getItemQuantity } = useCartStore();
-  const quantity = getItemQuantity(product.id);
+  const { addItem, removeItem, getItemQuantity } = useCartStore();
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  const quantity = hasMounted ? getItemQuantity(product.id) : 0;
+
+  if (!hasMounted) {
+     return (
+      <Button
+        size="sm"
+        className="w-full"
+        disabled
+      >
+        <Plus className="mr-2 h-4 w-4" />
+        Agregar
+      </Button>
+    );
+  }
 
   if (quantity === 0) {
     return (
