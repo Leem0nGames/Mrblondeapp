@@ -23,19 +23,21 @@ import { ActionButton, ActionButtonWrapper } from './client-action-buttons';
 const ShippingLabel = dynamic(
   () => import('./shipping-label').then(mod => mod.ShippingLabel),
   { 
-    ssr: false,
-    loading: () => <Card>
+    ssr: false, // Deshabilitar SSR para este componente es crucial
+    loading: () => (
+      <Card>
         <CardHeader>
-            <Skeleton className="h-6 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
         </CardHeader>
         <CardContent>
-            <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
         </CardContent>
-         <CardFooter>
-            <Skeleton className="h-10 w-full" />
+        <CardFooter>
+          <Skeleton className="h-10 w-full" />
         </CardFooter>
-    </Card>
+      </Card>
+    )
   }
 );
 
