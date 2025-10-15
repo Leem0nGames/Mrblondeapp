@@ -4,7 +4,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { Product, Agreement, Promotion, DetailedAgreement, AgreementWithCount, Client, PriceList, DetailedPriceList, PriceListItem, DashboardStats, Order, SalesCondition, ClientStats } from "@/types";
+import type { Product, Agreement, Promotion, DetailedAgreement, AgreementWithCount, Client, PriceList, DetailedPriceList, PriceListItem, DashboardStats, Order, SalesCondition, ClientStats, AgreementSalesCondition } from "@/types";
 
 // --- Generic Helpers ---
 
@@ -183,6 +183,23 @@ export async function getAgreementById(id: string): Promise<{ data: DetailedAgre
     };
     return { data: detailedAgreement, error: null };
 }
+
+export async function getAgreementSalesConditions(agreementId: string): Promise<{ data: AgreementSalesCondition[] | null, error: any }> {
+    const supabase = await getSupabaseClientWithAuth();
+    const { data, error } = await supabase
+        .from("agreement_sales_conditions")
+        .select(`
+            sales_conditions ( * )
+        `)
+        .eq("agreement_id", agreementId);
+
+    if (error) {
+        console.error("getAgreementSalesConditions error:", error.message);
+        return { data: null, error };
+    }
+    return { data: data as AgreementSalesCondition[], error: null };
+}
+
 
 type UpsertAgreementPayload = Pick<Agreement, "agreement_name" | "client_type" | "price_list_id"> & {
   id?: string;
@@ -764,3 +781,5 @@ export async function completeOrder(orderId: string, orderTotal: number) {
     revalidatePath('/admin');
     return { error: null };
 }
+
+    
