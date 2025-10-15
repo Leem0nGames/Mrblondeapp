@@ -6,8 +6,6 @@ import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/rendere
 import type { Client } from '@/types';
 
 // --- Estilos del PDF ---
-// Nota: @react-pdf/renderer no soporta todas las propiedades de CSS.
-// Hay que ser muy específico y usar propiedades que sí soporta.
 const styles = StyleSheet.create({
   page: {
     padding: 30,
@@ -18,7 +16,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 16,
     marginBottom: 20,
-    height: '251pt', // Aproximadamente un cuarto de A4
+    height: '251pt', 
     flexDirection: 'column',
     justifyContent: 'space-between',
   },
@@ -37,14 +35,9 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   logoText: {
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
     fontSize: '10pt',
     textAlign: 'center',
-    marginBottom: 10,
-  },
-  qrCode: {
-    width: 80,
-    height: 80,
     marginBottom: 10,
   },
   clientInfoContainer: {
@@ -52,7 +45,7 @@ const styles = StyleSheet.create({
   },
   clientName: {
     fontSize: '14pt',
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
     color: '#2563eb', // azul
   },
   clientCuit: {
@@ -65,7 +58,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   labelText: {
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
   },
   deliveryWindow: {
     backgroundColor: '#1f2937',
@@ -88,7 +81,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#374151',
     color: 'white',
     fontSize: '9pt',
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
@@ -101,14 +94,12 @@ interface ShippingLabelPDFProps {
 }
 
 const LabelComponent = ({ client, currentBulto, totalBultos }: { client: Client, currentBulto: number, totalBultos: number }) => {
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(client.id)}&qzone=1`;
 
   return (
     <View style={styles.label} wrap={false}>
       <View style={styles.mainContent}>
         <View style={styles.leftColumn}>
           <Text style={styles.logoText}>MR. BLONDE</Text>
-          {/* @react-pdf/renderer no puede cargar imágenes externas sin configuración especial, usaremos un placeholder */}
         </View>
         <View style={styles.rightColumn}>
           <View style={styles.clientInfoContainer}>
