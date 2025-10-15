@@ -13,7 +13,7 @@ import { ClientStats } from "./client-stats";
 import { ClientOrders } from "./client-orders";
 import type { Client, ClientStats as StatsType, Order, AgreementSalesCondition } from "@/types";
 import { Skeleton } from '@/components/ui/skeleton';
-import { deleteClient } from "@/app/admin/actions/admin.actions";
+import { deleteClient } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { OnboardingFormDialog } from './onboarding-form-dialog';
 import { AssignAgreementDialog } from '../../_components/assign-agreement-dialog';
