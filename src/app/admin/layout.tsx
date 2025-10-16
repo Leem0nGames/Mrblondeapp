@@ -26,6 +26,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Logo } from "@/components/logo";
 import { logout } from "@/app/actions/user.actions";
+import { Notifications } from "./_components/notifications";
 
 const mainNavItems = [
     { href: "/admin", icon: Home, label: "Dashboard" },
@@ -38,12 +39,12 @@ const mainNavItems = [
 ];
 
 const mobileNavItems = [
+    { href: "/admin", icon: Home, label: "Dashboard" },
     { href: "/admin/products", icon: Package, label: "Productos" },
     { href: "/admin/pricelists", icon: ClipboardList, label: "Precios" },
     { href: "/admin/agreements", icon: FileText, label: "Convenios" },
     { href: "/admin/clients", icon: Users, label: "Clientes" },
     { href: "/admin/promotions", icon: Percent, label: "Promos" },
-    { href: "/admin", icon: Home, label: "Dashboard" },
 ]
 
 export default function AdminLayout({
@@ -126,13 +127,14 @@ export default function AdminLayout({
                 <Logo showText={true} />
               </Link>
             </div>
-             <div className="ml-auto sm:hidden">
+             <div className="ml-auto flex items-center gap-2">
+                 <Notifications />
                  <Sheet>
                     <SheetTrigger asChild>
                     <Button
                         variant="outline"
                         size="icon"
-                        className="shrink-0"
+                        className="shrink-0 sm:hidden"
                     >
                         <Menu className="h-5 w-5" />
                         <span className="sr-only">Toggle navigation menu</span>
