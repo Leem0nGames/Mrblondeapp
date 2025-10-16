@@ -263,7 +263,6 @@ export async function submitOnboardingForm(payload: SubmitOnboardingPayload & {
         newStatus = 'pending_agreement';
     }
     
-    // Consolidate address and delivery window into single strings
     const address = `${street_address} ${street_number}, ${locality}, ${province}`;
     const delivery_window = `${delivery_days.join(', ')} de ${delivery_time_from} a ${delivery_time_to}hs`;
 
