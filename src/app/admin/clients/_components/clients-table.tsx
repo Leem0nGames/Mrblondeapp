@@ -186,13 +186,13 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                       {client.contact_name || "Cliente pendiente..."}
                     </Link>
                   </TableCell>
-                  <TableCell>{client.email}</TableCell>
-                  <TableCell>
-                      {client.agreements?.agreement_name || <span className="text-muted-foreground">Sin asignar</span>}
+                  <TableCell className="text-muted-foreground">{client.email}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                      {client.agreements?.agreement_name || "Sin asignar"}
                   </TableCell>
                   <TableCell>
                     <div>
-                        <Badge variant={statusMap[client.status].variant}>
+                        <Badge variant={statusMap[client.status].variant} className="capitalize">
                         {statusMap[client.status].label}
                         </Badge>
                     </div>

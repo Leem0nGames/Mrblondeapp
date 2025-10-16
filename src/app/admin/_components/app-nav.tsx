@@ -35,49 +35,51 @@ export function AppNav({ isMobile }: { isMobile: boolean }) {
 
   if (isMobile) {
     return (
-      <div className="flex justify-around items-center h-full">
-        {navItems.slice(0, 5).map((item) => { // Show first 5 for mobile bottom bar
+      <nav className="grid gap-6 text-base font-medium">
+        {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center gap-1 text-muted-foreground transition-colors hover:text-foreground",
-                isActive && "text-primary font-semibold"
+                "flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground",
+                isActive && "text-foreground"
               )}
             >
-              <item.icon className="h-6 w-6" />
-              <span className="text-xs">{item.label}</span>
+              <item.icon className="h-5 w-5" />
+              {item.label}
             </Link>
           );
         })}
-      </div>
+      </nav>
     );
   }
 
   return (
     <TooltipProvider>
-      {navItems.map((item) => {
-        const isActive = pathname === item.href;
-        return (
-          <Tooltip key={item.href}>
-            <TooltipTrigger asChild>
-              <Link
-                href={item.href}
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                  isActive && "bg-accent text-accent-foreground"
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                <span className="sr-only">{item.label}</span>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">{item.label}</TooltipContent>
-          </Tooltip>
-        );
-      })}
+      <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Tooltip key={item.href} delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
+                    isActive && "bg-accent text-accent-foreground"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span className="sr-only">{item.label}</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">{item.label}</TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </nav>
     </TooltipProvider>
   );
 }
