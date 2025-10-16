@@ -61,6 +61,10 @@ const validateCuit = (cuit: string): boolean | number => {
 
 
 const cuitSchema = z.string().superRefine((cuit, ctx) => {
+    if (!cuit) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "El CUIT es requerido."});
+        return;
+    }
     const validationResult = validateCuit(cuit);
     if (validationResult === true) {
         return; // It's valid

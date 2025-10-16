@@ -222,6 +222,7 @@ export async function getOnboardingClient(token: string): Promise<{ data: Client
 }
 
 type SubmitOnboardingPayload = Omit<Client, 'id' | 'created_at' | 'status' | 'agreement_id' | 'agreements'>;
+
 export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
     const supabase = createClient();
     
