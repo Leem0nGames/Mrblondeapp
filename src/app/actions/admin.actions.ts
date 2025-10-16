@@ -463,7 +463,7 @@ export async function getClientStats(clientId: string): Promise<{ data: ClientSt
 }
 
 
-export async function createClientForInvitation(): Promise<{ data: Pick<Client, "id" | "onboarding_token"> | null, error: any }> {
+export async function createClientForInvitation(): Promise<{ data: Pick<Client, "id" | "onboarding_token" | "agreement_id"> | null, error: any }> {
     const supabase = await getSupabaseClientWithAuth();
     
     const placeholderName = `Cliente Pendiente - ${new Date().toISOString()}`;
@@ -474,7 +474,7 @@ export async function createClientForInvitation(): Promise<{ data: Pick<Client, 
             onboarding_token: crypto.randomUUID(),
             contact_name: placeholderName,
         })
-        .select('id, onboarding_token')
+        .select('id, onboarding_token, agreement_id')
         .single();
 
     if (error || !client) {
@@ -549,22 +549,8 @@ export async function createFullClient(payload: Omit<Client, 'id' | 'created_at'
 
 export async function assignAgreementToClient(payload: { clientId: string, agreementId: string | null }): Promise<{ error: any }> {
     const supabase = await getSupabaseClientWithAuth();
-
-    const { data: client } = await supabase.from('clients').select('status').eq('id', payload.clientId).single();
-
-    if (!client) {
-        return { error: { message: 'Client not found.' } };
-    }
     
-    let newStatus = client.status as Client['status'];
-    if (client.status !== 'pending_onboarding') {
-        if (payload.agreementId) {
-            newStatus = 'active';
-        } else {
-            newStatus = 'pending_agreement';
-        }
-    }
-
+    const newStatus: Client['status'] = payload.agreementId ? 'active' : 'pending_agreement';
 
     const { error } = await supabase
         .from("clients")
@@ -820,3 +806,5 @@ export async function completeOrder(orderId: string, orderTotal: number) {
     
 
     
+
+      
