@@ -764,6 +764,18 @@ export async function getPendingOrders(): Promise<Order[]> {
     return data;
 }
 
+export async function getOverdueOrders(): Promise<Order[]> {
+    const supabase = await getSupabaseClientWithAuth();
+    const { data, error } = await supabase.rpc('get_overdue_orders');
+
+    if (error) {
+        console.error("getOverdueOrders error:", error.message);
+        return [];
+    }
+    return data;
+}
+
+
 export async function getClientOrders(clientId: string): Promise<Order[]> {
     const supabase = await getSupabaseClientWithAuth();
     const { data, error } = await supabase

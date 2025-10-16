@@ -10,7 +10,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Bell, Check, Package, UserPlus } from "lucide-react";
+import { Bell, Check, Package, UserPlus, Clock } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Link from "next/link";
@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 type Notification = {
     id: string;
-    type: 'order' | 'client';
+    type: 'order' | 'client' | 'overdue';
     title: string;
     description: string;
     createdAt: Date;
@@ -29,14 +29,20 @@ const getNotificationConfig = (notification: Notification) => {
         case 'order':
             return {
                 icon: Package,
-                href: `/admin`, // Can be more specific later, e.g., /admin/orders/id
+                href: `/admin`,
                 bgColorClass: "bg-blue-500",
             };
         case 'client':
             return {
                 icon: UserPlus,
-                href: `/admin/clients`, // Can be more specific later, e.g., /admin/clients/id
+                href: `/admin/clients`,
                 bgColorClass: "bg-green-500",
+            };
+        case 'overdue':
+             return {
+                icon: Clock,
+                href: `/admin`, // Could link to a specific "overdue" page later
+                bgColorClass: "bg-amber-500",
             };
         default:
             return {

@@ -20,18 +20,18 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/app/logo";
 import { logout } from "@/app/actions/user.actions";
 import { Notifications } from "./_components/notifications";
-import { getPendingOrders, getClientsWithPendingAgreements } from "@/app/actions/admin.actions";
-import { AppNav } from "./_components/app-nav";
+import { getPendingOrders, getClientsWithPendingAgreements, getOverdueOrders } from "@/app/actions/admin.actions";
 import type { Order, Client } from "@/types";
+import { differenceInDays } from "date-fns";
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
 }
 
-const transformDataToNotifications = (orders: Order[], clients: Client[]) => {
+const transformDataToNotifications = (orders: Order[], clients: Client[], overdueOrders: Order[]) => {
     const orderNotifications = orders.map(order => ({
         id: `order-${order.id}`,
         type: 'order' as const,
@@ -47,8 +47,19 @@ const transformDataToNotifications = (orders: Order[], clients: Client[]) => {
         description: `${client.contact_name || 'Cliente'} completó el alta.`,
         createdAt: new Date(client.created_at),
     }));
+    
+    const overdueNotifications = overdueOrders.map(order => {
+      const daysOverdue = differenceInDays(new Date(), new Date(order.created_at));
+      return {
+        id: `overdue-${order.id}`,
+        type: 'overdue' as const,
+        title: `Pedido Vencido #${order.id.slice(-4)}`,
+        description: `${order.client_name_cache} - ${daysOverdue} días de atraso`,
+        createdAt: new Date(order.created_at),
+    }});
 
-    return [...orderNotifications, ...clientNotifications].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    return [...orderNotifications, ...clientNotifications, ...overdueNotifications].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 
@@ -57,14 +68,16 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [pendingOrdersResult, pendingClientsResult] = await Promise.all([
+  const [pendingOrdersResult, pendingClientsResult, overdueOrdersResult] = await Promise.all([
     getPendingOrders(),
-    getClientsWithPendingAgreements()
+    getClientsWithPendingAgreements(),
+    getOverdueOrders()
   ]);
 
   const notifications = transformDataToNotifications(
     pendingOrdersResult,
-    pendingClientsResult
+    pendingClientsResult,
+    overdueOrdersResult
   );
 
 
@@ -77,7 +90,7 @@ export default async function AdminLayout({
             className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full text-lg font-semibold"
           >
             <Logo />
-            <span className="sr-only">Blonde Orders</span>
+            <span className="sr-only">MR. BLONDE</span>
           </Link>
           <AppNav isMobile={false} />
         </nav>
