@@ -807,7 +807,7 @@ export async function completeOrder(orderId: string, orderTotal: number) {
         return { error: orderUpdateError };
     }
 
-    const { error: rpcError } = await supabase.rpc('increment_total_revenue', {
+    const { error: rpcError } = await supabase.rpc('increment_total_revenue(numeric)', {
       amount_to_add: orderTotal
     });
 
@@ -824,3 +824,5 @@ export async function completeOrder(orderId: string, orderTotal: number) {
     
 
       
+
+    
