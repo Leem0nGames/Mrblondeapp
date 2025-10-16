@@ -256,9 +256,11 @@ export async function submitOnboardingForm(payload: SubmitOnboardingPayload & {
         return { error: { message: 'Enlace de alta inválido.' } };
     }
 
-    let newStatus: Client['status'] = existingClient.status as Client['status'];
-    if (existingClient.status === 'pending_onboarding') {
-        newStatus = existingClient.agreement_id ? 'active' : 'pending_agreement';
+    let newStatus: Client['status'];
+    if (existingClient.agreement_id) {
+        newStatus = 'active';
+    } else {
+        newStatus = 'pending_agreement';
     }
     
     // Consolidate address and delivery window into single strings

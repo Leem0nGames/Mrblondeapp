@@ -550,7 +550,23 @@ export async function createFullClient(payload: Omit<Client, 'id' | 'created_at'
 export async function assignAgreementToClient(payload: { clientId: string, agreementId: string | null }): Promise<{ error: any }> {
     const supabase = await getSupabaseClientWithAuth();
     
-    const newStatus: Client['status'] = payload.agreementId ? 'active' : 'pending_agreement';
+    const { data: client, error: clientError } = await supabase
+        .from('clients')
+        .select('status')
+        .eq('id', payload.clientId)
+        .single();
+    
+    if (clientError || !client) {
+        return { error: { message: 'Client not found.' } };
+    }
+
+    let newStatus = client.status as Client['status'];
+
+    // Only set to 'active' if the client is NOT pending onboarding.
+    // If they are pending, let the onboarding form submission handle the activation.
+    if (client.status !== 'pending_onboarding') {
+        newStatus = payload.agreementId ? 'active' : 'pending_agreement';
+    }
 
     const { error } = await supabase
         .from("clients")
