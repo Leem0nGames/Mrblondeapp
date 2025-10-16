@@ -26,13 +26,13 @@ import { provinces, getLocalitiesByProvince } from "@/lib/geo-data";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 
-// Zod schema for CUIT validation
-const cuitSchema = z.string().refine(
-  (cuit) => {
+// --- CUIT Validation Logic ---
+const validateCuit = (cuit: string): boolean | number => {
     if (!/^\d{11}$/.test(cuit)) return false;
+
     const coeficientes = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
     const digitos = cuit.split('').map(Number);
-    const digitoVerificador = digitos.pop();
+    const digitoVerificador = digitos.pop()!;
 
     let acumulado = 0;
     for (let i = 0; i < digitos.length; i++) {
@@ -44,13 +44,31 @@ const cuitSchema = z.string().refine(
     if (digitoCalculado === 11) {
         digitoCalculado = 0;
     } else if (digitoCalculado === 10) {
-        return false; // CUIT inválido
+        return false;
     }
+    
+    return digitoVerificador === digitoCalculado ? true : digitoCalculado;
+};
 
-    return digitoVerificador === digitoCalculado;
-  },
-  { message: "CUIT inválido. Debe tener 11 dígitos sin guiones y ser válido." }
-);
+const cuitSchema = z.string().superRefine((cuit, ctx) => {
+    const validationResult = validateCuit(cuit);
+    if (validationResult === true) {
+        return; 
+    }
+    if (typeof validationResult === 'number') {
+        const CUITBase = cuit.slice(0, -1);
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `CUIT inválido. El dígito verificador debería ser ${validationResult}. ¿Quisiste decir ${CUITBase}${validationResult}?`,
+        });
+    } else {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "CUIT inválido. Debe tener 11 dígitos sin guiones y ser válido.",
+        });
+    }
+});
+
 
 const deliveryDays = [
   { id: 'lunes', label: 'Lunes' },
@@ -94,7 +112,7 @@ export function OnboardingForm({ client }: { client: Client }) {
     defaultValues: {
       fiscal_status: client.fiscal_status ?? "",
       cuit: client.cuit ?? "",
-      contact_name: client.contact_name ?? "",
+      contact_name: client.contact_name?.startsWith('Cliente Pendiente') ? '' : client.contact_name ?? "",
       contact_dni: client.contact_dni ?? "",
       province: "",
       locality: "",
@@ -222,7 +240,7 @@ export function OnboardingForm({ client }: { client: Client }) {
                 <FormItem><FormLabel>Provincia</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione una provincia..." /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{provinces.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
               )}/>
               <FormField control={form.control} name="locality" render={({ field }) => (
-                <FormItem><FormLabel>Localidad</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={!watchedProvince}><FormControl><SelectTrigger><SelectValue placeholder={watchedProvince ? "Seleccione una localidad..." : "Elija una provincia primero"} /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{availableLocalities.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
+                <FormItem><FormLabel>Localidad</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={!watchedProvince}><FormControl><SelectTrigger><SelectValue placeholder={watchedProvince ? "Seleccione una localidad..." : "Elija una provincia primero"} /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{availableLocalities.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
               )}/>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -249,7 +267,7 @@ export function OnboardingForm({ client }: { client: Client }) {
                             checked={field.value?.includes(item.id)}
                             onCheckedChange={(checked) => {
                               return checked
-                                ? field.onChange([...field.value, item.id])
+                                ? field.onChange([...(field.value || []), item.id])
                                 : field.onChange(field.value?.filter((value) => value !== item.id));
                             }}
                           />

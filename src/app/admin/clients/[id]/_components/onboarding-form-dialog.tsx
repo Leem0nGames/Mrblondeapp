@@ -27,13 +27,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { provinces, getLocalitiesByProvince } from "@/lib/geo-data";
 import { Checkbox } from "@/components/ui/checkbox";
 
-// Zod schema for CUIT validation
-const cuitSchema = z.string().refine(
-  (cuit) => {
+// --- CUIT Validation Logic ---
+const validateCuit = (cuit: string): boolean | number => {
     if (!/^\d{11}$/.test(cuit)) return false;
+
     const coeficientes = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
     const digitos = cuit.split('').map(Number);
-    const digitoVerificador = digitos.pop();
+    const digitoVerificador = digitos.pop()!;
 
     let acumulado = 0;
     for (let i = 0; i < digitos.length; i++) {
@@ -45,13 +45,32 @@ const cuitSchema = z.string().refine(
     if (digitoCalculado === 11) {
         digitoCalculado = 0;
     } else if (digitoCalculado === 10) {
-        return false; // CUIT inválido
+        return false;
     }
+    
+    return digitoVerificador === digitoCalculado ? true : digitoCalculado;
+};
 
-    return digitoVerificador === digitoCalculado;
-  },
-  { message: "CUIT inválido. Debe tener 11 dígitos sin guiones y ser válido." }
-);
+
+const cuitSchema = z.string().superRefine((cuit, ctx) => {
+    const validationResult = validateCuit(cuit);
+    if (validationResult === true) {
+        return;
+    }
+    if (typeof validationResult === 'number') {
+        const CUITBase = cuit.slice(0, -1);
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `CUIT inválido. El dígito verificador debería ser ${validationResult}. ¿Quisiste decir ${CUITBase}${validationResult}?`,
+        });
+    } else {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "CUIT inválido. Debe tener 11 dígitos sin guiones y ser válido.",
+        });
+    }
+});
+
 
 const deliveryDays = [
   { id: 'lunes', label: 'L' },
@@ -112,10 +131,9 @@ const getDeliveryParts = (deliveryWindow: string | null) => {
     if (parts.length < 2) return { days: [], from: '09:00', to: '18:00' };
 
     const dayString = parts[0].toLowerCase();
+    const days = deliveryDays.map(d => d.id).filter(d => dayString.includes(d.slice(0, 2)) || dayString.includes(d));
+
     const timeString = parts[1];
-
-    const days = deliveryDays.map(d => d.id).filter(d => dayString.includes(d.slice(0, 2)));
-
     const timeParts = timeString.replace('hs', '').split(' a ');
     const from = timeParts[0] ? `${timeParts[0].padStart(2, '0')}:00` : '09:00';
     const to = timeParts[1] ? `${timeParts[1].padStart(2, '0')}:00` : '18:00';
@@ -135,7 +153,7 @@ export function OnboardingFormDialog({ children, client }: { children: React.Rea
     resolver: zodResolver(formSchema),
     defaultValues: {
       cuit: client.cuit ?? "",
-      contact_name: client.contact_name ?? "",
+      contact_name: client.contact_name?.startsWith('Cliente Pendiente') ? '' : client.contact_name ?? "",
       contact_dni: client.contact_dni ?? "",
       province: addressParts.province,
       locality: addressParts.locality,
@@ -276,7 +294,7 @@ export function OnboardingFormDialog({ children, client }: { children: React.Rea
                       <FormItem><FormLabel>Provincia</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione una provincia..." /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{provinces.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
                     )}/>
                     <FormField control={form.control} name="locality" render={({ field }) => (
-                      <FormItem><FormLabel>Localidad</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={!watchedProvince}><FormControl><SelectTrigger><SelectValue placeholder={watchedProvince ? "Seleccione una localidad..." : "Elija una provincia primero"} /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{availableLocalities.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
+                      <FormItem><FormLabel>Localidad</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={!watchedProvince}><FormControl><SelectTrigger><SelectValue placeholder={watchedProvince ? "Seleccione una localidad..." : "Elija una provincia primero"} /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{availableLocalities.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
                     )}/>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -303,7 +321,7 @@ export function OnboardingFormDialog({ children, client }: { children: React.Rea
                                   checked={field.value?.includes(item.id)}
                                   onCheckedChange={(checked) => {
                                     return checked
-                                      ? field.onChange([...field.value, item.id])
+                                      ? field.onChange([...(field.value || []), item.id])
                                       : field.onChange(field.value?.filter((value) => value !== item.id));
                                   }}
                                 />
