@@ -223,10 +223,28 @@ export async function getOnboardingClient(token: string): Promise<{ data: Client
 
 type SubmitOnboardingPayload = Omit<Client, 'id' | 'created_at' | 'status' | 'agreement_id' | 'agreements'>;
 
-export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
+export async function submitOnboardingForm(payload: SubmitOnboardingPayload & {
+  delivery_days: string[];
+  delivery_time_from: string;
+  delivery_time_to: string;
+  street_address: string;
+  street_number: string;
+  locality: string;
+  province: string;
+}) {
     const supabase = createClient();
     
-    const { onboarding_token, ...clientData } = payload;
+    const { 
+        onboarding_token, 
+        delivery_days,
+        delivery_time_from,
+        delivery_time_to,
+        street_address,
+        street_number,
+        locality,
+        province,
+        ...clientData 
+    } = payload;
 
     const { data: existingClient, error: fetchError } = await supabase
         .from('clients')
@@ -238,24 +256,29 @@ export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
         return { error: { message: 'Enlace de alta inválido.' } };
     }
 
-    // Determine the new status after form submission
     let newStatus: Client['status'] = existingClient.status as Client['status'];
     if (existingClient.status === 'pending_onboarding') {
         newStatus = existingClient.agreement_id ? 'active' : 'pending_agreement';
     }
     
+    // Consolidate address and delivery window into single strings
+    const address = `${street_address} ${street_number}, ${locality}, ${province}`;
+    const delivery_window = `${delivery_days.join(', ')} de ${delivery_time_from} a ${delivery_time_to}hs`;
+
     const { error } = await supabase
         .from('clients')
         .update({ 
-            ...clientData, 
+            ...clientData,
+            address,
+            delivery_window, 
             status: newStatus,
-            contact_name: payload.contact_name // Ensure name is updated from placeholder
+            contact_name: payload.contact_name
         })
         .eq('onboarding_token', onboarding_token);
 
     if (error) {
         console.error("submitOnboardingForm error:", error.message);
-        if (error.code === '23505') { // Unique constraint violation
+        if (error.code === '23505') { 
              if (error.message.includes('cuit')) {
                 return { error: { message: 'El CUIT ingresado ya está registrado en nuestro sistema.' }};
             }

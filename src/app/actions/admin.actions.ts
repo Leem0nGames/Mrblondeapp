@@ -486,27 +486,51 @@ export async function createClientForInvitation(): Promise<{ data: Pick<Client, 
     return { data: client, error: null };
 }
 
-export async function createFullClient(payload: Omit<Client, 'id' | 'created_at' | 'status' | 'onboarding_token' | 'agreements'>) {
+export async function createFullClient(payload: Omit<Client, 'id' | 'created_at' | 'status' | 'onboarding_token' | 'agreements'> & {
+    delivery_days: string[];
+    delivery_time_from: string;
+    delivery_time_to: string;
+    street_address: string;
+    street_number: string;
+    locality: string;
+    province: string;
+}) {
     const supabase = await getSupabaseClientWithAuth();
 
-    const { agreement_id, ...clientData } = payload;
+    const { 
+        agreement_id,
+        delivery_days,
+        delivery_time_from,
+        delivery_time_to,
+        street_address,
+        street_number,
+        locality,
+        province,
+        ...clientData 
+    } = payload;
     
     const newStatus: Client['status'] = agreement_id ? 'active' : 'pending_agreement';
+
+    const address = `${street_address} ${street_number}, ${locality}, ${province}`;
+    const delivery_window = `${delivery_days.join(', ')} de ${delivery_time_from} a ${delivery_time_to}hs`;
+
 
     const { data: newClient, error } = await supabase
         .from('clients')
         .insert({
             ...clientData,
+            address,
+            delivery_window,
             agreement_id: agreement_id,
             status: newStatus,
-            onboarding_token: crypto.randomUUID(), // Still need a token for potential future edits
+            onboarding_token: crypto.randomUUID(),
         })
         .select()
         .single();
     
     if (error) {
         console.error("createFullClient error:", error.message);
-        if (error.code === '23505') { // Unique constraint violation
+        if (error.code === '23505') { 
              if (error.message.includes('cuit')) {
                 return { error: { message: 'El CUIT ingresado ya está registrado en nuestro sistema.' }};
             }
@@ -533,13 +557,11 @@ export async function assignAgreementToClient(payload: { clientId: string, agree
     }
     
     let newStatus = client.status as Client['status'];
-    // If a client is pending onboarding, they stay that way even if an agreement is pre-assigned.
-    // They become active only after onboarding is submitted.
     if (client.status !== 'pending_onboarding') {
         if (payload.agreementId) {
-            newStatus = 'active'; // A client with an agreement is active
+            newStatus = 'active';
         } else {
-            newStatus = 'pending_agreement'; // A client without an agreement is pending one
+            newStatus = 'pending_agreement';
         }
     }
 
@@ -711,13 +733,10 @@ export async function updatePriceListItem(payload: { price_list_id: string; prod
 export async function getDashboardStats(): Promise<DashboardStats> {
     const supabase = await getSupabaseClientWithAuth();
     
-    // For simplicity, we are fetching from a pre-aggregated table.
-    // In a real app, you might have a cron job that updates this table.
     const { data, error } = await supabase.from("dashboard_stats").select("*").single();
 
     if (error || !data) {
         console.error("getDashboardStats error:", error?.message);
-        // Return zeroed-out stats on error
         return {
             total_revenue: 0,
             month_revenue: 0,
@@ -776,10 +795,6 @@ export async function getClientsWithPendingAgreements(): Promise<Client[]> {
 export async function completeOrder(orderId: string, orderTotal: number) {
     const supabase = await getSupabaseClientWithAuth();
     
-    // In a real app, this should be a single database transaction or an RPC call
-    // to ensure atomicity. For this demo, we perform sequential operations.
-
-    // 1. Mark the order as completed
     const { error: orderUpdateError } = await supabase
         .from('orders')
         .update({ status: 'completed' })
@@ -790,15 +805,12 @@ export async function completeOrder(orderId: string, orderTotal: number) {
         return { error: orderUpdateError };
     }
 
-    // 2. Increment the total_revenue in the stats table
-    // This is not safe from race conditions. A DB function would be better.
     const { error: rpcError } = await supabase.rpc('increment_total_revenue', {
       amount_to_add: orderTotal
     });
 
     if (rpcError) {
         console.error("completeOrder (rpc) error:", rpcError.message);
-        // In a real app, we might try to revert the order status update here.
         return { error: rpcError };
     }
 
