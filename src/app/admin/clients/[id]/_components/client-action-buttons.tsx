@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import {
@@ -27,8 +28,8 @@ type ClientActionButtonsProps = {
 
 const ActionButton = ({ children, ...props }: React.ComponentProps<typeof Button>) => (
     <Button
-        variant="outline"
-        className="flex flex-col items-center justify-center h-20 w-full gap-1 p-2 text-center text-xs sm:text-sm bg-background hover:bg-secondary/50"
+        variant="secondary"
+        className="flex flex-col items-center justify-center h-20 w-full gap-1 p-2 text-center text-xs sm:text-sm"
         {...props}
     >
         {children}
@@ -37,20 +38,20 @@ const ActionButton = ({ children, ...props }: React.ComponentProps<typeof Button
 
 export function ClientActionButtons({ onArchive, isArchiving, onCopyLink, orderLink, editDialog, agreementDialog }: ClientActionButtonsProps) {
     return (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {editDialog}
             
             {agreementDialog}
 
             <ActionButton disabled={!orderLink} onClick={() => onCopyLink(orderLink!, 'Enlace de pedido copiado!')}>
-                <LinkIcon className="h-6 w-6" />
+                <LinkIcon className="h-5 w-5" />
                 <span>Link Pedido</span>
             </ActionButton>
 
             <AlertDialog>
                 <AlertDialogTrigger asChild>
-                     <ActionButton variant="destructive">
-                        <Archive className="h-6 w-6" />
+                     <ActionButton variant="destructive" className="bg-destructive/80 hover:bg-destructive">
+                        <Archive className="h-5 w-5" />
                         <span>Archivar</span>
                     </ActionButton>
                 </AlertDialogTrigger>

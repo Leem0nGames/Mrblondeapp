@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
@@ -113,13 +114,17 @@ const getAddressParts = (address: string | null) => {
     const parts = address.split(',').map(p => p.trim());
     const province = provinces.find(p => p === parts[parts.length - 1]);
     const locality = province && parts[parts.length - 2] ? parts[parts.length - 2] : '';
-    const street_number = parts.length > 2 ? parts[1].match(/\d+$/)?.[0] || '' : '';
-    const street_address = parts.length > 2 ? parts[0] : parts[0].replace(/\s\d+$/, '');
+    
+    // Improved logic to separate street and number
+    const streetAndNumber = parts.length > 2 ? parts[0] : (parts.length > 1 && !province && !locality) ? parts[0] : '';
+    const match = streetAndNumber.match(/^(.*?)(\s+\d+)?$/);
+    const street_address = match ? match[1] : streetAndNumber;
+    const street_number = match && match[2] ? match[2].trim() : '';
 
     return {
-        street_address,
-        street_number,
-        locality: locality || parts[1] || '',
+        street_address: street_address,
+        street_number: street_number,
+        locality: locality || (parts.length > 1 && !province ? parts[1] : ''),
         province: province || '',
     };
 };
@@ -179,14 +184,9 @@ export function OnboardingFormDialog({ children, client }: { children: React.Rea
 
 
   const onSubmit = (values: OnboardingFormValues) => {
-    const address = `${values.street_address} ${values.street_number}, ${values.locality}, ${values.province}`;
-    const delivery_window = `${values.delivery_days.join(', ')} de ${values.delivery_time_from} a ${values.delivery_time_to}hs`;
-
     startTransition(async () => {
       const result = await submitOnboardingForm({
         ...values,
-        address: address,
-        delivery_window: delivery_window,
         onboarding_token: client.onboarding_token,
       });
 

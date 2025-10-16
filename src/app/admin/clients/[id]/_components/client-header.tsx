@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import { useCallback, useEffect, useState } from "react";
@@ -39,7 +40,7 @@ const CopyableField = ({ label, value, onCopy }: { label: string; value: string 
     };
 
     return (
-        <div className="group relative flex items-center gap-2">
+        <div className="group relative flex items-center justify-center gap-2">
             <span className="text-muted-foreground text-sm">{value || 'No disponible'}</span>
              {value && (
                 <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={handleCopy}>
@@ -72,7 +73,7 @@ export function ClientHeader({
   const [onboardingLink, setOnboardingLink] = useState<string | null>(null);
 
   useEffect(() => {
-    if (client.onboarding_token) {
+    if (typeof window !== 'undefined' && client.onboarding_token) {
       setOnboardingLink(`${window.location.origin}/onboarding/${client.onboarding_token}`);
     }
   }, [client.onboarding_token]);
@@ -80,8 +81,8 @@ export function ClientHeader({
 
   return (
     <div className="w-full">
-      <div className="relative flex flex-col items-center justify-center rounded-lg bg-card p-6 shadow-sm gap-2">
-        <div className="absolute top-4 right-4">
+      <div className="relative flex flex-col items-center justify-center rounded-xl bg-card p-6 shadow-sm gap-2 border">
+        <div className="absolute top-4 right-4 hidden sm:block">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -89,14 +90,6 @@ export function ClientHeader({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  {editDialog}
-               </DropdownMenuItem>
-               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  {agreementDialog}
-               </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
                 <DropdownMenuItem 
                     onClick={() => onCopyLink(orderLink, 'Enlace de pedido copiado!', 'El cliente debe estar activo para tener un enlace de pedido.')} 
                     disabled={!orderLink}>
@@ -142,11 +135,11 @@ export function ClientHeader({
           </AvatarFallback>
         </Avatar>
         <div className="text-center">
-            <CopyableField label="Nombre" value={client.contact_name} onCopy={onCopyLink} />
+            <h2 className="text-2xl font-bold">{client.contact_name}</h2>
             <CopyableField label="Email" value={client.email} onCopy={onCopyLink} />
             <CopyableField label="CUIT" value={client.cuit} onCopy={onCopyLink} />
         </div>
-        <div className="w-full pt-4">
+        <div className="w-full pt-6">
              <ClientActionButtons 
                 onArchive={onArchive}
                 isArchiving={isArchiving}

@@ -71,17 +71,17 @@ export default async function AdminLayout({
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <aside className="fixed inset-y-0 left-0 z-10 hidden w-16 flex-col border-r bg-background sm:flex">
-        <nav className="flex flex-col items-center gap-4 px-2 py-4">
-          <Link
+        <nav className="flex flex-col items-center gap-4 px-2 py-5">
+           <Link
             href="/admin"
-            className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full text-lg font-semibold text-primary-foreground"
+            className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full text-lg font-semibold"
           >
             <Logo />
             <span className="sr-only">Blonde Orders</span>
           </Link>
           <AppNav isMobile={false} />
         </nav>
-        <nav className="mt-auto flex flex-col items-center gap-4 px-2 py-4">
+        <nav className="mt-auto flex flex-col items-center gap-4 px-2 py-5">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -118,11 +118,11 @@ export default async function AdminLayout({
       <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-16">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
             <div className="sm:hidden">
-              <Link href="/admin">
+              <Link href="/admin" className="flex items-center gap-2 text-lg font-semibold">
                 <Logo showText={true} />
               </Link>
             </div>
-             <div className="ml-auto flex items-center gap-2">
+             <div className="ml-auto flex items-center gap-4">
                  <Notifications notifications={notifications} />
                  <Sheet>
                     <SheetTrigger asChild>
@@ -135,28 +135,25 @@ export default async function AdminLayout({
                         <span className="sr-only">Toggle navigation menu</span>
                     </Button>
                     </SheetTrigger>
-                    <SheetContent side="right">
-                    <nav className="grid gap-6 text-lg font-medium">
-                        <Link
-                            href="/admin"
-                            className="flex items-center gap-2 text-lg font-semibold mb-4"
-                        >
-                            <Logo showText={true} />
-                            <span className="sr-only">Blonde Orders</span>
-                        </Link>
+                    <SheetContent side="right" className="pt-16">
+                    <nav className="grid gap-6 text-base font-medium">
                         <AppNav isMobile={true} />
-                         <Link
-                            href="/admin/settings"
-                            className="text-muted-foreground hover:text-foreground"
-                         >
-                            Configuración
-                        </Link>
-                         <form action={logout}>
-                           <button className="w-full text-left text-muted-foreground hover:text-foreground">
-                                Cerrar Sesión
-                            </button>
-                        </form>
                     </nav>
+                    <div className="absolute bottom-4 left-4 right-4 grid gap-4">
+                      <Link
+                          href="/admin/settings"
+                          className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                        >
+                          <Settings className="h-5 w-5" />
+                          Configuración
+                      </Link>
+                      <form action={logout}>
+                          <button className="w-full flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground">
+                              <LogOut className="h-5 w-5" />
+                              Cerrar Sesión
+                          </button>
+                      </form>
+                    </div>
                     </SheetContent>
                 </Sheet>
             </div>
@@ -165,11 +162,6 @@ export default async function AdminLayout({
             {children}
         </main>
       </div>
-       <footer className="sm:hidden fixed bottom-0 left-0 right-0 h-16 bg-background border-t z-10">
-        <nav className="h-full">
-         <AppNav isMobile={true} />
-        </nav>
-      </footer>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { redirect } from 'next/navigation';
@@ -221,17 +222,17 @@ export async function getOnboardingClient(token: string): Promise<{ data: Client
     return { data, error: null };
 }
 
-type SubmitOnboardingPayload = Omit<Client, 'id' | 'created_at' | 'status' | 'agreement_id' | 'agreements'>;
-
-export async function submitOnboardingForm(payload: SubmitOnboardingPayload & {
-  delivery_days: string[];
-  delivery_time_from: string;
-  delivery_time_to: string;
+type SubmitOnboardingPayload = Omit<Client, 'id' | 'created_at' | 'status' | 'agreement_id' | 'agreements'> & {
   street_address: string;
   street_number: string;
   locality: string;
   province: string;
-}) {
+  delivery_days: string[];
+  delivery_time_from: string;
+  delivery_time_to: string;
+};
+
+export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
     const supabase = createClient();
     
     const { 

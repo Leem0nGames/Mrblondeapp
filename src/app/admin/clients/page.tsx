@@ -1,4 +1,5 @@
 
+
 import { getClients } from "@/app/actions/admin.actions";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -25,7 +26,7 @@ export default async function ClientsPage() {
   );
 
   return (
-    <div className="grid flex-1 items-start gap-8">
+    <div className="grid flex-1 items-start gap-4 md:gap-8">
        <PageHeader
         title="Clientes"
         description="Gestiona tus clientes, asígnales convenios y genera enlaces de alta."
