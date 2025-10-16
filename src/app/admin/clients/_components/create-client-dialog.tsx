@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useTransition, useEffect, useCallback } from "react";
@@ -16,11 +17,10 @@ import {
 } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { createClientForInvitation, createFullClient, getAgreements } from "@/app/actions/admin.actions";
-import type { Client, Agreement } from "@/types";
+import type { Agreement } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,6 +28,8 @@ import { Copy, Check } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { EntityDialog, type FormConfig } from "../../_components/entity-dialog";
 import { agreementFormConfig } from "../../agreements/_components/form-config";
+import { provinces, getLocalitiesByProvince } from "@/lib/geo-data";
+import { Checkbox } from "@/components/ui/checkbox";
 
 
 // Zod schema for CUIT validation
@@ -56,13 +58,32 @@ const cuitSchema = z.string().refine(
   { message: "CUIT inválido. Debe tener 11 dígitos sin guiones y ser válido." }
 );
 
+const deliveryDays = [
+  { id: 'lunes', label: 'L' },
+  { id: 'martes', label: 'M' },
+  { id: 'miercoles', label: 'M' },
+  { id: 'jueves', label: 'J' },
+  { id: 'viernes', label: 'V' },
+  { id: 'sabado', label: 'S' },
+];
+
 const formSchema = z.object({
   fiscal_status: z.string().min(1, "La condición fiscal es requerida"),
   cuit: cuitSchema,
   contact_name: z.string().min(3, "El nombre es requerido."),
   contact_dni: z.string().min(7, "El DNI debe tener entre 7 y 8 dígitos.").max(8, "El DNI debe tener entre 7 y 8 dígitos."),
-  address: z.string().min(5, "La dirección es requerida."),
-  delivery_window: z.string().min(5, "Este campo es requerido."),
+  
+  province: z.string().min(1, "La provincia es requerida."),
+  locality: z.string().min(1, "La localidad es requerida."),
+  street_address: z.string().min(3, "La calle es requerida."),
+  street_number: z.string().min(1, "El número es requerido."),
+
+  delivery_days: z.array(z.string()).refine((value) => value.some((item) => item), {
+    message: "Debes seleccionar al menos un día.",
+  }),
+  delivery_time_from: z.string().min(1, "La hora de inicio es requerida."),
+  delivery_time_to: z.string().min(1, "La hora de fin es requerida."),
+  
   email: z.string().email("Debe ser un email válido."),
   instagram: z.string().optional(),
   agreement_id: z.string().nullable(),
@@ -96,17 +117,39 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
       cuit: "",
       contact_name: "",
       contact_dni: "",
-      address: "",
-      delivery_window: "",
+      province: "",
+      locality: "",
+      street_address: "",
+      street_number: "",
+      delivery_days: ["lunes", "miercoles", "viernes"],
+      delivery_time_from: "09:00",
+      delivery_time_to: "18:00",
       email: "",
       instagram: "",
       agreement_id: null,
     },
   });
 
+  const watchedProvince = form.watch("province");
+  const availableLocalities = watchedProvince ? getLocalitiesByProvince(watchedProvince) : [];
+
+  useEffect(() => {
+    if (availableLocalities.length > 0 && !availableLocalities.includes(form.getValues('locality'))) {
+      form.setValue('locality', '');
+    }
+  }, [watchedProvince, availableLocalities, form]);
+
+
   const onSubmit = (values: OnboardingFormValues) => {
+    const address = `${values.street_address} ${values.street_number}, ${values.locality}, ${values.province}`;
+    const delivery_window = `${values.delivery_days.join(', ')} de ${values.delivery_time_from} a ${values.delivery_time_to}hs`;
+
     startTransition(async () => {
-      const result = await createFullClient(values);
+      const result = await createFullClient({
+        ...values,
+        address,
+        delivery_window
+      });
 
       if (result.error) {
         toast({
@@ -176,7 +219,7 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
   return (
     <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-xl grid-rows-[auto_1fr_auto] p-0 max-h-[90vh]">
+      <DialogContent className="sm:max-w-2xl grid-rows-[auto_1fr_auto] p-0 max-h-[90vh]">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle>Agregar Nuevo Cliente</DialogTitle>
           <DialogDescription>
@@ -228,12 +271,64 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
                                             <FormItem><FormLabel>DNI</FormLabel><FormControl><Input placeholder="Sin puntos" {...field} /></FormControl><FormMessage /></FormItem>
                                         )}/>
                                     </div>
-                                    <FormField control={form.control} name="address" render={({ field }) => (
-                                        <FormItem><FormLabel>Dirección de entrega</FormLabel><FormControl><Input placeholder="Calle Falsa 123, Localidad, Provincia" {...field} /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                    <FormField control={form.control} name="delivery_window" render={({ field }) => (
-                                        <FormItem><FormLabel>Días y Horarios de entrega</FormLabel><FormControl><Textarea placeholder="Ej: Lunes a Viernes de 9 a 18hs" {...field} /></FormControl><FormMessage /></FormItem>
-                                    )}/>
+
+                                    <div className="space-y-4 rounded-lg border p-4">
+                                      <h4 className="font-medium">Dirección de Entrega</h4>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <FormField control={form.control} name="province" render={({ field }) => (
+                                          <FormItem><FormLabel>Provincia</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione una provincia..." /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{provinces.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
+                                        )}/>
+                                        <FormField control={form.control} name="locality" render={({ field }) => (
+                                          <FormItem><FormLabel>Localidad</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={!watchedProvince}><FormControl><SelectTrigger><SelectValue placeholder={watchedProvince ? "Seleccione una localidad..." : "Elija una provincia primero"} /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{availableLocalities.map(l => <SelectItem key={l} value-l>{l}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
+                                        )}/>
+                                      </div>
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="md:col-span-2"><FormField control={form.control} name="street_address" render={({ field }) => (
+                                              <FormItem><FormLabel>Calle</FormLabel><FormControl><Input placeholder="Ej: Av. Corrientes" {...field} /></FormControl><FormMessage /></FormItem>
+                                            )}/></div>
+                                        <div><FormField control={form.control} name="street_number" render={({ field }) => (
+                                              <FormItem><FormLabel>Número</FormLabel><FormControl><Input placeholder="Ej: 1234" {...field} /></FormControl><FormMessage /></FormItem>
+                                            )}/></div>
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-4 rounded-lg border p-4">
+                                      <h4 className="font-medium">Ventana Horaria de Entrega</h4>
+                                      <FormField control={form.control} name="delivery_days" render={() => (
+                                        <FormItem>
+                                          <FormLabel>Días de Entrega</FormLabel>
+                                          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-2">
+                                            {deliveryDays.map((item) => (
+                                              <FormField key={item.id} control={form.control} name="delivery_days" render={({ field }) => (
+                                                <FormItem key={item.id} className="flex flex-row items-center space-x-2 space-y-0">
+                                                  <FormControl>
+                                                    <Checkbox
+                                                      checked={field.value?.includes(item.id)}
+                                                      onCheckedChange={(checked) => {
+                                                        return checked
+                                                          ? field.onChange([...field.value, item.id])
+                                                          : field.onChange(field.value?.filter((value) => value !== item.id));
+                                                      }}
+                                                    />
+                                                  </FormControl>
+                                                  <FormLabel className="font-normal">{item.label}</FormLabel>
+                                                </FormItem>
+                                              )} />
+                                            ))}
+                                          </div>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}/>
+                                      <div className="grid grid-cols-2 gap-4">
+                                          <FormField control={form.control} name="delivery_time_from" render={({ field }) => (
+                                            <FormItem><FormLabel>Desde</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem>
+                                          )}/>
+                                          <FormField control={form.control} name="delivery_time_to" render={({ field }) => (
+                                            <FormItem><FormLabel>Hasta</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem>
+                                          )}/>
+                                      </div>
+                                    </div>
+                                    
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <FormField control={form.control} name="email" render={({ field }) => (
                                             <FormItem><FormLabel>Mail</FormLabel><FormControl><Input type="email" placeholder="tu@email.com" {...field} /></FormControl><FormMessage /></FormItem>
