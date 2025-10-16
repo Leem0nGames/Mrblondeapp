@@ -10,7 +10,6 @@ import { AssignAgreementDialog } from "../../_components/assign-agreement-dialog
 import Link from "next/link";
 import { Edit, Copy, Check } from "lucide-react";
 import { OnboardingFormDialog } from "./onboarding-form-dialog";
-import { cn } from "@/lib/utils";
 
 const statusMap: Record<Client['status'], { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
     pending_onboarding: { label: "Pendiente de Alta", variant: "secondary" },
@@ -32,8 +31,8 @@ const CopyableInfoItem = ({ label, value, onCopy }: { label: string; value: stri
     return (
         <div className="space-y-1 text-sm">
             <p className="font-medium">{label}</p>
-            <div className="flex items-center justify-between gap-2 text-muted-foreground">
-                <p className="truncate">{value ?? "No especificado"}</p>
+            <div className="flex items-start justify-between gap-2 text-muted-foreground">
+                <p className="break-words w-full">{value ?? "No especificado"}</p>
                 {value && (
                     <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={handleCopy}>
                         {hasCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
@@ -64,9 +63,6 @@ export function ClientInfo({ client, onCopy }: { client: Client, onCopy: (text: 
             <div><Badge variant={statusMap[client.status].variant}>{statusMap[client.status].label}</Badge></div>
         </div>
         
-        <CopyableInfoItem label="CUIT" value={client.cuit} onCopy={onCopy} />
-        <CopyableInfoItem label="Email" value={client.email} onCopy={onCopy} />
-
         <div className="space-y-1 text-sm">
           <p className="font-medium">Convenio Asignado</p>
           <div className="flex items-center gap-2">

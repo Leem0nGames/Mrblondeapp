@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Client } from "@/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Archive, Copy, Edit, FilePen, Link as LinkIcon, MoreVertical } from "lucide-react";
+import { Archive, Copy, Edit, FilePen, Link as LinkIcon, MoreVertical, Check } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +27,31 @@ import {
 import { ClientActionButtons } from "./client-action-buttons";
 
 
+const CopyableField = ({ label, value, onCopy }: { label: string; value: string | null; onCopy: (text: string, message: string) => void; }) => {
+    const [hasCopied, setHasCopied] = useState(false);
+
+    const handleCopy = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!value) return;
+        onCopy(value, `${label} copiado`);
+        setHasCopied(true);
+        setTimeout(() => setHasCopied(false), 2000);
+    };
+
+    return (
+        <div className="group relative flex items-center gap-2">
+            <span className="text-muted-foreground text-sm">{value || 'No disponible'}</span>
+             {value && (
+                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={handleCopy}>
+                    {hasCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    <span className="sr-only">Copiar {label}</span>
+                </Button>
+            )}
+        </div>
+    );
+};
+
+
 export function ClientHeader({ 
     client, 
     onArchive, 
@@ -39,7 +64,7 @@ export function ClientHeader({
     client: Client;
     onArchive: () => void;
     isArchiving: boolean;
-    onCopyLink: (link: string, message: string, errorMessage?: string) => void;
+    onCopyLink: (link: string | null, message: string, errorMessage?: string) => void;
     orderLink: string | null;
     editDialog: React.ReactNode;
     agreementDialog: React.ReactNode;
@@ -55,7 +80,7 @@ export function ClientHeader({
 
   return (
     <div className="w-full">
-      <div className="relative flex flex-col items-center justify-center rounded-lg bg-card p-6 shadow-sm gap-4">
+      <div className="relative flex flex-col items-center justify-center rounded-lg bg-card p-6 shadow-sm gap-2">
         <div className="absolute top-4 right-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -73,7 +98,7 @@ export function ClientHeader({
 
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
-                    onClick={() => onCopyLink(orderLink!, 'Enlace de pedido copiado!', 'El cliente debe estar activo para tener un enlace de pedido.')} 
+                    onClick={() => onCopyLink(orderLink, 'Enlace de pedido copiado!', 'El cliente debe estar activo para tener un enlace de pedido.')} 
                     disabled={!orderLink}>
                     <LinkIcon className="mr-2 h-4 w-4" />
                     Copiar Link Pedido
@@ -111,14 +136,15 @@ export function ClientHeader({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <Avatar className="w-24 h-24">
+        <Avatar className="w-24 h-24 mb-2">
           <AvatarFallback className="text-4xl">
             {client.contact_name?.charAt(0).toUpperCase() ?? 'C'}
           </AvatarFallback>
         </Avatar>
         <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight">{client.contact_name}</h1>
-            <p className="text-muted-foreground text-sm">{client.email ?? 'Email no disponible'}</p>
+            <CopyableField label="Nombre" value={client.contact_name} onCopy={onCopyLink} />
+            <CopyableField label="Email" value={client.email} onCopy={onCopyLink} />
+            <CopyableField label="CUIT" value={client.cuit} onCopy={onCopyLink} />
         </div>
         <div className="w-full pt-4">
              <ClientActionButtons 
