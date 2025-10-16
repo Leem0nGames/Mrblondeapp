@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -39,7 +40,6 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
           } else {
               const link = `${window.location.origin}/onboarding/${result.data.onboarding_token}`;
               setInvitation({ link, client: result.data });
-              toast({ title: "Invitación Creada", description: "Copia el enlace y compártelo con tu cliente." });
           }
       });
   };
@@ -48,13 +48,16 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
     if (!invitation) return;
     navigator.clipboard.writeText(invitation.link);
     setHasCopied(true);
+    toast({ title: "Enlace copiado al portapapeles" });
     setTimeout(() => setHasCopied(false), 2000);
   };
 
   const handleDialogChange = (isOpen: boolean) => {
       onOpenChange(isOpen);
       if (!isOpen) {
-          setInvitation(null);
+          setTimeout(() => {
+            setInvitation(null);
+          }, 300);
       }
   }
 
@@ -92,16 +95,25 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
                     </div>
                 </div>
             ) : (
-                <p className="text-sm text-muted-foreground text-center">
-                    Haz clic en el botón para generar un nuevo enlace de invitación.
-                </p>
+                 <div className="text-center py-6">
+                    <Button onClick={handleInvite} disabled={isPending} className="w-full sm:w-auto">
+                        {isPending ? "Generando..." : "Generar Enlace de Invitación"}
+                    </Button>
+                 </div>
             )}
         </div>
         
         <DialogFooter>
-            <Button onClick={handleInvite} disabled={isPending} className="w-full" variant={invitation ? "outline" : "default"}>
-                {isPending ? "Generando..." : invitation ? "Generar Otro Enlace" : "Generar Enlace de Invitación"}
-            </Button>
+           <DialogClose asChild>
+                <Button variant="outline">
+                    {invitation ? "Listo" : "Cancelar"}
+                </Button>
+           </DialogClose>
+            {invitation && (
+                 <Button onClick={handleInvite} disabled={isPending} variant="ghost">
+                    {isPending ? "Generando..." : "Generar Otro Enlace"}
+                </Button>
+            )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
