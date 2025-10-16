@@ -2,8 +2,7 @@
 import { getClients } from "@/app/actions/admin.actions";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Users, PlusCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Users } from "lucide-react";
 import { ClientsTable } from "./_components/clients-table";
 import { CreateClientButton } from "./_components/create-client-button";
 

@@ -462,42 +462,66 @@ export async function getClientStats(clientId: string): Promise<{ data: ClientSt
     return { data, error: null };
 }
 
-export async function createPlaceholderClient(): Promise<{ data: Client | null, error: any }> {
+
+export async function createClientForInvitation(): Promise<{ data: Pick<Client, "id" | "onboarding_token"> | null, error: any }> {
     const supabase = await getSupabaseClientWithAuth();
     
-    // 1. Create a client with just the minimum required fields
+    const placeholderName = `Cliente Pendiente - ${new Date().toISOString()}`;
     const { data: client, error } = await supabase
         .from('clients')
         .insert({
             status: 'pending_onboarding',
             onboarding_token: crypto.randomUUID(),
+            contact_name: placeholderName,
         })
         .select('id, onboarding_token')
         .single();
 
     if (error || !client) {
-        console.error("createPlaceholderClient error:", error?.message);
-        return { data: null, error: { message: 'No se pudo crear el cliente.' } };
-    }
-
-    // 2. Update the client with a descriptive placeholder name
-    const placeholderName = `Cliente Pendiente #${client.id.slice(0, 4)}`;
-    const { data: updatedClient, error: updateError } = await supabase
-        .from('clients')
-        .update({ contact_name: placeholderName })
-        .eq('id', client.id)
-        .select()
-        .single();
-    
-    if (updateError) {
-        console.error("createPlaceholderClient (update) error:", updateError.message);
-        // If the update fails, we still have the client, but it's less descriptive.
-        // We'll proceed but log the error.
+        console.error("createClientForInvitation error:", error?.message);
+        return { data: null, error: { message: 'No se pudo crear la invitación para el cliente.' } };
     }
 
     revalidatePath("/admin/clients");
-    return { data: updatedClient, error: null };
+    return { data: client, error: null };
 }
+
+export async function createFullClient(payload: Omit<Client, 'id' | 'created_at' | 'status' | 'onboarding_token' | 'agreements'>) {
+    const supabase = await getSupabaseClientWithAuth();
+
+    const { agreement_id, ...clientData } = payload;
+    
+    const newStatus: Client['status'] = agreement_id ? 'active' : 'pending_agreement';
+
+    const { data: newClient, error } = await supabase
+        .from('clients')
+        .insert({
+            ...clientData,
+            agreement_id: agreement_id,
+            status: newStatus,
+            onboarding_token: crypto.randomUUID(), // Still need a token for potential future edits
+        })
+        .select()
+        .single();
+    
+    if (error) {
+        console.error("createFullClient error:", error.message);
+        if (error.code === '23505') { // Unique constraint violation
+             if (error.message.includes('cuit')) {
+                return { error: { message: 'El CUIT ingresado ya está registrado en nuestro sistema.' }};
+            }
+            if (error.message.includes('email')) {
+                return { error: { message: 'El email ingresado ya está registrado en nuestro sistema.' }};
+            }
+        }
+        return { error };
+    }
+
+    revalidatePath('/admin/clients');
+    revalidatePath('/admin');
+    return { data: newClient, error: null };
+}
+
 
 export async function assignAgreementToClient(payload: { clientId: string, agreementId: string | null }): Promise<{ error: any }> {
     const supabase = await getSupabaseClientWithAuth();
