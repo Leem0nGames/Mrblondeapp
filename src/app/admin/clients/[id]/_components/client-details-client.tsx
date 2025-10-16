@@ -4,7 +4,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useTransition, useCallback, useEffect, useState } from "react";
-import { Info, Landmark, ArrowLeft, Edit, FilePen } from "lucide-react";
+import { Info, Landmark, ArrowLeft, Edit, FilePen, Printer } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ClientHeader } from "./client-header";
@@ -19,27 +19,6 @@ import { OnboardingFormDialog } from './onboarding-form-dialog';
 import { AssignAgreementDialog } from '../../_components/assign-agreement-dialog';
 import { ActionButton, ActionButtonWrapper } from './client-action-buttons';
 
-
-const ShippingLabel = dynamic(
-  () => import('./shipping-label').then(mod => mod.ShippingLabel),
-  { 
-    ssr: false,
-    loading: () => (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-10 w-full" />
-        </CardContent>
-        <CardFooter>
-          <Skeleton className="h-10 w-full" />
-        </CardFooter>
-      </Card>
-    )
-  }
-);
 
 const formatRule = (rules: any): string => {
   if (!rules || typeof rules !== 'object') {
@@ -201,7 +180,6 @@ export function ClientDetailsClient({ client, stats, orders }: ClientDetailsClie
               <ClientOrders orders={orders} />
           </div>
           <div className="md:col-span-1 grid gap-4 auto-rows-min">
-              <ShippingLabel client={client} />
               <ClientInfo client={client} />
           </div>
       </div>

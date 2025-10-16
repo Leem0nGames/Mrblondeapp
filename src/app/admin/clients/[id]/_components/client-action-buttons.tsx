@@ -35,7 +35,7 @@ const ActionButton = ({ children, ...props }: React.ComponentProps<typeof Button
     </Button>
 );
 
-export function ClientActionButtons({ client, onArchive, isArchiving, onCopyLink, orderLink, editDialog, agreementDialog }: ClientActionButtonsProps) {
+export function ClientActionButtons({ onArchive, isArchiving, onCopyLink, orderLink, editDialog, agreementDialog }: ClientActionButtonsProps) {
     return (
         <div className="grid grid-cols-4 gap-2">
             {editDialog}

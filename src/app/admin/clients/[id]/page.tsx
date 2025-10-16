@@ -10,9 +10,11 @@ export default async function ClientDetailPage({
 }: {
   params: { id: string };
 }) {
-  const clientResult = await getClientById(params.id);
-  const statsResult = await getClientStats(params.id);
-  const ordersResult = await getClientOrders(params.id);
+  const [clientResult, statsResult, ordersResult] = await Promise.all([
+    getClientById(params.id),
+    getClientStats(params.id),
+    getClientOrders(params.id)
+  ]);
 
   if (clientResult.error || !clientResult.data) {
     return (
