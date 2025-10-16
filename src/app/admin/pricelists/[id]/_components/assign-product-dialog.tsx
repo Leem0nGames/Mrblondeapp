@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useTransition, useEffect, useCallback } from "react";
@@ -265,5 +264,3 @@ export function AssignProductToPriceListDialog({
     </Dialog>
   );
 }
-
-    
