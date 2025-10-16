@@ -1,8 +1,4 @@
-
-"use client";
-
 import Link from "next/link";
-import { usePathname } from 'next/navigation'
 import {
   Package,
   LogOut,
@@ -27,32 +23,50 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Logo } from "@/components/logo";
 import { logout } from "@/app/actions/user.actions";
 import { Notifications } from "./_components/notifications";
+import { getPendingOrders, getClientsWithPendingAgreements } from "@/app/actions/admin.actions";
+import { AppNav } from "./_components/app-nav";
+import type { Order, Client } from "@/types";
 
-const mainNavItems = [
-    { href: "/admin", icon: Home, label: "Dashboard" },
-    { href: "/admin/products", icon: Package, label: "Productos" },
-    { href: "/admin/pricelists", icon: ClipboardList, label: "Precios" },
-    { href: "/admin/agreements", icon: FileText, label: "Convenios" },
-    { href: "/admin/clients", icon: Users, label: "Clientes" },
-    { href: "/admin/promotions", icon: Percent, label: "Promos" },
-    { href: "/admin/sales-conditions", icon: Landmark, label: "Condiciones" },
-];
+const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
+}
 
-const mobileNavItems = [
-    { href: "/admin", icon: Home, label: "Dashboard" },
-    { href: "/admin/products", icon: Package, label: "Productos" },
-    { href: "/admin/pricelists", icon: ClipboardList, label: "Precios" },
-    { href: "/admin/agreements", icon: FileText, label: "Convenios" },
-    { href: "/admin/clients", icon: Users, label: "Clientes" },
-    { href: "/admin/promotions", icon: Percent, label: "Promos" },
-]
+const transformDataToNotifications = (orders: Order[], clients: Client[]) => {
+    const orderNotifications = orders.map(order => ({
+        id: `order-${order.id}`,
+        type: 'order' as const,
+        title: `Nuevo Pedido #${order.id.slice(-4)}`,
+        description: `${order.client_name_cache} - ${formatCurrency(order.total_amount)}`,
+        createdAt: new Date(order.created_at),
+    }));
 
-export default function AdminLayout({
+    const clientNotifications = clients.map(client => ({
+        id: `client-${client.id}`,
+        type: 'client' as const,
+        title: "Cliente Pendiente",
+        description: `${client.contact_name || 'Cliente'} completó el alta.`,
+        createdAt: new Date(client.created_at),
+    }));
+
+    return [...orderNotifications, ...clientNotifications].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
+
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
+  const [pendingOrdersResult, pendingClientsResult] = await Promise.all([
+    getPendingOrders(),
+    getClientsWithPendingAgreements()
+  ]);
+
+  const notifications = transformDataToNotifications(
+    pendingOrdersResult,
+    pendingClientsResult
+  );
+
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -65,25 +79,7 @@ export default function AdminLayout({
             <Logo />
             <span className="sr-only">Blonde Orders</span>
           </Link>
-          <TooltipProvider>
-            {mainNavItems.map(item => (
-                 <Tooltip key={item.href}>
-                    <TooltipTrigger asChild>
-                        <Link
-                          href={item.href}
-                          className={cn(
-                            "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                            pathname === item.href && "bg-accent text-accent-foreground"
-                          )}
-                        >
-                        <item.icon className="h-5 w-5" />
-                        <span className="sr-only">{item.label}</span>
-                        </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">{item.label}</TooltipContent>
-                </Tooltip>
-            ))}
-          </TooltipProvider>
+          <AppNav isMobile={false} />
         </nav>
         <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
           <TooltipProvider>
@@ -92,8 +88,7 @@ export default function AdminLayout({
                 <Link
                     href="/admin/settings"
                     className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                       pathname === "/admin/settings" && "bg-accent text-accent-foreground"
+                      "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                     )}
                     >
                     <Settings className="h-5 w-5" />
@@ -128,7 +123,7 @@ export default function AdminLayout({
               </Link>
             </div>
              <div className="ml-auto flex items-center gap-2">
-                 <Notifications />
+                 <Notifications notifications={notifications} />
                  <Sheet>
                     <SheetTrigger asChild>
                     <Button
@@ -149,24 +144,10 @@ export default function AdminLayout({
                             <Logo showText={true} />
                             <span className="sr-only">Blonde Orders</span>
                         </Link>
-                        {mainNavItems.map(item => (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={cn(
-                                  "hover:text-foreground",
-                                  pathname === item.href ? "text-foreground" : "text-muted-foreground"
-                                )}
-                            >
-                                {item.label}
-                            </Link>
-                        ))}
+                        <AppNav isMobile={true} />
                          <Link
                             href="/admin/settings"
-                            className={cn(
-                              "hover:text-foreground",
-                               pathname === "/admin/settings" ? "text-foreground" : "text-muted-foreground"
-                            )}
+                            className="text-muted-foreground hover:text-foreground"
                          >
                             Configuración
                         </Link>
@@ -186,22 +167,7 @@ export default function AdminLayout({
       </div>
        <footer className="sm:hidden fixed bottom-0 left-0 right-0 h-16 bg-background border-t z-10">
         <nav className="h-full">
-          <ul className="h-full grid grid-cols-6 justify-around items-center text-center">
-            {mobileNavItems.map(item => (
-                <li key={item.href}>
-                    <Link
-                        href={item.href}
-                        className={cn(
-                          "flex flex-col items-center gap-1 transition-colors",
-                          pathname === item.href ? "text-primary" : "text-muted-foreground hover:text-primary"
-                        )}
-                    >
-                        <item.icon className="h-6 w-6" />
-                        <span className="text-[10px]">{item.label}</span>
-                    </Link>
-                </li>
-            ))}
-          </ul>
+         <AppNav isMobile={true} />
         </nav>
       </footer>
     </div>
