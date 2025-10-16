@@ -76,6 +76,7 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
   const [agreements, setAgreements] = useState<Agreement[]>([]);
   const [invitationLink, setInvitationLink] = useState<string | null>(null);
   const [hasCopied, setHasCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState("fast-track");
 
   const fetchAgreements = useCallback(async () => {
     const { data } = await getAgreements();
@@ -149,6 +150,7 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
       if (!isOpen) {
           form.reset();
           setInvitationLink(null);
+          setActiveTab("fast-track");
       }
   }
   
@@ -175,128 +177,131 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
     <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-xl grid-rows-[auto_1fr_auto] p-0 max-h-[90vh]">
-        <DialogHeader className="p-6 pb-4">
+        <DialogHeader className="p-6 pb-2">
           <DialogTitle>Agregar Nuevo Cliente</DialogTitle>
           <DialogDescription>
             Elige cómo quieres agregar un nuevo cliente al sistema.
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="fast-track" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mx-auto px-6">
-                <TabsTrigger value="fast-track">Alta Rápida</TabsTrigger>
-                <TabsTrigger value="invite">Invitar Cliente</TabsTrigger>
-            </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="px-6">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="fast-track">Alta Rápida</TabsTrigger>
+                    <TabsTrigger value="invite">Invitar Cliente</TabsTrigger>
+                </TabsList>
+            </div>
             
-            <TabsContent value="fast-track">
-                <ScrollArea className="h-[60vh] w-full">
-                    <FormProvider {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6">
-                            <p className="text-sm text-muted-foreground pt-4">Completa los datos del cliente para darle de alta inmediatamente.</p>
-                            <FormField
-                                control={form.control}
-                                name="fiscal_status"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>Condición Fiscal</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Seleccione una condición..." />
-                                        </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                        <SelectItem value="Responsable Inscripto">Responsable Inscripto (Factura A)</SelectItem>
-                                        <SelectItem value="Monotributista">Monotributista (Factura B)</SelectItem>
-                                        <SelectItem value="Consumidor Final">Consumidor Final (Factura B)</SelectItem>
-                                        <SelectItem value="Exento">Exento (Factura B)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                                <FormField control={form.control} name="cuit" render={({ field }) => (
-                                    <FormItem><FormLabel>CUIT</FormLabel><FormControl><Input placeholder="11 dígitos, sin guiones" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormField control={form.control} name="contact_name" render={({ field }) => (
-                                        <FormItem><FormLabel>Nombre y Apellido</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                    <FormField control={form.control} name="contact_dni" render={({ field }) => (
-                                        <FormItem><FormLabel>DNI</FormLabel><FormControl><Input placeholder="Sin puntos" {...field} /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                </div>
-                                <FormField control={form.control} name="address" render={({ field }) => (
-                                    <FormItem><FormLabel>Dirección de entrega</FormLabel><FormControl><Input placeholder="Calle Falsa 123, Localidad, Provincia" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                <FormField control={form.control} name="delivery_window" render={({ field }) => (
-                                    <FormItem><FormLabel>Días y Horarios de entrega</FormLabel><FormControl><Textarea placeholder="Ej: Lunes a Viernes de 9 a 18hs" {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormField control={form.control} name="email" render={({ field }) => (
-                                        <FormItem><FormLabel>Mail</FormLabel><FormControl><Input type="email" placeholder="tu@email.com" {...field} /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                    <FormField control={form.control} name="instagram" render={({ field }) => (
-                                        <FormItem><FormLabel>Instagram (Opcional)</FormLabel><FormControl><Input placeholder="@usuario" {...field} /></FormControl><FormMessage /></FormItem>
-                                    )}/>
-                                </div>
+            <TabsContent value="fast-track" className="mt-0">
+                <FormProvider {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)}>
+                        <ScrollArea className="h-[55vh] w-full">
+                            <div className="space-y-6 px-6 pb-6 pt-4">
+                                <p className="text-sm text-muted-foreground">Completa los datos del cliente para darle de alta inmediatamente.</p>
                                 <FormField
                                     control={form.control}
-                                    name="agreement_id"
+                                    name="fiscal_status"
                                     render={({ field }) => (
                                         <FormItem>
-                                        <FormLabel>Convenio (Opcional)</FormLabel>
-                                        <Select onValueChange={(value) => field.onChange(value === 'null' ? null : value)} value={field.value ?? 'null'}>
-                                            <FormControl><SelectTrigger><SelectValue placeholder="Asignar un convenio..." /></SelectTrigger></FormControl>
+                                        <FormLabel>Condición Fiscal</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccione una condición..." /></SelectTrigger></FormControl>
                                             <SelectContent>
-                                                <SelectItem value="null">Ninguno por ahora</SelectItem>
-                                                {agreements.map(agreement => (<SelectItem key={agreement.id} value={agreement.id}>{agreement.agreement_name}</SelectItem>))}
+                                            <SelectItem value="Responsable Inscripto">Responsable Inscripto (Factura A)</SelectItem>
+                                            <SelectItem value="Monotributista">Monotributista (Factura B)</SelectItem>
+                                            <SelectItem value="Consumidor Final">Consumidor Final (Factura B)</SelectItem>
+                                            <SelectItem value="Exento">Exento (Factura B)</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <FormDescription>
-                                            <span>¿El convenio que buscas no existe?</span>
-                                            <EntityDialog formConfig={newAgreementDialogConfig} entity={undefined}>
-                                                <Button variant="link" size="sm" type="button" className="p-1 h-auto text-xs">
-                                                    o, Crear Nuevo Convenio
-                                                </Button>
-                                            </EntityDialog>
-                                        </FormDescription>
                                         <FormMessage />
                                         </FormItem>
                                     )}
-                                />
-                                <DialogFooter className="pt-4 !mt-0 bg-background sticky bottom-0 pb-6">
-                                    <Button type="submit" disabled={isPending} className="w-full">
-                                        {isPending ? "Guardando..." : "Crear Cliente"}
-                                    </Button>
-                                </DialogFooter>
-                        </form>
-                    </FormProvider>
-                </ScrollArea>
+                                    />
+                                    <FormField control={form.control} name="cuit" render={({ field }) => (
+                                        <FormItem><FormLabel>CUIT</FormLabel><FormControl><Input placeholder="11 dígitos, sin guiones" {...field} /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <FormField control={form.control} name="contact_name" render={({ field }) => (
+                                            <FormItem><FormLabel>Nombre y Apellido</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                        <FormField control={form.control} name="contact_dni" render={({ field }) => (
+                                            <FormItem><FormLabel>DNI</FormLabel><FormControl><Input placeholder="Sin puntos" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                    </div>
+                                    <FormField control={form.control} name="address" render={({ field }) => (
+                                        <FormItem><FormLabel>Dirección de entrega</FormLabel><FormControl><Input placeholder="Calle Falsa 123, Localidad, Provincia" {...field} /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                    <FormField control={form.control} name="delivery_window" render={({ field }) => (
+                                        <FormItem><FormLabel>Días y Horarios de entrega</FormLabel><FormControl><Textarea placeholder="Ej: Lunes a Viernes de 9 a 18hs" {...field} /></FormControl><FormMessage /></FormItem>
+                                    )}/>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <FormField control={form.control} name="email" render={({ field }) => (
+                                            <FormItem><FormLabel>Mail</FormLabel><FormControl><Input type="email" placeholder="tu@email.com" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                        <FormField control={form.control} name="instagram" render={({ field }) => (
+                                            <FormItem><FormLabel>Instagram (Opcional)</FormLabel><FormControl><Input placeholder="@usuario" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )}/>
+                                    </div>
+                                    <FormField
+                                        control={form.control}
+                                        name="agreement_id"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel>Convenio (Opcional)</FormLabel>
+                                            <Select onValueChange={(value) => field.onChange(value === 'null' ? null : value)} value={field.value ?? 'null'}>
+                                                <FormControl><SelectTrigger><SelectValue placeholder="Asignar un convenio..." /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="null">Ninguno por ahora</SelectItem>
+                                                    {agreements.map(agreement => (<SelectItem key={agreement.id} value={agreement.id}>{agreement.agreement_name}</SelectItem>))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormDescription className="flex items-center gap-1">
+                                                <span>¿El convenio que buscas no existe?</span>
+                                                <EntityDialog formConfig={newAgreementDialogConfig} entity={undefined}>
+                                                    <Button variant="link" size="sm" type="button" className="p-0 h-auto text-xs">
+                                                        Crear uno nuevo.
+                                                    </Button>
+                                                </EntityDialog>
+                                            </FormDescription>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                        </ScrollArea>
+                        <DialogFooter className="p-6 pt-2 border-t">
+                            <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
+                                {isPending ? "Guardando..." : "Crear Cliente"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </FormProvider>
             </TabsContent>
 
-            <TabsContent value="invite">
-                <div className="px-6 py-4 space-y-6">
-                    <p className="text-sm text-muted-foreground">Genera un enlace único para que el cliente complete sus datos. El cliente aparecerá en tu lista como "Pendiente de Alta".</p>
-                    {invitationLink ? (
-                        <Alert>
-                            <AlertTitle>¡Enlace Generado!</AlertTitle>
-                            <AlertDescription className="break-all">
-                                {invitationLink}
-                            </AlertDescription>
-                            <div className="mt-4">
-                                <Button size="sm" onClick={handleCopyToClipboard}>
-                                    {hasCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-                                    {hasCopied ? "Copiado" : "Copiar Enlace"}
-                                </Button>
-                            </div>
-                        </Alert>
-                    ) : (
-                         <Button onClick={handleInvite} disabled={isPending} className="w-full">
-                            {isPending ? "Generando..." : "Generar Enlace de Invitación"}
+            <TabsContent value="invite" className="mt-0">
+                <div className="h-[55vh] flex flex-col">
+                    <div className="p-6 space-y-6 flex-grow">
+                        <p className="text-sm text-muted-foreground">Genera un enlace único para que el cliente complete sus datos. El cliente aparecerá en tu lista como "Pendiente de Alta".</p>
+                        {invitationLink && (
+                            <Alert>
+                                <AlertTitle>¡Enlace Generado!</AlertTitle>
+                                <AlertDescription className="break-all">
+                                    {invitationLink}
+                                </AlertDescription>
+                                <div className="mt-4">
+                                    <Button size="sm" onClick={handleCopyToClipboard}>
+                                        {hasCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                                        {hasCopied ? "Copiado" : "Copiar Enlace"}
+                                    </Button>
+                                </div>
+                            </Alert>
+                        )}
+                    </div>
+                     <DialogFooter className="p-6 pt-2 border-t">
+                         <Button onClick={handleInvite} disabled={isPending} className="w-full sm:w-auto" variant={invitationLink ? "secondary" : "default"}>
+                            {isPending ? "Generando..." : invitationLink ? "Generar Otro Enlace" : "Generar Enlace de Invitación"}
                         </Button>
-                    )}
+                    </DialogFooter>
                 </div>
             </TabsContent>
         </Tabs>

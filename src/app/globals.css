@@ -6,32 +6,34 @@
 @layer base {
   :root {
     /* 🎨 Paleta clara */
-    --background: 48 36% 97%; /* Beige muy claro */
-    --foreground: 32 25% 20%; /* Marrón profundo */
-    --card: 48 36% 97%;
-    --card-foreground: 32 25% 20%;
-    --popover: 48 36% 97%;
-    --popover-foreground: 32 25% 20%;
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    
+    --primary: 40 96% 51%; /* Amarillo/Dorado vibrante */
+    --primary-foreground: 240 5.9% 10%;
 
-    --primary: 40 60% 60%; /* Amarillo cálido / dorado */
-    --primary-foreground: 32 25% 15%;
-
-    --secondary: 45 20% 92%; /* Gris cálido */
-    --secondary-foreground: 32 25% 20%;
-
-    --muted: 45 15% 88%;
-    --muted-foreground: 32 15% 35%;
-
-    --accent: 25 55% 30%; /* Marrón chocolate */
-    --accent-foreground: 48 36% 97%;
-
-    --destructive: 0 70% 50%; /* Rojo cálido */
+    --secondary: 240 4.8% 95.9%; /* Gris claro */
+    --secondary-foreground: 240 5.9% 10%;
+    
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-
-    --border: 40 20% 85%;
-    --input: 40 20% 85%;
-    --ring: 40 60% 65%;
-
+    
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 40 96% 51%;
+    
     --radius: 0.5rem;
 
     /* Gráficos */
@@ -42,44 +44,45 @@
     --chart-5: 15 75% 60%;
 
     /* Sidebar */
-    --sidebar-background: 46 36% 95%;
-    --sidebar-foreground: 32 25% 20%;
-    --sidebar-primary: 25 55% 30%;
-    --sidebar-primary-foreground: 48 36% 97%;
-    --sidebar-accent: 40 20% 85%;
-    --sidebar-accent-foreground: 32 25% 20%;
-    --sidebar-border: 40 20% 85%;
-    --sidebar-ring: 40 60% 65%;
+    --sidebar-background: 240 10% 3.9%; /* Oscuro */
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 40 96% 51%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 40 96% 51%;
   }
 
   .dark {
     /* 🌙 Paleta oscura */
-    --background: 25 30% 12%; /* Marrón oscuro */
-    --foreground: 48 36% 96%; /* Beige claro */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
 
-    --card: 25 30% 15%;
-    --card-foreground: 48 36% 96%;
-    --popover: 25 30% 12%;
-    --popover-foreground: 48 36% 96%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
 
-    --primary: 40 60% 60%; /* Dorado */
-    --primary-foreground: 25 30% 15%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
 
-    --secondary: 25 20% 25%;
-    --secondary-foreground: 48 36% 85%;
+    --primary: 40 96% 51%;
+    --primary-foreground: 240 5.9% 10%;
 
-    --muted: 25 20% 20%;
-    --muted-foreground: 40 15% 70%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
 
-    --accent: 40 60% 60%;
-    --accent-foreground: 25 30% 15%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
 
-    --destructive: 0 60% 40%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 25 20% 25%;
-    --input: 25 20% 25%;
-    --ring: 40 60% 60%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 40 96% 51%;
 
     /* Gráficos */
     --chart-1: 220 70% 55%;
@@ -89,14 +92,14 @@
     --chart-5: 340 70% 55%;
 
     /* Sidebar */
-    --sidebar-background: 25 30% 12%;
-    --sidebar-foreground: 48 36% 96%;
-    --sidebar-primary: 40 60% 60%;
-    --sidebar-primary-foreground: 25 30% 15%;
-    --sidebar-accent: 25 20% 20%;
-    --sidebar-accent-foreground: 48 36% 96%;
-    --sidebar-border: 25 20% 25%;
-    --sidebar-ring: 40 60% 60%;
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 40 96% 51%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 40 96% 51%;
   }
 
   * {
@@ -112,11 +115,6 @@
   }
 
   a {
-    @apply text-primary hover:text-accent transition-colors;
-  }
-
-  button {
-    @apply rounded-md px-4 py-2 font-medium bg-primary text-primary-foreground 
-           hover:bg-accent hover:text-accent-foreground transition-colors;
+    @apply text-primary hover:text-primary/80 transition-colors;
   }
 }
