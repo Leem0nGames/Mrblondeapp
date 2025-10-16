@@ -130,7 +130,7 @@ export async function getOrderPageData(agreementId: string) {
             price_lists(id, name, prices_include_vat)
         `)
         .eq('id', agreementId)
-        .single();
+        .maybeSingle();
         
     if (agreementError || !agreement) {
         console.error("getOrderPageData (agreement) error:", agreementError?.message);
