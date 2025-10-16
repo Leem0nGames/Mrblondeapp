@@ -37,6 +37,7 @@ export default async function OnboardingPage({ params }: { params: { token: stri
     );
   }
 
+  // Check if the form has been completed (any of the required fields are filled)
   if (client.status !== 'pending_onboarding') {
     return (
        <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
@@ -57,7 +58,7 @@ export default async function OnboardingPage({ params }: { params: { token: stri
             {client.agreement_id ? (
                 <>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        ¡Buenas noticias! Ya tienes un portal de pedidos activo.
+                        ¡Buenas noticias! Tu portal de pedidos ya está activo.
                     </p>
                     <Button asChild className="w-full">
                         <Link href={`/pedido/${client.agreement_id}`}>
@@ -99,4 +100,3 @@ export default async function OnboardingPage({ params }: { params: { token: stri
     </div>
   );
 }
-

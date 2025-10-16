@@ -216,7 +216,7 @@ export async function getOnboardingClient(token: string): Promise<{ data: Client
 
     if (error) {
         console.error("getOnboardingClient error:", error.message);
-        return { data: null, error };
+        return { data: null, error: { message: error.message } };
     }
     return { data, error: null };
 }
@@ -290,6 +290,7 @@ export async function submitOnboardingForm(payload: SubmitOnboardingPayload & {
     }
 
     revalidatePath('/admin/clients');
+    revalidatePath(`/onboarding/${onboarding_token}`);
     return { error: null };
 }
 

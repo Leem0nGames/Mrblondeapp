@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useTransition, useCallback, useEffect, useState } from "react";
-import { MoreHorizontal, Trash2, Copy, Link as LinkIcon, Archive, Edit } from "lucide-react";
+import { MoreHorizontal, Trash2, Copy, Link as LinkIcon, Archive, Edit, FilePen } from "lucide-react";
 import Link from "next/link";
 import {
   AlertDialog,
@@ -114,15 +115,12 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                 </CardContent>
             </Link>
             <CardFooter className="flex flex-col gap-2 items-stretch">
-                <Button 
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyToClipboard(orderLink, 'Enlace de pedido copiado!')}
-                    disabled={!orderLink}
-                >
-                    <LinkIcon className="mr-2 h-4 w-4" />
-                    Copiar Link de Pedido
-                </Button>
+                 <AssignAgreementDialog client={client}>
+                    <Button variant="outline" size="sm" className="w-full">
+                      <FilePen className="mr-2 h-4 w-4" />
+                       {client.agreement_id ? "Cambiar Convenio" : "Asignar Convenio"}
+                    </Button>
+                </AssignAgreementDialog>
                 <Button 
                     variant="secondary"
                     size="sm"
