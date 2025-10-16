@@ -26,6 +26,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Copy, Check } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { EntityDialog, type FormConfig } from "../../_components/entity-dialog";
+import { agreementFormConfig } from "../../agreements/_components/form-config";
 
 
 // Zod schema for CUIT validation
@@ -75,13 +77,16 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
   const [invitationLink, setInvitationLink] = useState<string | null>(null);
   const [hasCopied, setHasCopied] = useState(false);
 
-   useEffect(() => {
-    async function fetchAgreements() {
-        const { data } = await getAgreements();
-        setAgreements(data ?? []);
-    }
-    fetchAgreements();
+  const fetchAgreements = useCallback(async () => {
+    const { data } = await getAgreements();
+    setAgreements(data ?? []);
   }, []);
+
+   useEffect(() => {
+    if (open) {
+        fetchAgreements();
+    }
+  }, [open, fetchAgreements]);
 
   const form = useForm<OnboardingFormValues>({
     resolver: zodResolver(formSchema),
@@ -146,6 +151,24 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
           setInvitationLink(null);
       }
   }
+  
+  const handleNewAgreementSuccess = useCallback(async (newAgreement: Agreement) => {
+      await fetchAgreements();
+      form.setValue('agreement_id', newAgreement.id, { shouldValidate: true });
+  }, [fetchAgreements, form]);
+
+  const upsertActionWithCallback = useCallback(async (payload: any) => {
+    const result = await agreementFormConfig.upsertAction(payload);
+    if (!result.error && result.data) {
+        await handleNewAgreementSuccess(result.data);
+    }
+    return result;
+  }, [handleNewAgreementSuccess]);
+
+  const newAgreementDialogConfig: FormConfig<any> = {
+      ...agreementFormConfig,
+      upsertAction: upsertActionWithCallback,
+  };
 
 
   return (
@@ -224,14 +247,21 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
                                     render={({ field }) => (
                                         <FormItem>
                                         <FormLabel>Convenio (Opcional)</FormLabel>
-                                        <Select onValueChange={(value) => field.onChange(value === 'null' ? null : value)} defaultValue={field.value ?? 'null'}>
+                                        <Select onValueChange={(value) => field.onChange(value === 'null' ? null : value)} value={field.value ?? 'null'}>
                                             <FormControl><SelectTrigger><SelectValue placeholder="Asignar un convenio..." /></SelectTrigger></FormControl>
                                             <SelectContent>
                                                 <SelectItem value="null">Ninguno por ahora</SelectItem>
                                                 {agreements.map(agreement => (<SelectItem key={agreement.id} value={agreement.id}>{agreement.agreement_name}</SelectItem>))}
                                             </SelectContent>
                                         </Select>
-                                        <FormDescription>Si asignas un convenio, el cliente quedará como 'Activo'.</FormDescription>
+                                        <FormDescription>
+                                            <span>¿El convenio que buscas no existe?</span>
+                                            <EntityDialog formConfig={newAgreementDialogConfig} entity={undefined}>
+                                                <Button variant="link" size="sm" type="button" className="p-1 h-auto text-xs">
+                                                    o, Crear Nuevo Convenio
+                                                </Button>
+                                            </EntityDialog>
+                                        </FormDescription>
                                         <FormMessage />
                                         </FormItem>
                                     )}
