@@ -5,7 +5,7 @@ import { z } from "zod";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { upsertAgreement } from "@/app/admin/actions/admin.actions";
+import { upsertAgreement } from "@/app/actions/admin.actions";
 import type { FormConfig } from "../../_components/entity-dialog";
 import type { PriceList } from "@/types";
 import { Button } from "@/components/ui/button";
