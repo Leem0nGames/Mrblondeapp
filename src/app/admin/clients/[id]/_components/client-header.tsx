@@ -118,12 +118,10 @@ export function ClientHeader({
         </Avatar>
         <div className="text-center">
             <h1 className="text-3xl font-bold tracking-tight">{client.contact_name}</h1>
-            <p className="text-muted-foreground">{client.cuit ?? 'CUIT no disponible'}</p>
             <p className="text-muted-foreground text-sm">{client.email ?? 'Email no disponible'}</p>
         </div>
         <div className="w-full pt-4">
              <ClientActionButtons 
-                client={client}
                 onArchive={onArchive}
                 isArchiving={isArchiving}
                 onCopyLink={onCopyLink}

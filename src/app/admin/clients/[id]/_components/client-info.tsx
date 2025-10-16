@@ -1,24 +1,51 @@
 
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Client } from "@/types";
 import { AssignAgreementDialog } from "../../_components/assign-agreement-dialog";
 import Link from "next/link";
-import { Edit } from "lucide-react";
+import { Edit, Copy, Check } from "lucide-react";
 import { OnboardingFormDialog } from "./onboarding-form-dialog";
+import { cn } from "@/lib/utils";
 
-export function ClientInfo({ client }: { client: Client }) {
+const statusMap: Record<Client['status'], { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    pending_onboarding: { label: "Pendiente de Alta", variant: "secondary" },
+    pending_agreement: { label: "Pendiente de Convenio", variant: "destructive" },
+    active: { label: "Activo", variant: "default" },
+    archived: { label: "Archivado", variant: "outline" },
+};
 
-    const statusMap: Record<Client['status'], { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-        pending_onboarding: { label: "Pendiente de Alta", variant: "secondary" },
-        pending_agreement: { label: "Pendiente de Convenio", variant: "destructive" },
-        active: { label: "Activo", variant: "default" },
-        archived: { label: "Archivado", variant: "outline" },
+const CopyableInfoItem = ({ label, value, onCopy }: { label: string; value: string | null; onCopy: (text: string, message: string) => void; }) => {
+    const [hasCopied, setHasCopied] = useState(false);
+
+    const handleCopy = () => {
+        if (!value) return;
+        onCopy(value, `${label} copiado al portapapeles`);
+        setHasCopied(true);
+        setTimeout(() => setHasCopied(false), 2000);
     };
 
+    return (
+        <div className="space-y-1 text-sm">
+            <p className="font-medium">{label}</p>
+            <div className="flex items-center justify-between gap-2 text-muted-foreground">
+                <p className="truncate">{value ?? "No especificado"}</p>
+                {value && (
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={handleCopy}>
+                        {hasCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                        <span className="sr-only">Copiar {label}</span>
+                    </Button>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export function ClientInfo({ client, onCopy }: { client: Client, onCopy: (text: string, message: string) => void }) {
 
   return (
     <Card>
@@ -27,6 +54,7 @@ export function ClientInfo({ client }: { client: Client }) {
         <OnboardingFormDialog client={client}>
             <Button variant="outline" size="icon" className="h-8 w-8">
                 <Edit className="h-4 w-4" />
+                <span className="sr-only">Editar datos del cliente</span>
             </Button>
         </OnboardingFormDialog>
       </CardHeader>
@@ -35,10 +63,10 @@ export function ClientInfo({ client }: { client: Client }) {
             <p className="font-medium">Estado</p>
             <div><Badge variant={statusMap[client.status].variant}>{statusMap[client.status].label}</Badge></div>
         </div>
-         <div className="space-y-1 text-sm">
-          <p className="font-medium">Email</p>
-          <p className="text-muted-foreground">{client.email ?? "No especificado"}</p>
-        </div>
+        
+        <CopyableInfoItem label="CUIT" value={client.cuit} onCopy={onCopy} />
+        <CopyableInfoItem label="Email" value={client.email} onCopy={onCopy} />
+
         <div className="space-y-1 text-sm">
           <p className="font-medium">Convenio Asignado</p>
           <div className="flex items-center gap-2">
@@ -54,18 +82,11 @@ export function ClientInfo({ client }: { client: Client }) {
              </AssignAgreementDialog>
           </div>
         </div>
-        <div className="space-y-1 text-sm">
-          <p className="font-medium">Dirección de Entrega</p>
-          <p className="text-muted-foreground">{client.address ?? "No especificada"}</p>
-        </div>
-        <div className="space-y-1 text-sm">
-          <p className="font-medium">Ventana de Entrega</p>
-          <p className="text-muted-foreground">{client.delivery_window ?? "No especificada"}</p>
-        </div>
-        <div className="space-y-1 text-sm">
-          <p className="font-medium">Instagram</p>
-          <p className="text-muted-foreground">{client.instagram ?? "No especificado"}</p>
-        </div>
+
+        <CopyableInfoItem label="Dirección de Entrega" value={client.address} onCopy={onCopy} />
+        <CopyableInfoItem label="Ventana de Entrega" value={client.delivery_window} onCopy={onCopy} />
+        <CopyableInfoItem label="Instagram" value={client.instagram} onCopy={onCopy} />
+
       </CardContent>
     </Card>
   );

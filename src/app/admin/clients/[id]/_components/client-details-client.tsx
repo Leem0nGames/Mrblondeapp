@@ -81,7 +81,7 @@ export function ClientDetailsClient({ client, stats, orders }: ClientDetailsClie
 
   const copyToClipboard = useCallback((textToCopy: string | null, toastMessage: string, errorMessage?: string) => {
     if (!textToCopy) {
-      toast({ title: "No hay enlace para copiar", description: errorMessage || "El recurso no está disponible.", variant: "destructive"});
+      toast({ title: "No hay nada para copiar", description: errorMessage || "El recurso no está disponible.", variant: "destructive"});
       return;
     }
     navigator.clipboard.writeText(textToCopy);
@@ -180,7 +180,7 @@ export function ClientDetailsClient({ client, stats, orders }: ClientDetailsClie
               <ClientOrders orders={orders} />
           </div>
           <div className="md:col-span-1 grid gap-4 auto-rows-min">
-              <ClientInfo client={client} />
+              <ClientInfo client={client} onCopy={copyToClipboard} />
           </div>
       </div>
     </>
