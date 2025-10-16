@@ -40,7 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Promotion } from "@/types";
-import { deletePromotion } from "@/app/admin/actions/admin.actions";
+import { deletePromotion } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
 import { EntityDialog } from "../../_components/entity-dialog";
@@ -235,3 +235,5 @@ export default function PromotionsTable({ promotions, emptyState }: PromotionsTa
     </>
   );
 }
+
+    

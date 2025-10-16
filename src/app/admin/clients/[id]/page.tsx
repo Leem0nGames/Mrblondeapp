@@ -1,9 +1,18 @@
 
 import Link from "next/link";
-import { FileWarning } from "lucide-react";
-import { getClientById, getClientStats, getClientOrders } from "@/app/admin/actions/admin.actions";
+import { FileWarning, Printer } from "lucide-react";
+import { getClientById, getClientStats, getClientOrders, getAgreementSalesConditions } from "@/app/actions/admin.actions";
 import { Button } from "@/components/ui/button";
 import { ClientDetailsClient } from "./_components/client-details-client";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import dynamic from "next/dynamic";
 
 export default async function ClientDetailPage({
   params,
@@ -49,3 +58,5 @@ export default async function ClientDetailPage({
     </div>
   );
 }
+
+    

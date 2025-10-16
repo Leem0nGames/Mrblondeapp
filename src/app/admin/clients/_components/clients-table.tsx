@@ -35,7 +35,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { deleteClient } from "@/app/admin/actions/admin.actions";
+import { deleteClient } from "@/app/actions/admin.actions";
 import type { Client } from "@/types";
 import { AssignAgreementDialog } from "./assign-agreement-dialog";
 import { cn } from "@/lib/utils";
@@ -278,3 +278,5 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
     </>
   );
 }
+
+    

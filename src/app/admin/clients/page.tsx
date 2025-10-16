@@ -1,5 +1,5 @@
 
-import { getClients } from "@/app/admin/actions/admin.actions";
+import { getClients } from "@/app/actions/admin.actions";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Users, PlusCircle } from "lucide-react";
@@ -37,3 +37,5 @@ export default async function ClientsPage() {
     </div>
   );
 }
+
+    

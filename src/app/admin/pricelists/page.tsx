@@ -1,6 +1,6 @@
 
 import { ClipboardList, PlusCircle } from "lucide-react";
-import { getPriceLists } from "@/app/admin/actions/admin.actions";
+import { getPriceLists } from "@/app/actions/admin.actions";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -50,3 +50,5 @@ export default async function PriceListsPage() {
     </div>
   );
 }
+
+    

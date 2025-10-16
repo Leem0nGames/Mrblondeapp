@@ -27,7 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { updatePriceListItem } from "@/app/admin/actions/admin.actions";
+import { updatePriceListItem } from "@/app/actions/admin.actions";
 import type { PriceListItem } from "@/types";
 
 const priceSchema = z.object({
@@ -145,3 +145,5 @@ export function PriceListItemEditDialog({
     </Dialog>
   );
 }
+
+    

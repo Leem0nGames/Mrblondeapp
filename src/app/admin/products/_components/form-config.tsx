@@ -5,7 +5,7 @@ import { z } from "zod";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { upsertProduct } from "@/app/admin/actions/admin.actions";
+import { upsertProduct } from "@/app/actions/admin.actions";
 import type { FormConfig } from "../../_components/entity-dialog";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
@@ -133,3 +133,5 @@ export const productFormConfig: FormConfig<typeof productSchema> = {
   getDefaultValues: getProductDefaultValues,
   renderFields: renderProductFields,
 };
+
+    

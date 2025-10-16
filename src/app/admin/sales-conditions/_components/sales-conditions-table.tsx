@@ -40,7 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { SalesCondition } from "@/types";
-import { deleteSalesCondition } from "@/app/admin/actions/admin.actions";
+import { deleteSalesCondition } from "@/app/actions/admin.actions";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
 import { EntityDialog } from "../../_components/entity-dialog";
@@ -242,3 +242,5 @@ export default function SalesConditionsTable({ salesConditions, emptyState }: Sa
     </>
   );
 }
+
+    

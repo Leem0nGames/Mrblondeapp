@@ -2,7 +2,7 @@
 "use client";
 
 import { z } from "zod";
-import { upsertPromotion } from "@/app/admin/actions/admin.actions";
+import { upsertPromotion } from "@/app/actions/admin.actions";
 import type { FormConfig } from "../../_components/entity-dialog";
 import { PromotionFormFields } from "./promotion-form-fields";
 
@@ -115,3 +115,5 @@ export const promotionFormConfig: FormConfig<typeof promotionSchema> = {
   getDefaultValues: getPromotionDefaultValues,
   renderFields: (form: any) => <PromotionFormFields form={form} />,
 };
+
+    
