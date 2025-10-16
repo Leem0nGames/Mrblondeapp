@@ -2,7 +2,6 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Package } from "lucide-react";
 
 export function Logo({
   className,
@@ -22,8 +21,10 @@ export function Logo({
         className
       )}
     >
-      <Package className={cn("h-6 w-6", textColor)} />
-      {showText && <span className={cn(textColor, isMono && "font-sans font-extrabold tracking-tighter")}>{textContent}</span>}
+      {!isMono && <span className="font-extrabold tracking-tighter text-2xl">MR.</span>}
+      <span className={cn("font-extrabold tracking-tighter", isMono ? "text-black" : "text-primary", showText ? "text-2xl" : "text-lg")}>
+        BLONDE
+      </span>
     </div>
   );
 }
