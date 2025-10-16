@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useTransition, useCallback, useEffect, useState } from "react";
@@ -278,5 +277,3 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
     </>
   );
 }
-
-    

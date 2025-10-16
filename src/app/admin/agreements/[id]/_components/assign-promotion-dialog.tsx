@@ -4,7 +4,7 @@
 import {
   getUnassignedPromotions,
   assignMultiplePromotionsToAgreement,
-} from "@/app/admin/actions/admin.actions";
+} from "@/app/actions/admin.actions";
 import type { Promotion } from "@/types";
 import { promotionFormConfig } from "../../../promotions/_components/form-config";
 import { AssignEntityDialog } from "./assign-entity-dialog";

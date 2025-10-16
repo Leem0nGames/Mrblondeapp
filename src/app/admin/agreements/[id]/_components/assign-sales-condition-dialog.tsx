@@ -4,7 +4,7 @@
 import {
   getUnassignedSalesConditions,
   assignMultipleSalesConditionsToAgreement,
-} from "@/app/admin/actions/admin.actions";
+} from "@/app/actions/admin.actions";
 import type { SalesCondition } from "@/types";
 import { salesConditionFormConfig } from "../../../sales-conditions/_components/form-config";
 import { AssignEntityDialog } from "./assign-entity-dialog";

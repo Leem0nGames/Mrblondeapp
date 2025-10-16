@@ -1,4 +1,3 @@
-
 "use client";
 
 import { MoreHorizontal, Trash2, Edit } from "lucide-react";
@@ -235,5 +234,3 @@ export default function PromotionsTable({ promotions, emptyState }: PromotionsTa
     </>
   );
 }
-
-    

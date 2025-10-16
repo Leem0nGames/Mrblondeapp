@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useTransition, useCallback } from "react";
@@ -251,5 +250,3 @@ export default function AgreementsTable({ agreements, emptyState }: AgreementsTa
     </>
   );
 }
-
-    

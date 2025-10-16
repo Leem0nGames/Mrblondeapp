@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useTransition } from "react";
@@ -108,5 +107,3 @@ export default function AgreementPromotionsList({ promotions, agreementId }: { p
     </div>
   );
 }
-
-    

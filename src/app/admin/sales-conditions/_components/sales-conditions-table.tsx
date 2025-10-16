@@ -1,4 +1,3 @@
-
 "use client";
 
 import { MoreHorizontal, Trash2, Edit } from "lucide-react";
@@ -242,5 +241,3 @@ export default function SalesConditionsTable({ salesConditions, emptyState }: Sa
     </>
   );
 }
-
-    
