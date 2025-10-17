@@ -18,8 +18,9 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Logo } from "@/app/logo";
 import { logout } from "@/app/actions/user.actions";
 import { Notifications } from "./_components/notifications";
-import { getNotificationData } from "@/app/admin/actions/dashboard.actions";
+import { getNotificationData, getDashboardData } from "@/app/admin/actions/dashboard.actions";
 import { AppNav } from "./_components/app-nav";
+import type { DashboardStats } from "@/types";
 
 const createNotifications = (
   pendingOrdersCount: number,
@@ -69,6 +70,8 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const { pending_orders_count, pending_clients_count, overdue_orders_count } = await getNotificationData();
+  const { stats } = await getDashboardData();
+
 
   const notifications = createNotifications(
     pending_orders_count,
@@ -88,7 +91,7 @@ export default async function AdminLayout({
             <Logo />
             <span className="sr-only">MR. BLONDE</span>
           </Link>
-          <AppNav isMobile={false} />
+          <AppNav isMobile={false} stats={stats as DashboardStats} />
         </nav>
         <nav className="mt-auto flex flex-col items-center gap-4 px-2 py-5">
           <TooltipProvider>
@@ -145,12 +148,12 @@ export default async function AdminLayout({
                     </Button>
                     </SheetTrigger>
                     <SheetContent side="right" className="pt-16">
-                      <SheetHeader className="sr-only">
-                        <SheetTitle>Menú de Navegación</SheetTitle>
-                        <SheetDescription>Navegación principal de la aplicación para dispositivos móviles.</SheetDescription>
+                      <SheetHeader>
+                        <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
+                        <SheetDescription className="sr-only">Navegación principal de la aplicación para dispositivos móviles.</SheetDescription>
                       </SheetHeader>
                       <nav className="grid gap-6 text-base font-medium">
-                          <AppNav isMobile={true} />
+                          <AppNav isMobile={true} stats={stats as DashboardStats} />
                       </nav>
                       <div className="absolute bottom-4 left-4 right-4 grid gap-4">
                         <Link

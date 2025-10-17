@@ -12,17 +12,10 @@ import {
 import { DashboardStats } from "./_components/dashboard-stats";
 import { RecentOrders } from "./_components/recent-orders";
 import { PendingClients } from "./_components/pending-clients";
-import { SetupChecklist } from "./_components/setup-checklist";
 import type { DashboardStats as Stats } from "@/types";
 
 export default async function AdminDashboardPage() {
     const { stats, pendingOrders, pendingClients } = await getDashboardData();
-    
-    const isSetupComplete = 
-        stats.total_clients > 0 && 
-        stats.total_pricelists > 0 && 
-        stats.total_promotions > 0 && 
-        stats.total_sales_conditions > 0;
 
     return (
         <div className="grid flex-1 items-start gap-4 md:gap-8">
@@ -31,8 +24,6 @@ export default async function AdminDashboardPage() {
                 description="Un resumen de la actividad de tu negocio."
             />
             
-            {!isSetupComplete && <SetupChecklist stats={stats as Stats} />}
-
             <DashboardStats stats={stats as Stats} />
 
             <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
