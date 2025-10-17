@@ -29,7 +29,6 @@ import { useRouter } from "next/navigation";
 export function CreateClientDialog({ children, open, onOpenChange }: { children: React.ReactNode, open: boolean, onOpenChange: (open: boolean) => void }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
-  const router = useRouter();
   
   const [invitation, setInvitation] = useState<{link: string, client: Pick<Client, 'id' | 'agreement_id' | 'onboarding_token'>} | null>(null);
   const [hasCopied, setHasCopied] = useState(false);
@@ -38,12 +37,10 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
       startTransition(async () => {
           const result = await createClientForInvitation();
           if (result.error || !result.data) {
-              toast({ title: "Error", description: result.error?.message || 'No se pudo crear la invitación', variant: "destructive" });
+              toast({ title: "Error", description: result.error?.message || 'No se pudo crear la invitación para el cliente.', variant: "destructive" });
           } else {
               const link = `${window.location.origin}/onboarding/${result.data.onboarding_token}`;
               setInvitation({ link, client: result.data });
-              // Refresh the client list in the background
-              router.refresh();
           }
       });
   };
@@ -61,6 +58,7 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
       if (!isOpen) {
           setTimeout(() => {
             setInvitation(null);
+            setHasCopied(false);
           }, 300);
       }
   }

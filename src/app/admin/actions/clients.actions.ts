@@ -81,8 +81,7 @@ export async function createClientForInvitation(): Promise<{ data: Pick<Client, 
         return { data: null, error: { message: 'No se pudo crear la invitación para el cliente.' } };
     }
 
-    // No revalidar aquí para evitar el error de cookies. El cliente se actualizará en el estado del componente.
-    // revalidatePath("/admin/clients");
+    revalidatePath("/admin/clients");
     return { data: client, error: null };
 }
 
