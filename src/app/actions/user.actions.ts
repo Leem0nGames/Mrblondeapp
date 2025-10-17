@@ -303,6 +303,7 @@ export async function submitOrder(payload: {
     agreementId: string;
     clientId: string;
     clientName: string;
+    notes?: string;
 }) {
     const supabase = createClient();
 
@@ -314,7 +315,8 @@ export async function submitOrder(payload: {
             agreement_id: payload.agreementId,
             total_amount: payload.total,
             status: 'pending',
-            client_name_cache: payload.clientName
+            client_name_cache: payload.clientName,
+            notes: payload.notes
         })
         .select()
         .single();

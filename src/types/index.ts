@@ -120,6 +120,7 @@ export type Order = {
     total_amount: number;
     status: 'pending' | 'completed';
     client_name_cache: string;
+    notes?: string | null;
 }
 
 export type DashboardStats = {

@@ -1,7 +1,8 @@
 
+
 "use client";
 
-import { useEffect, useTransition } from "react";
+import { useEffect, useTransition, useState } from "react";
 import { useCartStore, type CartItem, type BonusInfo } from "@/hooks/use-cart-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -10,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Gift, Truck } from "lucide-react";
 import { submitOrder } from "@/app/actions/user.actions";
 import type { Promotion } from "@/types";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 function formatWhatsAppMessage(
   clientName: string,
@@ -21,6 +24,7 @@ function formatWhatsAppMessage(
   orderId: string,
   appliedPromotions: Promotion[],
   bonusInfo: BonusInfo,
+  notes?: string
 ) {
   const itemsText = cartItems
     .map((item) => `- ${item.quantity}x ${item.product.name}`)
@@ -31,8 +35,13 @@ function formatWhatsAppMessage(
   const messageParts = [
     `✨ NUEVO PEDIDO #${orderId.slice(-4)} ✨\n`,
     `👤 *Cliente:*\n${clientName}\n`,
-    `📦 *Productos:* (${totalItems} unidades)\n${itemsText}\n`,
   ];
+  
+  if (notes) {
+    messageParts.push(`📝 *Nota del Cliente:*\n${notes}\n`);
+  }
+  
+  messageParts.push(`📦 *Productos:* (${totalItems} unidades)\n${itemsText}\n`);
   
   if (appliedPromotions.length > 0) {
     const bonusText = Object.values(bonusInfo).map(info => 
@@ -133,6 +142,7 @@ export function OrderSummary({
   const { items, totalItems, subtotal, vatAmount, totalPrice, clearCart, setAgreement, appliedPromotions, bonusInfo } = useCartStore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const [notes, setNotes] = useState("");
 
   const whatsAppNumber =
     process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5491123456789";
@@ -159,7 +169,8 @@ export function OrderSummary({
             total: totalPrice,
             agreementId,
             clientId,
-            clientName
+            clientName,
+            notes: notes,
         });
 
         if (result.error || !result.data) {
@@ -180,13 +191,15 @@ export function OrderSummary({
             totalPrice,
             result.data.orderId,
             appliedPromotions,
-            bonusInfo
+            bonusInfo,
+            notes
         );
         const whatsappUrl = `https://wa.me/${whatsAppNumber}?text=${message}`;
         window.open(whatsappUrl, "_blank");
 
         // Clear cart on success
         clearCart();
+        setNotes("");
         toast({
             title: "Pedido enviado!",
             description: "Tu pedido se ha registrado y enviado por WhatsApp.",
@@ -224,6 +237,16 @@ export function OrderSummary({
                         <div className="flex justify-between items-center text-sm">
                           <span className="text-muted-foreground">{totalItems} Unidades</span>
                       </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Notas del Pedido (Opcional)</Label>
+                    <Textarea 
+                      id="notes"
+                      placeholder="Ej: 'Entregar en recepción', 'Factura A con CUIT...', etc." 
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                    />
                   </div>
 
                   <Separator />
