@@ -1,3 +1,4 @@
+
 "use client";
 
 import { MoreHorizontal, Trash2, Edit } from "lucide-react";
@@ -61,6 +62,8 @@ const formatRule = (rules: any): string => {
         return `Financiación: ${installments || 'N/D'} cuotas.`;
     case 'split_payment':
         return `${initial_percentage || 'N/D'}% de adelanto, resto a ${remaining_days || 'N/D'} días.`;
+    case 'cash_on_delivery':
+        return `Pago al momento de la entrega.`;
     default:
       return 'Regla personalizada.';
   }

@@ -32,7 +32,7 @@ const splitPaymentSchema = z.object({
 const salesConditionSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
   description: z.string().optional(),
-  type: z.enum(["net_days", "discount", "installments", "split_payment"]),
+  type: z.enum(["net_days", "discount", "installments", "split_payment", "cash_on_delivery"]),
   rules: z.object({
       net_days: netDaysSchema.optional(),
       discount: discountSchema.optional(),
@@ -120,7 +120,10 @@ const RenderFields = ({ form }: {form: any}) => {
 
     useEffect(() => {
         // Limpia los valores de las reglas no seleccionadas para evitar conflictos de validación
-        const rulesToKeep = { [selectedType]: form.getValues().rules[selectedType] };
+        const rulesToKeep: any = {};
+        if(form.getValues().rules[selectedType]) {
+            rulesToKeep[selectedType] = form.getValues().rules[selectedType];
+        }
         form.setValue("rules", rulesToKeep, { shouldValidate: true });
     }, [selectedType, form]);
 
@@ -169,6 +172,7 @@ const RenderFields = ({ form }: {form: any}) => {
                     <SelectItem value="discount">Descuento por pronto pago (%)</SelectItem>
                     <SelectItem value="installments">Financiación (cuotas)</SelectItem>
                     <SelectItem value="split_payment">Pago dividido (adelanto + plazo)</SelectItem>
+                    <SelectItem value="cash_on_delivery">Pago Contra Reembolso</SelectItem>
                 </SelectContent>
                 </Select>
                 <FormMessage />
