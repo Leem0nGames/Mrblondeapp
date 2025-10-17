@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UpsertClientForm } from "./upsert-client-form";
+import { UpsertClientForm } from "../../clients/_components/upsert-client-form";
 
 export function CreateClientDialog({
   children,
