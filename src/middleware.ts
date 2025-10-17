@@ -1,4 +1,3 @@
-
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { hasUsers } from './app/actions/user.actions';
@@ -6,7 +5,9 @@ import { hasUsers } from './app/actions/user.actions';
 // Define las rutas públicas que no requieren autenticación
 const publicRoutes = ['/login', '/signup'];
 
-export async function middleware(request: NextRequest) {
+// This function will be called by `createSupabaseClient` to update the session
+// It will be passed `request` and `response` objects to read and write cookies
+const updateSession = async (request: NextRequest) => {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -22,18 +23,51 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({ name, value, ...options });
-          response = NextResponse.next({ request: { headers: request.headers } });
-          response.cookies.set({ name, value, ...options });
+          request.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          });
         },
         remove(name: string, options: CookieOptions) {
-          request.cookies.set({ name, value: '', ...options });
-          response = NextResponse.next({ request: { headers: request.headers } });
-          response.cookies.set({ name, value: '', ...options });
+          request.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
         },
       },
     }
   );
+
+  // refreshing the session in middleware is required for this client to work
+  await supabase.auth.getUser();
+
+  return { supabase, response };
+};
+
+export async function middleware(request: NextRequest) {
+  const { supabase, response } = await updateSession(request);
 
   // Es crucial refrescar la sesión en cada petición del middleware
   const { data: { session } } = await supabase.auth.getSession();
