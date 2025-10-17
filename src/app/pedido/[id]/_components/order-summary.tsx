@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import { useEffect, useTransition, useState } from "react";
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Gift, Truck } from "lucide-react";
+import { ArrowRight, Gift, Truck, Percent } from "lucide-react";
 import { submitOrder } from "@/app/actions/user.actions";
 import type { Promotion } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +20,8 @@ function formatWhatsAppMessage(
   cartItems: CartItem[],
   totalItems: number,
   subtotal: number,
+  discountApplied: number,
+  subtotalWithDiscount: number,
   vatAmount: number,
   totalPrice: number,
   orderId: string,
@@ -44,29 +47,41 @@ function formatWhatsAppMessage(
   messageParts.push(`📦 *Productos:* (${totalItems} unidades)\n${itemsText}\n`);
   
   if (appliedPromotions.length > 0) {
+    let promotionsText = "";
     const bonusText = Object.values(bonusInfo).map(info => 
         `+${info.bonusQuantity} un. de ${info.productName}`
     ).join('\n');
 
-    const promotionsText = appliedPromotions.map(promo => {
-        if (promo.rules.type === 'buy_x_get_y_free' && bonusText) {
-            return `🎁 *Bonificaciones:*\n${bonusText}`;
-        }
-        if (promo.rules.type === 'free_shipping') {
-            return `🚚 Envío Gratis.`;
-        }
-        return ``;
-    }).filter(Boolean).join('\n\n');
+    const discountPromo = appliedPromotions.find(p => p.rules.type === 'min_amount_discount');
+    if (discountPromo) {
+        promotionsText += `💸 *Descuento Aplicado (${discountPromo.rules.percentage}%):*\n-${formatCurrency(discountApplied)}\n`;
+    }
+
+    if (bonusText) {
+        promotionsText += `\n🎁 *Bonificaciones:*\n${bonusText}\n`;
+    }
+    
+    if (appliedPromotions.some(p => p.rules.type === 'free_shipping')) {
+        promotionsText += `\n🚚 Envío Gratis.\n`;
+    }
 
     if (promotionsText) {
-      messageParts.push(`${promotionsText}\n`);
+      messageParts.push(promotionsText);
     }
   }
 
 
   messageParts.push(
     `*Resumen de Pago:*\n` +
-    `Subtotal: ${formatCurrency(subtotal)}\n` +
+    `Subtotal: ${formatCurrency(subtotal)}\n`
+  );
+  
+  if (discountApplied > 0) {
+    messageParts.push(`Descuento: -${formatCurrency(discountApplied)}\n`);
+    messageParts.push(`Subtotal c/ Descuento: ${formatCurrency(subtotalWithDiscount)}\n`);
+  }
+
+  messageParts.push(
     `IVA (21%): ${formatCurrency(vatAmount)}\n` +
     `*Total a Pagar: ${formatCurrency(totalPrice)}*`
   );
@@ -77,17 +92,30 @@ function formatWhatsAppMessage(
 }
 
 function AppliedPromotions() {
-    const { appliedPromotions, bonusInfo } = useCartStore();
+    const { appliedPromotions, bonusInfo, discountApplied } = useCartStore();
 
     if (appliedPromotions.length === 0) {
         return null;
     }
-
+    const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
     const bonusEntries = Object.values(bonusInfo);
 
     return (
         <div className="space-y-4 w-full">
             {appliedPromotions.map(promo => {
+                if (promo.rules.type === 'min_amount_discount') {
+                   return (
+                         <div key={promo.id} className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                            <div className="flex items-start gap-3">
+                                <Percent className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
+                                <div>
+                                    <p className="font-semibold text-primary">{promo.name}</p>
+                                    <p className="text-sm text-muted-foreground">Ahorraste {formatCurrency(discountApplied)}.</p>
+                                </div>
+                            </div>
+                        </div>
+                   )
+                }
                 if (promo.rules.type === 'buy_x_get_y_free' && bonusEntries.length > 0) {
                     return (
                         <div key={promo.id} className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
@@ -139,7 +167,7 @@ export function OrderSummary({
   pricesIncludeVat: boolean;
   promotions: Promotion[];
 }) {
-  const { items, totalItems, subtotal, vatAmount, totalPrice, clearCart, setAgreement, appliedPromotions, bonusInfo } = useCartStore();
+  const { items, totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, clearCart, setAgreement, appliedPromotions, bonusInfo } = useCartStore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [notes, setNotes] = useState("");
@@ -187,6 +215,8 @@ export function OrderSummary({
             items,
             totalItems,
             subtotal,
+            discountApplied,
+            subtotalWithDiscount,
             vatAmount,
             totalPrice,
             result.data.orderId,
@@ -225,6 +255,12 @@ export function OrderSummary({
                           <span className="text-muted-foreground">Subtotal</span>
                           <span>{formatCurrency(subtotal)}</span>
                       </div>
+                      {discountApplied > 0 && (
+                         <div className="flex justify-between text-destructive">
+                            <span className="text-destructive">Descuento aplicado</span>
+                            <span>-{formatCurrency(discountApplied)}</span>
+                        </div>
+                      )}
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">IVA (21%)</span>
                           <span>{formatCurrency(vatAmount)}</span>

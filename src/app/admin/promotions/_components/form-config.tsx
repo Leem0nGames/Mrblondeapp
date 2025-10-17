@@ -17,15 +17,21 @@ const freeShippingSchema = z.object({
   locations: z.string().min(1, "Debe haber al menos una ciudad"),
 });
 
+const minAmountDiscountSchema = z.object({
+  min_amount: z.coerce.number().min(1, "El monto mínimo debe ser mayor a 0."),
+  percentage: z.coerce.number().min(1, "El porcentaje debe ser entre 1 y 100.").max(100, "El porcentaje no puede ser mayor a 100."),
+});
+
 
 // --- Main Form Schema with Refined Validation ---
 const promotionSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
   description: z.string().optional(),
-  type: z.enum(["buy_x_get_y_free", "free_shipping"]),
+  type: z.enum(["buy_x_get_y_free", "free_shipping", "min_amount_discount"]),
   rules: z.object({
     buy_x_get_y_free: buyXgetYFreeSchema.optional(),
     free_shipping: freeShippingSchema.optional(),
+    min_amount_discount: minAmountDiscountSchema.optional(),
   })
 }).superRefine((data, ctx) => {
     if (data.type === 'buy_x_get_y_free') {
@@ -50,6 +56,17 @@ const promotionSchema = z.object({
             });
         }
     }
+    if (data.type === 'min_amount_discount') {
+        const result = minAmountDiscountSchema.safeParse(data.rules.min_amount_discount);
+        if (!result.success) {
+            result.error.errors.forEach(err => {
+                ctx.addIssue({
+                    ...err,
+                    path: ["rules", "min_amount_discount", ...err.path],
+                });
+            });
+        }
+    }
 });
 
 
@@ -63,6 +80,7 @@ const getPromotionDefaultValues = (promotion?: any) => {
       rules: {
         buy_x_get_y_free: { buy: 8, get: 2 },
         free_shipping: { min_units: 12, locations: "" },
+        min_amount_discount: { min_amount: 100000, percentage: 10 },
       }
     };
   }
@@ -81,6 +99,10 @@ const getPromotionDefaultValues = (promotion?: any) => {
         min_units: rules.min_units || 12,
         locations: (rules.locations || []).join(", "),
       },
+       min_amount_discount: {
+        min_amount: rules.min_amount || 100000,
+        percentage: rules.percentage || 10,
+      },
     }
   };
 };
@@ -94,6 +116,8 @@ const processPromotionPayload = (values: z.infer<typeof promotionSchema>) => {
       ...values.rules.free_shipping,
       locations: values.rules.free_shipping.locations.split(',').map(s => s.trim()).filter(Boolean),
     };
+  } else if (values.type === "min_amount_discount" && values.rules.min_amount_discount) {
+    ruleDetails = values.rules.min_amount_discount;
   }
 
   return {

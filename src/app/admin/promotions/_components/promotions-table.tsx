@@ -1,3 +1,4 @@
+
 "use client";
 
 import { MoreHorizontal, Trash2, Edit } from "lucide-react";
@@ -45,6 +46,8 @@ import { formatDate } from "@/lib/utils";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { promotionFormConfig } from "./form-config";
 
+const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
+
 const formatRule = (rules: any): string => {
   if (!rules || typeof rules !== 'object') {
     return 'Regla no definida';
@@ -55,6 +58,8 @@ const formatRule = (rules: any): string => {
       return `Llevando ${rules.buy || 'X'} unidades, obtienes ${rules.get || 'Y'} de regalo.`;
     case 'free_shipping':
       return `Envío gratis con ${rules.min_units || 'X'} unidades o más.`;
+    case 'min_amount_discount':
+      return `${rules.percentage || 'X'}% OFF en compras superiores a ${formatCurrency(rules.min_amount || 0)}.`;
     default:
       return 'Regla personalizada.';
   }

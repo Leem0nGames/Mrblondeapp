@@ -10,6 +10,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,18 +22,25 @@ import {
 } from "@/components/ui/select";
 
 export function PromotionFormFields({ form }: { form: any }) {
-  const { watch, setValue } = form;
+  const { watch, setValue, clearErrors } = form;
   const selectedType = watch("type");
 
-  // This is the key change: When the promotion type changes,
-  // we clear the values of the other rule type to avoid validation conflicts.
   useEffect(() => {
-    if (selectedType === "buy_x_get_y_free") {
-      setValue("rules.free_shipping", undefined, { shouldValidate: false });
-    } else if (selectedType === "free_shipping") {
-      setValue("rules.buy_x_get_y_free", undefined, { shouldValidate: false });
+    const rulesToKeep: any = {};
+    if (form.getValues().rules[selectedType]) {
+      rulesToKeep[selectedType] = form.getValues().rules[selectedType];
     }
-  }, [selectedType, setValue]);
+    
+    // Clear previous rule errors when type changes
+    const allRuleTypes = ["buy_x_get_y_free", "free_shipping", "min_amount_discount"];
+    allRuleTypes.forEach(type => {
+        if (type !== selectedType) {
+            clearErrors(`rules.${type}`);
+        }
+    });
+
+    setValue("rules", rulesToKeep, { shouldValidate: true });
+  }, [selectedType, setValue, clearErrors, form]);
 
   return (
     <>
@@ -82,6 +90,7 @@ export function PromotionFormFields({ form }: { form: any }) {
                   Compre X, lleve Y gratis
                 </SelectItem>
                 <SelectItem value="free_shipping">Envío sin cargo</SelectItem>
+                <SelectItem value="min_amount_discount">Descuento por Monto Mínimo</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
@@ -162,6 +171,46 @@ export function PromotionFormFields({ form }: { form: any }) {
             </FormItem>
           )}
         />
+      </div>
+
+       <div
+        className={cn(
+          "space-y-4 p-4 border rounded-md bg-muted/30",
+          selectedType === "min_amount_discount" ? "block" : "hidden"
+        )}
+      >
+        <h4 className="font-medium text-sm">Reglas de "Descuento por Monto Mínimo"</h4>
+         <div className="grid grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="rules.min_amount_discount.min_amount"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Monto Mínimo (sin IVA)</FormLabel>
+                <FormControl>
+                    <Input type="number" placeholder="100000" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="rules.min_amount_discount.percentage"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>% de Descuento</FormLabel>
+                <FormControl>
+                    <Input type="number" placeholder="10" {...field} />
+                </FormControl>
+                 <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+        <FormDescription>
+          El descuento se aplicará sobre el subtotal si se alcanza el monto mínimo.
+        </FormDescription>
       </div>
     </>
   );

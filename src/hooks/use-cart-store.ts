@@ -18,6 +18,8 @@ type CartState = {
   items: CartItemType[];
   totalItems: number;
   subtotal: number;
+  subtotalWithDiscount: number;
+  discountApplied: number;
   vatAmount: number;
   totalPrice: number;
   isVolumePricingActive: boolean;
@@ -34,10 +36,11 @@ type CartState = {
   clearCart: () => void;
 };
 
-const calculatePromotions = (items: CartItemType[], promotions: Promotion[]) => {
+const calculatePromotions = (items: CartItemType[], subtotal: number, promotions: Promotion[]) => {
     const totalItems = items.reduce((total, item) => total + item.quantity, 0);
     const appliedPromotions: Promotion[] = [];
     const bonusInfo: BonusInfo = {};
+    let discountPercentage = 0;
 
     promotions.forEach(promo => {
         if (!promo.rules || !promo.rules.type) return;
@@ -67,11 +70,19 @@ const calculatePromotions = (items: CartItemType[], promotions: Promotion[]) => 
                     }
                 }
                 break;
+            case 'min_amount_discount':
+                 if (subtotal >= promo.rules.min_amount) {
+                    discountPercentage = Math.max(discountPercentage, promo.rules.percentage);
+                    if (!appliedPromotions.find(p => p.id === promo.id)) {
+                       appliedPromotions.push(promo);
+                    }
+                }
+                break;
             default:
                 break;
         }
     });
-    return { appliedPromotions, bonusInfo };
+    return { appliedPromotions, bonusInfo, discountPercentage };
 }
 
 
@@ -96,12 +107,14 @@ const calculateAll = (items: CartItemType[], pricesIncludeVat: boolean, promotio
     }
   });
 
-  const vatAmount = subtotal * VAT_RATE;
-  const totalPrice = subtotal + vatAmount;
-  
-  const { appliedPromotions, bonusInfo } = calculatePromotions(items, promotions);
+  const { appliedPromotions, bonusInfo, discountPercentage } = calculatePromotions(items, subtotal, promotions);
 
-  return { totalItems, subtotal, vatAmount, totalPrice, isVolumePricingActive, appliedPromotions, bonusInfo };
+  const discountApplied = subtotal * (discountPercentage / 100);
+  const subtotalWithDiscount = subtotal - discountApplied;
+  const vatAmount = subtotalWithDiscount * VAT_RATE;
+  const totalPrice = subtotalWithDiscount + vatAmount;
+
+  return { totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, isVolumePricingActive, appliedPromotions, bonusInfo };
 };
 
 export const useCartStore = create<CartState>()(
@@ -110,6 +123,8 @@ export const useCartStore = create<CartState>()(
       items: [],
       totalItems: 0,
       subtotal: 0,
+      subtotalWithDiscount: 0,
+      discountApplied: 0,
       vatAmount: 0,
       totalPrice: 0,
       isVolumePricingActive: false,
@@ -129,6 +144,8 @@ export const useCartStore = create<CartState>()(
                 items: [], 
                 totalItems: 0, 
                 subtotal: 0, 
+                subtotalWithDiscount: 0,
+                discountApplied: 0,
                 vatAmount: 0, 
                 totalPrice: 0,
                 isVolumePricingActive: false,
@@ -207,7 +224,7 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => {
-        set({ items: [], totalItems: 0, subtotal: 0, vatAmount: 0, totalPrice: 0, isVolumePricingActive: false, appliedPromotions: [], bonusInfo: {} });
+        set({ items: [], totalItems: 0, subtotal: 0, subtotalWithDiscount: 0, discountApplied: 0, vatAmount: 0, totalPrice: 0, isVolumePricingActive: false, appliedPromotions: [], bonusInfo: {} });
       },
     }),
     {
@@ -221,9 +238,11 @@ export const useCartStore = create<CartState>()(
       onRehydrateStorage: () => (state, error) => {
         if (state) {
             // Recalculate totals on rehydration, but with an empty promotions array
-            const { totalItems, subtotal, vatAmount, totalPrice, isVolumePricingActive } = calculateAll(state.items, state.pricesIncludeVat, []);
+            const { totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, isVolumePricingActive } = calculateAll(state.items, state.pricesIncludeVat, []);
             state.totalItems = totalItems;
             state.subtotal = subtotal;
+            state.subtotalWithDiscount = subtotalWithDiscount;
+            state.discountApplied = discountApplied;
             state.vatAmount = vatAmount;
             state.totalPrice = totalPrice;
             state.isVolumePricingActive = isVolumePricingActive;
