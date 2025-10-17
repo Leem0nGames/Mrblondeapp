@@ -6,9 +6,15 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Users } from "lucide-react";
 import { ClientsTable } from "./_components/clients-table";
 import { CreateClientButton } from "./_components/create-client-button";
+import { SearchClients } from "./_components/search-clients";
 
-export default async function ClientsPage() {
-  const { data: clients, error } = await getClients();
+export default async function ClientsPage({
+  searchParams,
+}: {
+  searchParams?: { query?: string };
+}) {
+  const query = searchParams?.query || "";
+  const { data: clients, error } = await getClients(query);
 
   if (error) {
     // TODO: Add a better error component
@@ -18,8 +24,8 @@ export default async function ClientsPage() {
   const emptyState = (
     <EmptyState
       icon={Users}
-      title="No hay clientes"
-      description="Aún no tienes clientes. ¡Crea el primero para generar un enlace de alta!"
+      title="No se encontraron clientes"
+      description="No hay clientes que coincidan con tu búsqueda. Intenta con otro término o crea un cliente nuevo."
     >
         <CreateClientButton />
     </EmptyState>
@@ -31,7 +37,10 @@ export default async function ClientsPage() {
         title="Clientes"
         description="Gestiona tus clientes, asígnales convenios y genera enlaces de alta."
       >
-        <CreateClientButton />
+        <div className="flex items-center gap-2">
+            <SearchClients />
+            <CreateClientButton />
+        </div>
       </PageHeader>
       <ClientsTable clients={clients ?? []} emptyState={emptyState} />
     </div>
