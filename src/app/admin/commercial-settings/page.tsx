@@ -1,5 +1,4 @@
 
-import { redirect } from 'next/navigation'
 import {
   Tabs,
   TabsContent,
@@ -10,6 +9,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import PriceListsTab from './_components/price-lists-tab';
 import PromotionsTab from './_components/promotions-tab';
 import SalesConditionsTab from './_components/sales-conditions-tab';
+import Link from "next/link";
 
 export default async function CommercialSettingsPage({
   searchParams,
@@ -26,14 +26,14 @@ export default async function CommercialSettingsPage({
       />
       <Tabs value={currentTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-           <TabsTrigger value="pricelists" onClick={() => redirect('/admin/commercial-settings?tab=pricelists')}>
-            Listas de Precios
+           <TabsTrigger value="pricelists" asChild>
+            <Link href="/admin/commercial-settings?tab=pricelists">Listas de Precios</Link>
           </TabsTrigger>
-          <TabsTrigger value="promotions" onClick={() => redirect('/admin/commercial-settings?tab=promotions')}>
-            Promociones
+          <TabsTrigger value="promotions" asChild>
+            <Link href="/admin/commercial-settings?tab=promotions">Promociones</Link>
           </TabsTrigger>
-          <TabsTrigger value="sales-conditions" onClick={() => redirect('/admin/commercial-settings?tab=sales-conditions')}>
-            Condiciones de Venta
+          <TabsTrigger value="sales-conditions" asChild>
+             <Link href="/admin/commercial-settings?tab=sales-conditions">Condiciones de Venta</Link>
           </TabsTrigger>
         </TabsList>
 
