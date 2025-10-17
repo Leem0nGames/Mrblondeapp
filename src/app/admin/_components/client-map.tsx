@@ -8,11 +8,10 @@ type ClientMapProps = {
   clients: Client[];
   center: { lat: number; lng: number };
   zoom: number;
-  mapId?: string;
   style?: React.CSSProperties;
 };
 
-export function ClientMap({ clients, center, zoom, mapId, style = { height: "400px" } }: ClientMapProps) {
+export function ClientMap({ clients, center, zoom, style = { height: "400px" } }: ClientMapProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
@@ -39,7 +38,6 @@ export function ClientMap({ clients, center, zoom, mapId, style = { height: "400
             <Map 
                 zoom={zoom} 
                 center={center} 
-                mapId={mapId || 'blonde-map'}
                 gestureHandling={'greedy'}
                 disableDefaultUI={true}
             >
