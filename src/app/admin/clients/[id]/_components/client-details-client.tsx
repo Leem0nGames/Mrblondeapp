@@ -49,7 +49,7 @@ type ClientDetailsClientProps = {
     orders: Order[];
 }
 
-export function ClientDetailsClient({ client: initialClient, stats, orders }: ClientDetailsClientProps) {
+export default function ClientDetailsClient({ client: initialClient, stats, orders }: ClientDetailsClientProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [client, setClient] = useState(initialClient);

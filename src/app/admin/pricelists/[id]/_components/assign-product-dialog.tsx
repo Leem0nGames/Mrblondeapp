@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useTransition, useEffect, useCallback } from "react";
@@ -221,7 +222,7 @@ export function AssignProductToPriceListDialog({
                                     className="w-full flex items-center gap-4 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                                   >
                                     <Image
-                                      src={getImageUrl("product_sm", { id: product.id, width: 40, height: 40 }, product.image_url)}
+                                      src={getImageUrl("product_sm", { seed: product.id, width: 40, height: 40 }, product.image_url)}
                                       alt={product.name}
                                       width={40}
                                       height={40}

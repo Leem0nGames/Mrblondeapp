@@ -1,14 +1,15 @@
 
+
 import placeholderData from './placeholder-images.json';
 
-type ImageType = 'product' | 'product_sm' | 'product_card' | 'cart_item' | 'summary_item';
+type ImageType = keyof typeof placeholderData;
 type ImageParams = {
-    id: string;
-    width: number;
-    height: number;
+    seed: string;
+    width?: number;
+    height?: number;
 }
 
-const typedPlaceholderData = placeholderData as Record<ImageType, { seed: string }>;
+const typedPlaceholderData = placeholderData as Record<ImageType, { seed: string, width: number, height: number }>;
 
 export function getImageUrl(
     type: ImageType, 
@@ -20,7 +21,9 @@ export function getImageUrl(
     }
     
     const seedInfo = typedPlaceholderData[type];
-    const seed = seedInfo ? `${seedInfo.seed}_${params.id}` : params.id;
+    const seed = `${seedInfo.seed}_${params.seed}`;
+    const width = params.width ?? seedInfo.width;
+    const height = params.height ?? seedInfo.height;
     
-    return `https://picsum.photos/seed/${seed}/${params.width}/${params.height}`;
+    return `https://picsum.photos/seed/${seed}/${width}/${height}`;
 }
