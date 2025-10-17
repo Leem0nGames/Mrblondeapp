@@ -14,7 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Logo } from "@/app/logo";
 import { logout } from "@/app/actions/user.actions";
 import { Notifications } from "./_components/notifications";
@@ -145,24 +145,28 @@ export default async function AdminLayout({
                     </Button>
                     </SheetTrigger>
                     <SheetContent side="right" className="pt-16">
-                    <nav className="grid gap-6 text-base font-medium">
-                        <AppNav isMobile={true} />
-                    </nav>
-                    <div className="absolute bottom-4 left-4 right-4 grid gap-4">
-                      <Link
-                          href="/admin/settings"
-                          className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-                        >
-                          <Settings className="h-5 w-5" />
-                          Configuración
-                      </Link>
-                      <form action={logout}>
-                          <button className="w-full flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground">
-                              <LogOut className="h-5 w-5" />
-                              Cerrar Sesión
-                          </button>
-                      </form>
-                    </div>
+                      <SheetHeader className="sr-only">
+                        <SheetTitle>Menú de Navegación</SheetTitle>
+                        <SheetDescription>Navegación principal de la aplicación para dispositivos móviles.</SheetDescription>
+                      </SheetHeader>
+                      <nav className="grid gap-6 text-base font-medium">
+                          <AppNav isMobile={true} />
+                      </nav>
+                      <div className="absolute bottom-4 left-4 right-4 grid gap-4">
+                        <Link
+                            href="/admin/settings"
+                            className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
+                          >
+                            <Settings className="h-5 w-5" />
+                            Configuración
+                        </Link>
+                        <form action={logout}>
+                            <button className="w-full flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground">
+                                <LogOut className="h-5 w-5" />
+                                Cerrar Sesión
+                            </button>
+                        </form>
+                      </div>
                     </SheetContent>
                 </Sheet>
             </div>
