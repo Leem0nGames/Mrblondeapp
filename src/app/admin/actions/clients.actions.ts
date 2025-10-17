@@ -107,87 +107,10 @@ export async function createClientForInvitation(
     };
   }
 
-  // The revalidation is what's causing issues with cookies. We'll handle state update on the client.
-  // revalidatePath("/admin/clients");
+  revalidatePath("/admin/clients");
 
   const link = `/onboarding/${onboardingToken}`;
   return { data: { link }, error: null };
-}
-
-export async function createFullClient(
-  payload: Omit<
-    Client,
-    "id" | "created_at" | "status" | "onboarding_token" | "agreements"
-  > & {
-    delivery_days: string[];
-    delivery_time_from: string;
-    delivery_time_to: string;
-    street_address: string;
-    street_number: string;
-    locality: string;
-    province: string;
-  }
-) {
-  const supabase = await getSupabaseClientWithAuth();
-
-  const {
-    agreement_id,
-    delivery_days,
-    delivery_time_from,
-    delivery_time_to,
-    street_address,
-    street_number,
-    locality,
-    province,
-    ...clientData
-  } = payload;
-
-  const newStatus: Client["status"] = agreement_id
-    ? "active"
-    : "pending_agreement";
-
-  const address = `${street_address} ${street_number}, ${locality}, ${province}`;
-  const delivery_window = `${delivery_days.join(
-    ", "
-  )} de ${delivery_time_from} a ${delivery_time_to}hs`;
-
-  const { data: newClient, error } = await supabase
-    .from("clients")
-    .insert({
-      ...clientData,
-      address,
-      delivery_window,
-      agreement_id: agreement_id,
-      status: newStatus,
-      onboarding_token: crypto.randomUUID(),
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error("createFullClient error:", error.message);
-    if (error.code === "23505") {
-      if (error.message.includes("cuit")) {
-        return {
-          error: {
-            message: "El CUIT ingresado ya está registrado en nuestro sistema.",
-          },
-        };
-      }
-      if (error.message.includes("email")) {
-        return {
-          error: {
-            message: "El email ingresado ya está registrado en nuestro sistema.",
-          },
-        };
-      }
-    }
-    return { error };
-  }
-
-  revalidatePath("/admin/clients");
-  revalidatePath("/admin");
-  return { data: newClient, error: null };
 }
 
 export async function assignAgreementToClient(payload: {

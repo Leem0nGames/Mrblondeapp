@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition, useCallback, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -20,20 +20,30 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { createClientForInvitation } from "@/app/admin/actions/clients.actions";
-import { Copy, Check } from "lucide-react";
+import { getAgreements } from "@/app/admin/actions/agreements.actions";
+import { Copy, Check, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AssignAgreementDialog } from "./assign-agreement-dialog";
-import type { Client } from "@/types";
+import type { AgreementWithCount } from "@/types";
 
 const formSchema = z.object({
-  // No fields needed for this simple version
+  agreementId: z.string().nullable(),
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 export function CreateClientDialog({
   children,
@@ -41,19 +51,38 @@ export function CreateClientDialog({
   children: React.ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [isGenerating, startGenerating] = useTransition();
   const { toast } = useToast();
-  const [newClient, setNewClient] = useState<Pick<
-    Client,
-    "id" | "onboarding_token" | "agreement_id"
-  > | null>(null);
+  
+  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [hasCopied, setHasCopied] = useState(false);
+  const [agreements, setAgreements] = useState<AgreementWithCount[]>([]);
+  const [isLoadingAgreements, setIsLoadingAgreements] = useState(false);
 
-  const form = useForm();
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      agreementId: null,
+    }
+  });
 
-  const generateLink = () => {
-    startTransition(async () => {
-      const result = await createClientForInvitation(null);
+  const fetchAgreements = useCallback(async () => {
+    setIsLoadingAgreements(true);
+    const { data } = await getAgreements();
+    setAgreements(data ?? []);
+    setIsLoadingAgreements(false);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchAgreements();
+    }
+  }, [isOpen, fetchAgreements]);
+
+
+  const onSubmit = (values: FormValues) => {
+    startGenerating(async () => {
+      const result = await createClientForInvitation(values.agreementId);
       if (result.error) {
         toast({
           title: "Error",
@@ -61,29 +90,29 @@ export function CreateClientDialog({
           variant: "destructive",
         });
       } else {
-        setNewClient(result.data);
+        setGeneratedLink(result.data.link);
         toast({
           title: "¡Enlace Generado!",
-          description:
-            "Copia el enlace para enviárselo al cliente para que complete sus datos.",
+          description: "Copia el enlace para enviárselo al cliente.",
         });
       }
     });
   };
 
   const copyToClipboard = useCallback(() => {
-    if (!newClient || typeof window === "undefined") return;
-    const link = `${window.location.origin}/onboarding/${newClient.onboarding_token}`;
-    navigator.clipboard.writeText(link);
+    if (!generatedLink || typeof window === "undefined") return;
+    const fullLink = `${window.location.origin}${generatedLink}`;
+    navigator.clipboard.writeText(fullLink);
     setHasCopied(true);
     setTimeout(() => setHasCopied(false), 2000);
-  }, [newClient]);
+  }, [generatedLink]);
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       // Reset state when closing
-      setNewClient(null);
+      setGeneratedLink(null);
       setHasCopied(false);
+      form.reset();
     }
     setIsOpen(open);
   };
@@ -93,32 +122,55 @@ export function CreateClientDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Crear Nuevo Cliente</DialogTitle>
+          <DialogTitle>Crear Enlace de Alta para Cliente</DialogTitle>
           <DialogDescription>
-            Esto generará un enlace único para que el nuevo cliente complete su
-            información de alta.
+            Selecciona un convenio y genera un enlace único para que un nuevo cliente complete su información.
           </DialogDescription>
         </DialogHeader>
 
-        {!newClient ? (
-          <div className="flex flex-col items-center gap-4 py-8">
-            <p className="text-sm text-muted-foreground text-center">
-              Haz clic en el botón para generar un nuevo enlace de alta.
-            </p>
-            <Button onClick={generateLink} disabled={isPending}>
-              {isPending ? "Generando..." : "Generar Enlace de Alta"}
-            </Button>
-          </div>
+        {!generatedLink ? (
+            <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+              <FormField
+                control={form.control}
+                name="agreementId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Convenio (Opcional)</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(value === 'null' ? null : value)} defaultValue={field.value ?? 'null'}>
+                      <FormControl>
+                        <SelectTrigger disabled={isLoadingAgreements}>
+                          <SelectValue placeholder={isLoadingAgreements ? "Cargando convenios..." : "Selecciona un convenio..."} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="null">Ninguno (se asignará después)</SelectItem>
+                        {agreements.map(agreement => (
+                          <SelectItem key={agreement.id} value={agreement.id}>
+                            {agreement.agreement_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <Button type="submit" disabled={isGenerating} className="w-full">
+                {isGenerating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generando...</> : "Generar Enlace de Alta"}
+              </Button>
+            </form>
+          </Form>
         ) : (
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="onboarding-link">
-                Enlace de Alta para el Cliente
+                Enlace de Alta Generado
               </Label>
               <div className="flex w-full items-center space-x-2">
                 <Input
                   id="onboarding-link"
-                  value={`${window.location.origin}/onboarding/${newClient.onboarding_token}`}
+                  value={`${window.location.origin}${generatedLink}`}
                   readOnly
                 />
                 <Button
@@ -136,14 +188,9 @@ export function CreateClientDialog({
                 </Button>
               </div>
             </div>
-            <div className="text-sm text-muted-foreground">
-              <p>
-                Opcional: puedes asignar un convenio a este cliente ahora.
+             <p className="text-sm text-muted-foreground">
+                Envía este enlace al cliente para que complete su registro.
               </p>
-              <AssignAgreementDialog client={newClient}>
-                 <Button variant="link" className="p-0 h-auto">Asignar Convenio</Button>
-              </AssignAgreementDialog>
-            </div>
           </div>
         )}
 
