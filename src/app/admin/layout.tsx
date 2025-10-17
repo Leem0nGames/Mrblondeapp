@@ -24,8 +24,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Logo } from "@/app/logo";
 import { logout } from "@/app/actions/user.actions";
 import { Notifications } from "./_components/notifications";
-import { getPendingOrders, getOverdueOrders } from "@/app/admin/actions/dashboard.actions";
-import { getClientsWithPendingAgreements } from "@/app/admin/actions/clients.actions";
+import { getNotificationData } from "@/app/admin/actions/dashboard.actions";
 import type { Order, Client } from "@/types";
 import { differenceInDays } from "date-fns";
 import { AppNav } from "./_components/app-nav";
@@ -34,36 +33,46 @@ const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
 }
 
-const transformDataToNotifications = (orders: Order[], clients: Client[], overdueOrders: Order[]) => {
-    const orderNotifications = orders.map(order => ({
-        id: `order-${order.id}`,
-        type: 'order' as const,
-        title: `Nuevo Pedido #${order.id.slice(-4)}`,
-        description: `${order.client_name_cache} - ${formatCurrency(order.total_amount)}`,
-        createdAt: new Date(order.created_at),
-    }));
+const createNotifications = (
+  pendingOrdersCount: number,
+  pendingClientsCount: number,
+  overdueOrdersCount: number
+) => {
+  const notifications = [];
 
-    const clientNotifications = clients.map(client => ({
-        id: `client-${client.id}`,
-        type: 'client' as const,
-        title: "Cliente Pendiente",
-        description: `${client.contact_name || 'Cliente'} completó el alta.`,
-        createdAt: new Date(client.created_at),
-    }));
-    
-    const overdueNotifications = overdueOrders.map(order => {
-      const daysOverdue = differenceInDays(new Date(), new Date(order.created_at));
-      return {
-        id: `overdue-${order.id}`,
-        type: 'overdue' as const,
-        title: `Pedido Vencido #${order.id.slice(-4)}`,
-        description: `${order.client_name_cache} - ${daysOverdue} días de atraso`,
-        createdAt: new Date(order.created_at),
-    }});
+  if (pendingOrdersCount > 0) {
+    notifications.push({
+      id: "pending-orders",
+      type: "order" as const,
+      title: `${pendingOrdersCount} Pedido(s) Nuevo(s)`,
+      description: "Tienes nuevos pedidos para procesar.",
+      createdAt: new Date(),
+    });
+  }
 
+  if (pendingClientsCount > 0) {
+    notifications.push({
+      id: "pending-clients",
+      type: "client" as const,
+      title: `${pendingClientsCount} Cliente(s) Pendiente(s)`,
+      description: "Nuevos clientes esperan asignación de convenio.",
+      createdAt: new Date(),
+    });
+  }
 
-    return [...orderNotifications, ...clientNotifications, ...overdueNotifications].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-}
+  if (overdueOrdersCount > 0) {
+    notifications.push({
+      id: "overdue-orders",
+      type: "overdue" as const,
+      title: `${overdueOrdersCount} Pedido(s) Vencido(s)`,
+      description: "Hay pedidos cuya gestión está demorada.",
+      createdAt: new Date(),
+    });
+  }
+
+  return notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+};
+
 
 
 export default async function AdminLayout({
@@ -71,16 +80,12 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [pendingOrdersResult, pendingClientsResult, overdueOrdersResult] = await Promise.all([
-    getPendingOrders(),
-    getClientsWithPendingAgreements(),
-    getOverdueOrders()
-  ]);
+  const { pending_orders_count, pending_clients_count, overdue_orders_count } = await getNotificationData();
 
-  const notifications = transformDataToNotifications(
-    pendingOrdersResult,
-    pendingClientsResult,
-    overdueOrdersResult
+  const notifications = createNotifications(
+    pending_orders_count,
+    pending_clients_count,
+    overdue_orders_count
   );
 
 
