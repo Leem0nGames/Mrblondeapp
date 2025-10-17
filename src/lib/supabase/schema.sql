@@ -1,375 +1,343 @@
--- Deshabilitar temporalmente los triggers para evitar problemas de dependencias
-SET session_replication_role = 'replica';
 
+-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+-- ▓                                                                         ▓
+-- ▓  ██████╗ ██╗      ██████╗ ███╗   ██╗██████╗ ███████╗    ██╗    ██████╗    ▓
+-- ▓  ██╔══██╗██║     ██╔═══██╗████╗  ██║██╔══██╗██╔════╝    ██║    ██╔══██╗   ▓
+-- ▓  ██████╔╝██║     ██║   ██║██╔██╗ ██║██║  ██║█████╗      ██║    ██████╔╝   ▓
+-- ▓  ██╔═══╝ ██║     ██║   ██║██║╚██╗██║██║  ██║██╔══╝      ██║    ██╔═══╝    ▓
+-- ▓  ██║     ███████╗╚██████╔╝██║ ╚████║██████╔╝███████╗    ██████╗██║        ▓
+-- ▓  ╚═╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═══╝╚═════╝ ╚══════╝    ╚═════╝╚═╝        ▓
+-- ▓                                                                         ▓
+-- ▓  Este script SQL es IDEMPOTENTE.                                        ▓
+-- ▓  Puedes ejecutarlo de forma segura en cualquier momento. Se encargará    ▓
+-- <b>se encuentra en el archivo:</b>src/lib/supabase/schema.sql
+-- ▓  de limpiar y reconfigurar las tablas, vistas y funciones necesarias.  ▓
+-- ▓                                                                         ▓
+-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 
--- 1. Limpieza Inicial
--- Eliminar vistas, tablas y tipos existentes en orden inverso de creación
-DROP VIEW IF EXISTS public.dashboard_stats;
+-- Habilitar la extensión pgcrypto si no está habilitada
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+-- ▓                                                                         ▓
+-- ▓                         SECCIÓN DE LIMPIEZA (DROP)                      ▓
+-- ▓                                                                         ▓
+-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+
+-- Deshabilitar RLS temporalmente en las tablas para poder eliminarlas
+ALTER TABLE IF EXISTS public.orders DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.order_items DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.products DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.clients DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.agreements DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.agreement_promotions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.promotions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.price_lists DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.price_list_items DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.sales_conditions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.agreement_sales_conditions DISABLE ROW LEVEL SECURITY;
+
+-- Eliminar vistas y funciones en orden de dependencia
 DROP VIEW IF EXISTS public.agreements_with_counts;
-DROP FUNCTION IF EXISTS public.get_notification_counts();
+DROP VIEW IF EXISTS public.dashboard_stats;
 DROP FUNCTION IF EXISTS public.get_client_stats(uuid);
 DROP FUNCTION IF EXISTS public.increment_total_revenue(numeric);
+DROP FUNCTION IF EXISTS public.get_notification_counts();
 
-DROP TABLE IF EXISTS public.order_items CASCADE;
-DROP TABLE IF EXISTS public.orders CASCADE;
-DROP TABLE IF EXISTS public.agreement_promotions CASCADE;
-DROP TABLE IF EXISTS public.agreement_sales_conditions CASCADE;
-DROP TABLE IF EXISTS public.price_list_items CASCADE;
-DROP TABLE IF EXISTS public.clients CASCADE;
-DROP TABLE IF EXISTS public.promotions CASCADE;
-DROP TABLE IF EXISTS public.sales_conditions CASCADE;
-DROP TABLE IF EXISTS public.agreements CASCADE;
-DROP TABLE IF EXISTS public.price_lists CASCADE;
-DROP TABLE IF EXISTS public.products CASCADE;
 
--- Eliminar los tipos ENUM. Requieren un paso adicional.
-DO $$
-BEGIN
-    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'client_status') THEN
-        DROP TYPE public.client_status;
-    END IF;
-    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
-        DROP TYPE public.order_status;
-    END IF;
-    IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'client_type') THEN
-        DROP TYPE public.client_type;
-    END IF;
-END$$;
+-- Eliminar políticas de RLS de las tablas
+DROP POLICY IF EXISTS "Enable read access for all users" ON public.products;
+DROP POLICY IF EXISTS "Enable all operations for authenticated users" ON public.products;
+DROP POLICY IF EXISTS "Enable insert for authenticated users" ON public.clients;
+DROP POLICY IF EXISTS "Enable update for users based on id" ON public.clients;
+DROP POLICY IF EXISTS "Enable read access for all users" ON public.clients;
+DROP POLICY IF EXISTS "Enable all for authenticated users" ON public.agreements;
+DROP POLICY IF EXISTS "Enable all for authenticated users" ON public.agreement_promotions;
+DROP POLICY IF EXISTS "Enable all for authenticated users" ON public.promotions;
+DROP POLICY IF EXISTS "Enable all for authenticated users" ON public.price_lists;
+DROP POLICY IF EXISTS "Enable all for authenticated users" ON public.price_list_items;
+DROP POLICY IF EXISTS "Enable all for authenticated users" ON public.orders;
+DROP POLICY IF EXISTS "Enable all for authenticated users" ON public.order_items;
+DROP POLICY IF EXISTS "Enable all for authenticated users" ON public.sales_conditions;
+DROP POLICY IF EXISTS "Enable all for authenticated users" ON public.agreement_sales_conditions;
 
--- 2. Creación de Tipos ENUM
-CREATE TYPE public.client_type AS ENUM ('barberia', 'distribuidor', 'especial');
-CREATE TYPE public.client_status AS ENUM ('pending_onboarding', 'pending_agreement', 'active', 'archived');
-CREATE TYPE public.order_status AS ENUM ('pending', 'completed');
+-- Eliminar políticas de Storage
+DROP POLICY IF EXISTS "Allow authenticated users to upload" ON storage.objects;
+DROP POLICY IF EXISTS "Allow admin full access to product images" ON storage.objects;
+DROP POLICY IF EXISTS "Allow anonymous read access to product images" ON storage.objects;
 
--- 3. Creación de Tablas
-CREATE TABLE public.products (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    name character varying NOT NULL,
-    description text NULL,
-    category character varying NULL,
-    image_url text NULL,
-    created_at timestamp with time zone NOT NULL DEFAULT now(),
-    CONSTRAINT products_pkey PRIMARY KEY (id)
-);
 
+-- Eliminar tablas en orden inverso de dependencia (de muchos a uno)
+DROP TABLE IF EXISTS public.order_items;
+DROP TABLE IF EXISTS public.orders;
+DROP TABLE IF EXISTS public.agreement_promotions;
+DROP TABLE IF EXISTS public.agreement_sales_conditions;
+DROP TABLE IF EXISTS public.price_list_items;
+DROP TABLE IF EXISTS public.clients;
+DROP TABLE IF EXISTS public.agreements;
+DROP TABLE IF EXISTS public.promotions;
+DROP TABLE IF EXISTS public.price_lists;
+DROP TABLE IF EXISTS public.products;
+DROP TABLE IF EXISTS public.sales_conditions;
+DROP TABLE IF EXISTS public.general_stats;
+
+-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+-- ▓                                                                         ▓
+-- ▓                      SECCIÓN DE CREACIÓN (CREATE)                       ▓
+-- ▓                                                                         ▓
+-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+
+-- Tabla de Listas de Precios
 CREATE TABLE public.price_lists (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    name character varying NOT NULL UNIQUE,
+    prices_include_vat boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+-- Tabla de Productos
+CREATE TABLE public.products (
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
     name character varying NOT NULL,
-    created_at timestamp with time zone NOT NULL DEFAULT now(),
-    prices_include_vat boolean NOT NULL DEFAULT true,
-    CONSTRAINT price_lists_pkey PRIMARY KEY (id),
-    CONSTRAINT price_lists_name_key UNIQUE (name)
+    description text,
+    category text,
+    image_url text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
-CREATE TABLE public.agreements (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    agreement_name character varying NOT NULL,
-    client_type public.client_type NOT NULL,
-    created_at timestamp with time zone NOT NULL DEFAULT now(),
-    price_list_id uuid NULL,
-    CONSTRAINT agreements_pkey PRIMARY KEY (id),
-    CONSTRAINT agreements_agreement_name_key UNIQUE (agreement_name),
-    CONSTRAINT agreements_price_list_id_fkey FOREIGN KEY (price_list_id) REFERENCES public.price_lists(id) ON DELETE SET NULL
+-- Tabla de Items de Lista de Precios (tabla pivote)
+CREATE TABLE public.price_list_items (
+    price_list_id uuid NOT NULL REFERENCES public.price_lists(id) ON DELETE CASCADE,
+    product_id uuid NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+    price numeric(10,2) NOT NULL,
+    volume_price numeric(10,2),
+    PRIMARY KEY (price_list_id, product_id)
 );
 
+-- Tabla de Promociones
 CREATE TABLE public.promotions (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
     name character varying NOT NULL,
-    description text NULL,
-    rules jsonb NOT NULL,
-    created_at timestamp with time zone NOT NULL DEFAULT now(),
-    CONSTRAINT promotions_pkey PRIMARY KEY (id)
+    description text,
+    rules jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
+-- Tabla de Condiciones de Venta
 CREATE TABLE public.sales_conditions (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
     name character varying NOT NULL,
-    description text NULL,
-    rules jsonb NOT NULL,
-    created_at timestamp with time zone NOT NULL DEFAULT now(),
-    CONSTRAINT sales_conditions_pkey PRIMARY KEY (id)
+    description text,
+    rules jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
+-- Tabla de Convenios
+CREATE TABLE public.agreements (
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    agreement_name character varying NOT NULL UNIQUE,
+    client_type public.client_type NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    price_list_id uuid REFERENCES public.price_lists(id) ON DELETE SET NULL
+);
+
+-- Tabla de Promociones por Convenio (tabla pivote)
+CREATE TABLE public.agreement_promotions (
+    agreement_id uuid NOT NULL REFERENCES public.agreements(id) ON DELETE CASCADE,
+    promotion_id uuid NOT NULL REFERENCES public.promotions(id) ON DELETE CASCADE,
+    PRIMARY KEY (agreement_id, promotion_id)
+);
+
+-- Tabla de Condiciones de Venta por Convenio (tabla pivote)
+CREATE TABLE public.agreement_sales_conditions (
+    agreement_id uuid NOT NULL REFERENCES public.agreements(id) ON DELETE CASCADE,
+    sales_condition_id uuid NOT NULL REFERENCES public.sales_conditions(id) ON DELETE CASCADE,
+    PRIMARY KEY (agreement_id, sales_condition_id)
+);
+
+-- Tabla de Clientes
 CREATE TABLE public.clients (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    cuit character varying NULL,
-    contact_name character varying NULL,
-    contact_dni character varying NULL,
-    address text NULL,
-    delivery_window text NULL,
-    email character varying NULL,
-    instagram character varying NULL,
-    status public.client_status NOT NULL,
-    onboarding_token uuid NOT NULL DEFAULT gen_random_uuid(),
-    agreement_id uuid NULL,
-    created_at timestamp with time zone NOT NULL DEFAULT now(),
-    fiscal_status character varying NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    cuit character varying UNIQUE,
+    contact_name character varying,
+    contact_dni character varying,
+    address text,
     latitude double precision,
     longitude double precision,
-    CONSTRAINT clients_pkey PRIMARY KEY (id),
-    CONSTRAINT clients_cuit_key UNIQUE (cuit),
-    CONSTRAINT clients_email_key UNIQUE (email),
-    CONSTRAINT clients_onboarding_token_key UNIQUE (onboarding_token),
-    CONSTRAINT clients_agreement_id_fkey FOREIGN KEY (agreement_id) REFERENCES public.agreements(id) ON DELETE SET NULL
+    delivery_window text,
+    email character varying UNIQUE,
+    instagram character varying,
+    status public.client_status NOT NULL,
+    onboarding_token uuid NOT NULL UNIQUE,
+    agreement_id uuid REFERENCES public.agreements(id) ON DELETE SET NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    fiscal_status text
 );
 
-CREATE TABLE public.price_list_items (
-    price_list_id uuid NOT NULL,
-    product_id uuid NOT NULL,
-    price numeric NOT NULL,
-    volume_price numeric NULL,
-    CONSTRAINT price_list_items_pkey PRIMARY KEY (price_list_id, product_id),
-    CONSTRAINT price_list_items_price_list_id_fkey FOREIGN KEY (price_list_id) REFERENCES public.price_lists(id) ON DELETE CASCADE,
-    CONSTRAINT price_list_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE
-);
-
-CREATE TABLE public.agreement_promotions (
-    agreement_id uuid NOT NULL,
-    promotion_id uuid NOT NULL,
-    CONSTRAINT agreement_promotions_pkey PRIMARY KEY (agreement_id, promotion_id),
-    CONSTRAINT agreement_promotions_agreement_id_fkey FOREIGN KEY (agreement_id) REFERENCES public.agreements(id) ON DELETE CASCADE,
-    CONSTRAINT agreement_promotions_promotion_id_fkey FOREIGN KEY (promotion_id) REFERENCES public.promotions(id) ON DELETE CASCADE
-);
-
-CREATE TABLE public.agreement_sales_conditions (
-    agreement_id uuid NOT NULL,
-    sales_condition_id uuid NOT NULL,
-    CONSTRAINT agreement_sales_conditions_pkey PRIMARY KEY (agreement_id, sales_condition_id),
-    CONSTRAINT agreement_sales_conditions_agreement_id_fkey FOREIGN KEY (agreement_id) REFERENCES public.agreements(id) ON DELETE CASCADE,
-    CONSTRAINT agreement_sales_conditions_sales_condition_id_fkey FOREIGN KEY (sales_condition_id) REFERENCES public.sales_conditions(id) ON DELETE CASCADE
-);
-
+-- Tabla de Pedidos
 CREATE TABLE public.orders (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    client_id uuid NOT NULL,
-    agreement_id uuid NOT NULL,
-    created_at timestamp with time zone NOT NULL DEFAULT now(),
-    total_amount numeric NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    client_id uuid NOT NULL REFERENCES public.clients(id),
+    agreement_id uuid NOT NULL REFERENCES public.agreements(id),
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    total_amount numeric(10,2) NOT NULL,
     status public.order_status NOT NULL,
     client_name_cache character varying NOT NULL,
-    notes text NULL,
-    CONSTRAINT orders_pkey PRIMARY KEY (id),
-    CONSTRAINT orders_agreement_id_fkey FOREIGN KEY (agreement_id) REFERENCES public.agreements(id) ON DELETE RESTRICT,
-    CONSTRAINT orders_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.clients(id) ON DELETE RESTRICT
+    notes text
 );
 
+-- Tabla de Items de Pedido
 CREATE TABLE public.order_items (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    order_id uuid NOT NULL,
-    product_id uuid NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    order_id uuid NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+    product_id uuid NOT NULL REFERENCES public.products(id),
     quantity integer NOT NULL,
-    price_per_unit numeric NOT NULL,
-    CONSTRAINT order_items_pkey PRIMARY KEY (id),
-    CONSTRAINT order_items_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id) ON DELETE CASCADE,
-    CONSTRAINT order_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE RESTRICT
+    price_per_unit numeric(10,2) NOT NULL
 );
 
+-- Tabla para estadísticas generales
+CREATE TABLE public.general_stats (
+    stat_key text PRIMARY KEY,
+    stat_value numeric DEFAULT 0 NOT NULL,
+    updated_at timestamp with time zone DEFAULT now()
+);
 
--- 4. Creación de Vistas
-CREATE VIEW public.agreements_with_counts AS
-SELECT
-    a.id,
+-- Insertar la estadística de ingresos totales si no existe
+INSERT INTO public.general_stats (stat_key, stat_value)
+VALUES ('total_revenue', 0)
+ON CONFLICT (stat_key) DO NOTHING;
+
+
+-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+-- ▓                                                                         ▓
+-- ▓               VISTAS (VIEWS) Y FUNCIONES (FUNCTIONS)                    ▓
+-- ▓                                                                         ▓
+-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+
+
+-- Vista para obtener convenios con sus contadores
+CREATE OR REPLACE VIEW public.agreements_with_counts AS
+ SELECT a.id,
     a.agreement_name,
     a.client_type,
     a.price_list_id,
-    a.created_at,
+    pl.name AS price_list_name,
     (SELECT count(*) FROM public.agreement_promotions ap WHERE ap.agreement_id = a.id) AS promotion_count,
     (SELECT count(*) FROM public.agreement_sales_conditions ascv WHERE ascv.agreement_id = a.id) AS sales_condition_count
-FROM
-    public.agreements a;
-
-CREATE VIEW public.dashboard_stats AS
-SELECT
-    (SELECT COALESCE(sum(total_amount), 0::numeric) FROM public.orders WHERE status = 'completed') AS total_revenue,
-    (SELECT COALESCE(sum(total_amount), 0::numeric) FROM public.orders WHERE status = 'completed' AND created_at >= date_trunc('month'::text, now())) AS month_revenue,
-    (SELECT count(*) FROM public.clients WHERE status = 'active') AS active_clients,
-    (SELECT count(*) FROM public.orders WHERE status = 'pending' AND created_at < (now() - '3 days'::interval)) AS overdue_orders_count;
+   FROM (public.agreements a
+     LEFT JOIN public.price_lists pl ON ((a.price_list_id = pl.id)));
 
 
--- 5. Creación de Funciones
-CREATE FUNCTION public.get_client_stats(p_client_id uuid)
-RETURNS TABLE(total_spent numeric, total_orders bigint, average_order_value numeric)
-LANGUAGE sql STABLE
-AS $$
+-- Vista para estadísticas del dashboard
+CREATE OR REPLACE VIEW public.dashboard_stats AS
+ SELECT
+    (SELECT stat_value FROM public.general_stats WHERE stat_key = 'total_revenue') AS total_revenue,
+    (SELECT coalesce(sum(total_amount), 0::numeric) FROM public.orders WHERE (status = 'completed'::public.order_status) AND (created_at > (now() - '30 days'::interval))) AS month_revenue,
+    (SELECT count(*) FROM public.clients WHERE status = 'active'::public.client_status) AS active_clients,
+    (SELECT count(*) FROM public.orders WHERE status = 'pending'::public.order_status AND created_at < (now() - '2 days'::interval)) AS overdue_orders_count;
+
+
+-- Función para obtener estadísticas de un cliente
+CREATE OR REPLACE FUNCTION public.get_client_stats(p_client_id uuid)
+ RETURNS TABLE(total_spent numeric, total_orders bigint, average_order_value numeric)
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    RETURN QUERY
     SELECT
         COALESCE(SUM(total_amount), 0) AS total_spent,
-        COUNT(id) AS total_orders,
+        COALESCE(COUNT(id), 0) AS total_orders,
         COALESCE(AVG(total_amount), 0) AS average_order_value
     FROM
         public.orders
     WHERE
-        client_id = p_client_id AND status = 'completed';
-$$;
+        client_id = p_client_id
+        AND status = 'completed';
+END;
+$function$;
 
+-- Función para obtener contadores para notificaciones
+CREATE OR REPLACE FUNCTION public.get_notification_counts()
+ RETURNS TABLE(pending_orders_count bigint, pending_clients_count bigint, overdue_orders_count bigint)
+ LANGUAGE sql
+AS $function$
+  SELECT
+    (SELECT COUNT(*) FROM public.orders WHERE status = 'pending') AS pending_orders_count,
+    (SELECT COUNT(*) FROM public.clients WHERE status = 'pending_agreement') AS pending_clients_count,
+    (SELECT COUNT(*) FROM public.orders WHERE status = 'pending' AND created_at < (now() - '2 days'::interval)) AS overdue_orders_count;
+$function$;
+
+-- Función para incrementar los ingresos totales
 CREATE OR REPLACE FUNCTION public.increment_total_revenue(amount_to_add numeric)
 RETURNS void
-LANGUAGE sql
+LANGUAGE plpgsql
 AS $$
-  -- Esta función está vacía intencionadamente.
-  -- El RPC se usa principalmente para invalidar el cache de Next.js.
-  -- La lógica real está en la VISTA dashboard_stats.
-$$;
-
-CREATE OR REPLACE FUNCTION public.get_notification_counts()
-RETURNS TABLE(pending_orders_count integer, pending_clients_count integer, overdue_orders_count integer)
-LANGUAGE sql
-AS $$
-    SELECT
-        (SELECT count(*)::integer FROM public.orders WHERE status = 'pending') AS pending_orders_count,
-        (SELECT count(*)::integer FROM public.clients WHERE status = 'pending_agreement') AS pending_clients_count,
-        (SELECT count(*)::integer FROM public.orders WHERE status = 'pending' AND created_at < (now() - '3 days'::interval)) AS overdue_orders_count;
+BEGIN
+  UPDATE public.general_stats
+  SET stat_value = stat_value + amount_to_add,
+      updated_at = now()
+  WHERE stat_key = 'total_revenue';
+END;
 $$;
 
 
--- Reactivar los triggers
-SET session_replication_role = 'origin';
+-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+-- ▓                                                                         ▓
+-- ▓        POLÍTICAS DE SEGURIDAD A NIVEL DE FILA (RLS) Y STORAGE           ▓
+-- ▓                                                                         ▓
+-- ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 
--- Habilitar RLS para todas las tablas
+-- Habilitar RLS en todas las tablas
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.price_lists ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.agreements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.promotions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.price_list_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.agreements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.agreement_promotions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.promotions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.price_lists ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.price_list_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sales_conditions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.agreement_sales_conditions ENABLE ROW LEVEL SECURITY;
 
--- 6. Políticas de Seguridad (RLS)
 
--- Los administradores autenticados pueden hacer todo.
-CREATE POLICY "Allow all access to authenticated admins"
-ON public.products FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
+-- Políticas de RLS para cada tabla
+CREATE POLICY "Enable read access for all users" ON public.products FOR SELECT USING (true);
+CREATE POLICY "Enable all operations for authenticated users" ON public.products FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY "Allow all access to authenticated admins"
-ON public.price_lists FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
+CREATE POLICY "Enable insert for authenticated users" ON public.clients FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Enable update for users based on id" ON public.clients FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+CREATE POLICY "Enable read access for all users" ON public.clients FOR SELECT USING (true);
 
-CREATE POLICY "Allow all access to authenticated admins"
-ON public.agreements FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
+CREATE POLICY "Enable all for authenticated users" ON public.agreements FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Enable all for authenticated users" ON public.agreement_promotions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Enable all for authenticated users" ON public.promotions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Enable all for authenticated users" ON public.price_lists FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Enable all for authenticated users" ON public.price_list_items FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Enable all for authenticated users" ON public.orders FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Enable all for authenticated users" ON public.order_items FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Enable all for authenticated users" ON public.sales_conditions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Enable all for authenticated users" ON public.agreement_sales_conditions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY "Allow all access to authenticated admins"
-ON public.promotions FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
+-- Bucket para imágenes de productos
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('product_images', 'product_images', true)
+ON CONFLICT (id) DO NOTHING;
 
-CREATE POLICY "Allow all access to authenticated admins"
-ON public.clients FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
+-- Storage policies for product_images bucket
+CREATE POLICY "Allow authenticated users to upload"
+  FOR INSERT
+  ON storage.objects
+  TO authenticated
+  WITH CHECK (bucket_id = 'product_images');
 
-CREATE POLICY "Allow all access to authenticated admins"
-ON public.price_list_items FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Allow all access to authenticated admins"
-ON public.agreement_promotions FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Allow all access to authenticated admins"
-ON public.orders FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Allow all access to authenticated admins"
-ON public.order_items FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Allow all access to authenticated admins"
-ON public.sales_conditions FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Allow all access to authenticated admins"
-ON public.agreement_sales_conditions FOR ALL
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
-
--- El acceso anónimo (no autenticado) está muy restringido.
--- Se permite leer información necesaria para las páginas de pedido y alta.
-CREATE POLICY "Allow anonymous read for order pages"
-ON public.agreements FOR SELECT
-TO anon
-USING (true);
-
-CREATE POLICY "Allow anonymous read for order pages"
-ON public.agreement_promotions FOR SELECT
-TO anon
-USING (true);
-
-CREATE POLICY "Allow anonymous read for order pages"
-ON public.promotions FOR SELECT
-TO anon
-USING (true);
-
-CREATE POLICY "Allow anonymous read for order pages"
-ON public.price_lists FOR SELECT
-TO anon
-USING (true);
-
-CREATE POLICY "Allow anonymous read for order pages"
-ON public.price_list_items FOR SELECT
-TO anon
-USING (true);
-
-CREATE POLICY "Allow anonymous read for order pages"
-ON public.products FOR SELECT
-TO anon
-USING (true);
-
-CREATE POLICY "Allow anonymous read for onboarding"
-ON public.clients FOR SELECT
-TO anon
-USING (onboarding_token IS NOT NULL);
-
-CREATE POLICY "Allow anonymous update for onboarding form"
-ON public.clients FOR UPDATE
-TO anon
-USING (onboarding_token IS NOT NULL)
-WITH CHECK (onboarding_token IS NOT NULL);
-
--- Los usuarios anónimos pueden crear nuevos pedidos
-CREATE POLICY "Allow anonymous insert for orders"
-ON public.orders FOR INSERT
-TO anon
-WITH CHECK (true);
-
-CREATE POLICY "Allow anonymous insert for order_items"
-ON public.order_items FOR INSERT
-TO anon
-WITH CHECK (true);
-
--- Permisos para almacenamiento (Storage)
 CREATE POLICY "Allow admin full access to product images"
-ON storage.objects FOR ALL
-TO authenticated
-USING (bucket_id = 'product_images')
-WITH CHECK (bucket_id = 'product_images');
+  FOR ALL
+  ON storage.objects
+  TO service_role
+  WITH CHECK (bucket_id = 'product_images');
 
 CREATE POLICY "Allow anonymous read access to product images"
-ON storage.objects FOR SELECT
-TO anon
-USING (bucket_id = 'product_images');
-
+    ON storage.objects FOR SELECT
+    TO anon
+    USING (bucket_id = 'product_images');
