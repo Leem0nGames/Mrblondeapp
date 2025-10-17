@@ -152,8 +152,8 @@ export default function SalesConditionsTable({ salesConditions, emptyState }: Sa
       </div>
 
       {/* Desktop View */}
-      <Card className="hidden sm:block">
-        <CardContent className="p-0">
+      
+        <div className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
@@ -233,14 +233,12 @@ export default function SalesConditionsTable({ salesConditions, emptyState }: Sa
               ))}
             </TableBody>
           </Table>
-        </CardContent>
-        <CardFooter>
-          <div className="text-xs text-muted-foreground">
-            Mostrando <strong>{salesConditions.length}</strong> de{" "}
-            <strong>{salesConditions.length}</strong> condiciones.
-          </div>
-        </CardFooter>
-      </Card>
+        </div>
+        <div className="text-xs text-muted-foreground pt-4">
+          Mostrando <strong>{salesConditions.length}</strong> de{" "}
+          <strong>{salesConditions.length}</strong> condiciones.
+        </div>
+      
     </>
   );
 }

@@ -79,7 +79,7 @@ export default async function AgreementDetailPage({
                         <div className="flex flex-col gap-2">
                             <div><Badge variant="secondary" className="w-fit text-base">{agreement.price_lists.name}</Badge></div>
                             <Button variant="outline" size="sm" className="w-fit" asChild>
-                                <Link href={`/admin/pricelists/${agreement.price_lists.id}`}>
+                                <Link href={`/admin/commercial-settings?tab=pricelists`}>
                                     Ver o Editar Lista
                                 </Link>
                             </Button>

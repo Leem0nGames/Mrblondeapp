@@ -147,8 +147,8 @@ export default function PromotionsTable({ promotions, emptyState }: PromotionsTa
       </div>
 
       {/* Desktop View */}
-      <Card className="hidden sm:block">
-        <CardContent className="p-0">
+      
+        <div className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
@@ -228,14 +228,12 @@ export default function PromotionsTable({ promotions, emptyState }: PromotionsTa
               ))}
             </TableBody>
           </Table>
-        </CardContent>
-        <CardFooter>
-          <div className="text-xs text-muted-foreground">
-            Mostrando <strong>{promotions.length}</strong> de{" "}
-            <strong>{promotions.length}</strong> promociones
-          </div>
-        </CardFooter>
-      </Card>
+        </div>
+        <div className="text-xs text-muted-foreground pt-4">
+          Mostrando <strong>{promotions.length}</strong> de{" "}
+          <strong>{promotions.length}</strong> promociones
+        </div>
+      
     </>
   );
 }

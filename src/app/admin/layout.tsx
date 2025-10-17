@@ -2,15 +2,8 @@
 
 import Link from "next/link";
 import {
-  Package,
   LogOut,
-  FileText,
-  Percent,
   Settings,
-  Users,
-  ClipboardList,
-  Landmark,
-  Home,
   Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,13 +19,7 @@ import { Logo } from "@/app/logo";
 import { logout } from "@/app/actions/user.actions";
 import { Notifications } from "./_components/notifications";
 import { getNotificationData } from "@/app/admin/actions/dashboard.actions";
-import type { Order, Client } from "@/types";
-import { differenceInDays } from "date-fns";
 import { AppNav } from "./_components/app-nav";
-
-const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
-}
 
 const createNotifications = (
   pendingOrdersCount: number,

@@ -8,9 +8,7 @@ import {
   Package,
   Users,
   FileText,
-  Percent,
-  ClipboardList,
-  Landmark,
+  Briefcase,
 } from "lucide-react";
 import {
   Tooltip,
@@ -25,9 +23,7 @@ const navItems = [
   { href: "/admin/products", icon: Package, label: "Productos" },
   { href: "/admin/clients", icon: Users, label: "Clientes" },
   { href: "/admin/agreements", icon: FileText, label: "Convenios" },
-  { href: "/admin/pricelists", icon: ClipboardList, label: "Listas de Precios" },
-  { href: "/admin/promotions", icon: Percent, label: "Promociones" },
-  { href: "/admin/sales-conditions", icon: Landmark, label: "Cond. de Venta" },
+  { href: "/admin/commercial-settings", icon: Briefcase, label: "Comercial" },
 ];
 
 export function AppNav({ isMobile }: { isMobile: boolean }) {
@@ -37,7 +33,7 @@ export function AppNav({ isMobile }: { isMobile: boolean }) {
     return (
       <nav className="grid gap-6 text-base font-medium">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname.startsWith(item.href) && (item.href !== '/admin' || pathname === '/admin');
           return (
             <Link
               key={item.href}
@@ -60,7 +56,7 @@ export function AppNav({ isMobile }: { isMobile: boolean }) {
     <TooltipProvider>
       <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname.startsWith(item.href) && (item.href !== '/admin' || pathname === '/admin');
           return (
             <Tooltip key={item.href} delayDuration={0}>
               <TooltipTrigger asChild>

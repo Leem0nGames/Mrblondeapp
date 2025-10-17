@@ -34,7 +34,7 @@ export default async function PriceListDetailPage({
             No se pudo encontrar la lista solicitada.
           </p>
           <Button asChild className="mt-4">
-            <Link href="/admin/pricelists">Volver a Listas</Link>
+            <Link href="/admin/commercial-settings?tab=pricelists">Volver a Listas</Link>
           </Button>
         </div>
       </div>
@@ -45,7 +45,7 @@ export default async function PriceListDetailPage({
     <div className="grid flex-1 items-start gap-4 md:gap-8">
       <div className="flex items-center gap-4">
         <Button variant="outline" size="icon" className="h-7 w-7" asChild>
-          <Link href="/admin/pricelists">
+          <Link href="/admin/commercial-settings?tab=pricelists">
             <ArrowLeft className="h-4 w-4" />
             <span className="sr-only">Volver</span>
           </Link>
