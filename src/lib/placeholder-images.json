@@ -1,0 +1,17 @@
+{
+  "product": {
+    "seed": "product"
+  },
+  "product_sm": {
+    "seed": "prod_sm"
+  },
+  "product_card": {
+    "seed": "prod_card"
+  },
+  "cart_item": {
+    "seed": "cart"
+  },
+  "summary_item": {
+    "seed": "summary"
+  }
+}

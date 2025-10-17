@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 /**
@@ -23,9 +24,8 @@ export default {
     extend: {
       // Typography
       fontFamily: {
-        body: ["var(--font-body)", "serif"],
-        headline: ["var(--font-headline)", "sans-serif"],
-        code: ["var(--font-code)", "monospace"],
+        body: ["var(--font-body)"],
+        headline: ["var(--font-headline)"],
       },
 
       // Colors (mapped to CSS variables for theme flexibility)

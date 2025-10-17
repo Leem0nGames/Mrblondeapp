@@ -1,5 +1,5 @@
-// Using a simple object for this, but this could be a more complex system
-// that fetches images from a CMS or a dedicated image service.
+
+import placeholderData from './placeholder-images.json';
 
 type ImageType = 'product' | 'product_sm' | 'product_card' | 'cart_item' | 'summary_item';
 type ImageParams = {
@@ -8,13 +8,7 @@ type ImageParams = {
     height: number;
 }
 
-const placeholderSources: Record<ImageType, (params: ImageParams) => string> = {
-    product: ({ id, width, height }) => `https://picsum.photos/seed/${id}/${width}/${height}`,
-    product_sm: ({ id, width, height }) => `https://picsum.photos/seed/${id}/${width}/${height}`,
-    product_card: ({ id, width, height }) => `https://picsum.photos/seed/${id}/${width}/${height}`,
-    cart_item: ({ id, width, height }) => `https://picsum.photos/seed/${id}/${width}/${height}`,
-    summary_item: ({ id, width, height }) => `https://picsum.photos/seed/${id}/${width}/${height}`,
-}
+const typedPlaceholderData = placeholderData as Record<ImageType, { seed: string }>;
 
 export function getImageUrl(
     type: ImageType, 
@@ -24,10 +18,9 @@ export function getImageUrl(
     if (realImageUrl) {
         return realImageUrl;
     }
-    const sourceFn = placeholderSources[type];
-    if (!sourceFn) {
-        // Fallback for an unknown type
-        return `https://picsum.photos/${params.width}/${params.height}`;
-    }
-    return sourceFn(params);
+    
+    const seedInfo = typedPlaceholderData[type];
+    const seed = seedInfo ? `${seedInfo.seed}_${params.id}` : params.id;
+    
+    return `https://picsum.photos/seed/${seed}/${params.width}/${params.height}`;
 }

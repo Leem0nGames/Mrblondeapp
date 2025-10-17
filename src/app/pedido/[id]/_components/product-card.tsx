@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useMemo } from "react";
@@ -30,10 +29,10 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
       <CardContent className="p-0 flex flex-col sm:flex-row items-center gap-4 p-4 w-full">
          <div className="relative aspect-square w-full sm:w-24 sm:h-24 flex-shrink-0">
             <Image
-                src={getImageUrl("product_card", { id: product.id, width: 200, height: 200 }, product.image_url)}
+                src={getImageUrl("product_card", { id: product.id, width: 96, height: 96 }, product.image_url)}
                 alt={product.name}
                 fill
-                sizes="(max-width: 640px) 90vw, 200px"
+                sizes="(max-width: 640px) 90vw, 96px"
                 className="rounded-lg object-cover"
                 data-ai-hint="product image"
             />
