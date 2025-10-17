@@ -4,7 +4,6 @@
 
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createPublicClient } from '@/lib/supabase/client';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { Client, CartItem } from '@/types';
@@ -49,7 +48,7 @@ export async function signupSuperAdmin(
     return { error: { message: 'El registro ya no está disponible. Ya existe un administrador.' } };
   }
 
-  const supabase = createServerClient();
+  const supabase = createPublicClient();
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
@@ -86,7 +85,7 @@ export async function login(
   prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
-  const supabase = createServerClient();
+  const supabase = createPublicClient();
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
@@ -113,7 +112,7 @@ export async function login(
 
 
 export async function logout() {
-  const supabase = createServerClient();
+  const supabase = createPublicClient();
   await supabase.auth.signOut();
   redirect('/login');
 }
@@ -214,7 +213,7 @@ export async function getOnboardingClient(token: string): Promise<{ data: Client
         .from('clients')
         .select('*')
         .eq('onboarding_token', token)
-        .single();
+        .maybeSingle();
 
     if (error) {
         console.error("getOnboardingClient error:", error.message);
@@ -317,7 +316,7 @@ export async function submitOrder(payload: {
             total_amount: payload.total,
             status: 'pending',
             client_name_cache: payload.clientName,
-            notes: payload.notes || null, // Ensure notes is null if undefined/empty
+            notes: payload.notes || null,
         })
         .select()
         .single();
