@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -62,3 +63,4 @@ export function ClientMap({ clients, center, zoom, style = { height: "400px" } }
     </div>
   );
 }
+
