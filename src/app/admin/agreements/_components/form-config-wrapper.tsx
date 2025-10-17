@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, cloneElement } from "react";
 import type { PriceList } from "@/types";
-import { getPriceLists } from "@/app/actions/admin.actions";
+import { getPriceLists } from "@/app/admin/actions/pricelists.actions";
 import { useFormContext } from "react-hook-form";
 
 // This is a new wrapper component to contain the client-side logic

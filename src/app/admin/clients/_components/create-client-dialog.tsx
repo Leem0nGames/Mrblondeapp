@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { createClientForInvitation } from "@/app/actions/admin.actions";
+import { createClientForInvitation } from "@/app/admin/actions/clients.actions";
 import type { Agreement, Client } from "@/types";
 import { Copy, Check, FilePen } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";

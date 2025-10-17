@@ -1,7 +1,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Edit, FileWarning, Landmark, Package, Percent, PlusCircle, Users } from "lucide-react";
-import { getAgreementById } from "@/app/actions/admin.actions";
+import { getAgreementById } from "@/app/admin/actions/agreements.actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -166,5 +166,3 @@ export default async function AgreementDetailPage({
     </div>
   );
 }
-
-    

@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { upsertSalesCondition } from "@/app/actions/admin.actions";
+import { upsertSalesCondition } from "@/app/admin/actions/sales-conditions.actions";
 import type { FormConfig } from "../../_components/entity-dialog";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -247,5 +247,3 @@ export const salesConditionFormConfig: FormConfig<typeof salesConditionSchema> =
   getDefaultValues: getSalesConditionDefaultValues,
   renderFields: (form: any) => <RenderFields form={form} />,
 };
-
-    

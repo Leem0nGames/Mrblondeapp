@@ -1,5 +1,6 @@
 
-import { getClientsWithPendingAgreements, getDashboardStats, getPendingOrders } from "@/app/actions/admin.actions";
+import { getDashboardStats, getPendingOrders } from "@/app/admin/actions/dashboard.actions";
+import { getClientsWithPendingAgreements } from "@/app/admin/actions/clients.actions";
 import { PageHeader } from "@/components/shared/page-header";
 import { 
     Card,
@@ -51,5 +52,3 @@ export default async function AdminDashboardPage() {
         </div>
     );
 }
-
-    

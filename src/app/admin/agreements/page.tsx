@@ -1,5 +1,5 @@
 
-import { getAgreements } from "@/app/actions/admin.actions";
+import { getAgreements } from "@/app/admin/actions/agreements.actions";
 import AgreementsTable from "./_components/agreements-table";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -53,5 +53,3 @@ export default async function AgreementsPage() {
     </div>
   );
 }
-
-    

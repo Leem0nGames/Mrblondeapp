@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { unassignPromotionFromAgreement } from "@/app/actions/admin.actions";
+import { unassignPromotionFromAgreement } from "@/app/admin/actions/agreements.actions";
 import { useToast } from "@/hooks/use-toast";
 import { X } from "lucide-react";
 

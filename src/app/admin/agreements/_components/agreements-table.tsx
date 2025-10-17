@@ -41,7 +41,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { deleteAgreement } from "@/app/actions/admin.actions";
+import { deleteAgreement } from "@/app/admin/actions/agreements.actions";
 import type { AgreementWithCount } from "@/types";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { agreementFormConfig } from "../_components/form-config";

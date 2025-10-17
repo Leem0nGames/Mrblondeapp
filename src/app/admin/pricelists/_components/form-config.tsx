@@ -5,7 +5,7 @@ import { z } from "zod";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { upsertPriceList } from "@/app/actions/admin.actions";
+import { upsertPriceList } from "@/app/admin/actions/pricelists.actions";
 import type { FormConfig } from "../../_components/entity-dialog";
 
 const formSchema = z.object({
@@ -63,5 +63,3 @@ export const priceListFormConfig: FormConfig<typeof formSchema> = {
   getDefaultValues: getDefaultValues,
   renderFields: renderFields,
 };
-
-    

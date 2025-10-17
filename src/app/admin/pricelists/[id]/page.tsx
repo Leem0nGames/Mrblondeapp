@@ -1,7 +1,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, Edit, FileWarning, Package, PlusCircle } from "lucide-react";
-import { getPriceListById } from "@/app/actions/admin.actions";
+import { getPriceListById } from "@/app/admin/actions/pricelists.actions";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -84,5 +84,3 @@ export default async function PriceListDetailPage({
     </div>
   );
 }
-
-    
