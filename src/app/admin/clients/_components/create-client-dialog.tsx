@@ -23,13 +23,15 @@ import type { Agreement, Client } from "@/types";
 import { Copy, Check, FilePen } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AssignAgreementDialog } from "./assign-agreement-dialog";
+import { useRouter } from "next/navigation";
 
 
 export function CreateClientDialog({ children, open, onOpenChange }: { children: React.ReactNode, open: boolean, onOpenChange: (open: boolean) => void }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const router = useRouter();
   
-  const [invitation, setInvitation] = useState<{link: string, client: Pick<Client, 'id' | 'agreement_id'>} | null>(null);
+  const [invitation, setInvitation] = useState<{link: string, client: Pick<Client, 'id' | 'agreement_id' | 'onboarding_token'>} | null>(null);
   const [hasCopied, setHasCopied] = useState(false);
 
   const handleInvite = () => {
@@ -40,6 +42,8 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
           } else {
               const link = `${window.location.origin}/onboarding/${result.data.onboarding_token}`;
               setInvitation({ link, client: result.data });
+              // Refresh the client list in the background
+              router.refresh();
           }
       });
   };
