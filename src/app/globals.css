@@ -5,81 +5,79 @@
 
 @layer base {
   :root {
-    /* 🎨 Paleta de día (inspirada en la imagen) */
-    --background: 45 44% 91%; /* Arena claro */
-    --foreground: 45 10% 15%; /* Negro carbón */
-    
-    --card: 45 44% 97%; /* Arena aún más claro / Blanco hueso */
-    --card-foreground: 45 10% 15%;
-    
-    --popover: 45 44% 97%;
-    --popover-foreground: 45 10% 15%;
-    
-    --primary: 45 10% 15%; /* Negro carbón como primario */
-    --primary-foreground: 45 44% 91%; /* Arena claro para texto en primario */
+    --background: 0 0% 0%; /* Negro carbón */
+    --foreground: 0 0% 100%; /* Blanco puro */
 
-    --secondary: 45 20% 85%; /* Arena intermedio */
-    --secondary-foreground: 45 10% 15%;
-    
-    --muted: 45 20% 88%;
-    --muted-foreground: 45 5% 40%;
-    
-    --accent: 45 20% 85%;
-    --accent-foreground: 45 10% 15%;
-    
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    
-    --border: 45 20% 80%;
-    --input: 45 20% 80%;
-    --ring: 45 10% 15%;
-    
-    --radius: 0.5rem;
+    --card: 0 0% 11%; /* Gris humo */
+    --card-foreground: 0 0% 100%;
 
-    /* Gráficos */
-    --chart-1: 30 80% 55%;
-    --chart-2: 10 55% 40%;
-    --chart-3: 50 45% 30%;
-    --chart-4: 40 70% 65%;
-    --chart-5: 25 75% 60%;
-  }
+    --popover: 0 0% 11%;
+    --popover-foreground: 0 0% 100%;
 
-  .dark {
-    /* 🌙 Paleta oscura (inspirada en la imagen) */
-    --background: 0 0% 13%; /* Negro carbón de la imagen */
-    --foreground: 0 0% 90%; /* Blanco hueso para texto */
+    --primary: 41 47% 57%; /* Dorado cálido */
+    --primary-foreground: 0 0% 0%; /* Negro para texto en primario */
 
-    --card: 0 0% 15%;
-    --card-foreground: 0 0% 90%;
+    --secondary: 40 18% 57%; /* Beige tostado */
+    --secondary-foreground: 0 0% 0%;
 
-    --popover: 0 0% 13%;
-    --popover-foreground: 0 0% 90%;
-
-    --primary: 45 53% 73%; /* Beige Arena como primario */
-    --primary-foreground: 0 0% 13%; /* Negro carbón para texto en primario */
-
-    --secondary: 0 0% 20%;
-    --secondary-foreground: 0 0% 90%;
-
-    --muted: 0 0% 20%;
+    --muted: 0 0% 11%;
     --muted-foreground: 0 0% 60%;
 
-    --accent: 0 0% 22%;
-    --accent-foreground: 0 0% 95%;
+    --accent: 0 0% 11%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 22%;
-    --input: 0 0% 22%;
-    --ring: 45 53% 73%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 41 47% 57%; /* Dorado cálido */
+    
+    --radius: 0.5rem;
+
+    /* Gráficos */
+    --chart-1: 41 47% 57%;
+    --chart-2: 40 18% 57%;
+    --chart-3: 0 0% 50%;
+    --chart-4: 0 0% 70%;
+    --chart-5: 0 0% 30%;
+  }
+
+  .dark {
+    --background: 0 0% 0%; /* Negro carbón */
+    --foreground: 0 0% 100%; /* Blanco puro */
+
+    --card: 0 0% 11%; /* Gris humo */
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 11%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 41 47% 57%; /* Dorado cálido */
+    --primary-foreground: 0 0% 0%; /* Negro para texto en primario */
+
+    --secondary: 40 18% 57%; /* Beige tostado */
+    --secondary-foreground: 0 0% 0%;
+
+    --muted: 0 0% 11%;
+    --muted-foreground: 0 0% 60%;
+
+    --accent: 0 0% 11%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 41 47% 57%; /* Dorado cálido */
 
      /* Gráficos */
-    --chart-1: 45 53% 73%;
-    --chart-2: 30 50% 65%;
-    --chart-3: 15 60% 60%;
-    --chart-4: 50 40% 70%;
-    --chart-5: 0 0% 50%;
+    --chart-1: 41 47% 57%;
+    --chart-2: 40 18% 57%;
+    --chart-3: 0 0% 50%;
+    --chart-4: 0 0% 70%;
+    --chart-5: 0 0% 30%;
   }
 
   * {

@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { cn } from "@/lib/utils";
@@ -12,6 +11,11 @@ export function Logo({
   className?: string;
   showText?: boolean;
 }) {
+  const textStyle: React.CSSProperties = {
+    filter: 'drop-shadow(1px 2px 1px hsl(41 47% 57% / 0.7))',
+    color: '#FFFFFF'
+  };
+
   if (showText) {
     return (
         <div
@@ -23,7 +27,7 @@ export function Logo({
             <div className="bg-primary text-primary-foreground p-1.5 rounded-md">
                 <Atom className="h-5 w-5" />
             </div>
-            <span className={cn("font-extrabold tracking-tighter text-xl")}>
+            <span style={textStyle} className={cn("font-extrabold tracking-tighter text-xl")}>
                 MR. BLONDE
             </span>
         </div>

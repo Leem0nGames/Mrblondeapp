@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
 import { cn } from '@/lib/utils';
-import { Alegreya, Belleza, Source_Code_Pro } from 'next/font/google';
+import { Belleza, Source_Code_Pro } from 'next/font/google';
 
 const belleza = Belleza({
   subsets: ['latin'],
@@ -11,14 +11,9 @@ const belleza = Belleza({
   variable: '--font-headline',
 });
 
-const alegreya = Alegreya({
-  subsets: ['latin'],
-  variable: '--font-body',
-});
-
 const sourceCodePro = Source_Code_Pro({
   subsets: ['latin'],
-  variable: '--font-code',
+  variable: '--font-body',
 });
 
 
@@ -38,7 +33,6 @@ export default function RootLayout({
         className={cn(
           "font-body antialiased min-h-screen bg-background",
           belleza.variable,
-          alegreya.variable,
           sourceCodePro.variable
         )}
         suppressHydrationWarning={true}
