@@ -326,13 +326,21 @@ export async function submitOrder(payload: {
         return { error: { message: "No se pudo registrar el pedido en la base de datos." } };
     }
 
+    const totalItemsInCart = payload.cart.reduce((acc, item) => acc + item.quantity, 0);
+    const isVolumeActive = totalItemsInCart >= 150;
+
     // 2. Create the order items
-    const orderItems = payload.cart.map(item => ({
+    const orderItems = payload.cart.map(item => {
+      const useVolumePrice = isVolumeActive && item.product.volume_price && item.product.volume_price < item.product.price;
+      const pricePerUnit = useVolumePrice ? item.product.volume_price! : item.product.price;
+      
+      return {
         order_id: order.id,
         product_id: item.product.id,
         quantity: item.quantity,
-        price_per_unit: item.product.price,
-    }));
+        price_per_unit: pricePerUnit,
+      };
+    });
 
     const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
 
