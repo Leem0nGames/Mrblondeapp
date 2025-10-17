@@ -316,7 +316,7 @@ export async function submitOrder(payload: {
             total_amount: payload.total,
             status: 'pending',
             client_name_cache: payload.clientName,
-            notes: payload.notes
+            notes: payload.notes || null, // Ensure notes is null if undefined/empty
         })
         .select()
         .single();
