@@ -4,6 +4,8 @@
 import { useState } from 'react';
 import { APIProvider, Map, AdvancedMarker, Pin, InfoWindow } from '@vis.gl/react-google-maps';
 import type { Client } from '@/types';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
 type ClientMapProps = {
   clients: Client[];
@@ -17,7 +19,15 @@ export function ClientMap({ clients, center, zoom, style = { height: "400px" } }
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
   if (!apiKey) {
-    return <div className="flex items-center justify-center h-full bg-muted rounded-lg"><p className="text-destructive">La clave de API de Google Maps no está configurada.</p></div>;
+    return (
+        <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Error de Configuración</AlertTitle>
+            <AlertDescription>
+                La clave de API de Google Maps (`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`) no está configurada en tu archivo `.env.local`. El mapa no puede funcionar sin ella.
+            </AlertDescription>
+        </Alert>
+    )
   }
   
   // Filter out clients without valid coordinates
@@ -34,13 +44,16 @@ export function ClientMap({ clients, center, zoom, style = { height: "400px" } }
   }
 
   return (
-    <div style={style} className="w-full rounded-lg overflow-hidden">
-        <APIProvider apiKey={apiKey}>
+    <div style={style} className="w-full rounded-lg overflow-hidden border">
+        <APIProvider apiKey={apiKey}
+            onLoad={() => console.log('Google Maps API cargada exitosamente.')}
+        >
             <Map 
                 zoom={zoom} 
                 center={center} 
                 gestureHandling={'greedy'}
                 disableDefaultUI={true}
+                className="w-full h-full"
             >
                 {clientsWithCoords.map((client) => (
                     <AdvancedMarker 
@@ -63,4 +76,3 @@ export function ClientMap({ clients, center, zoom, style = { height: "400px" } }
     </div>
   );
 }
-
