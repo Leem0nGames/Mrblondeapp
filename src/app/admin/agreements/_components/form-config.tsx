@@ -1,4 +1,3 @@
-
 "use client";
 
 import { z } from "zod";
@@ -30,7 +29,7 @@ const AgreementFormFields = ({ form, priceLists = [], onPriceListCreated = () =>
     return result;
   };
   
-  const priceListDialogConfig: FormConfig<any> = {
+  const newPriceListDialogConfig: FormConfig<any> = {
       ...priceListFormConfig,
       upsertAction: upsertPriceListActionWithCallback,
   };
@@ -104,9 +103,9 @@ const AgreementFormFields = ({ form, priceLists = [], onPriceListCreated = () =>
       
        <div className="text-sm">
         <span>¿La lista que buscas no existe?</span>
-          <EntityDialog formConfig={priceListDialogConfig} entity={undefined}>
+          <EntityDialog formConfig={newPriceListDialogConfig} entity={undefined}>
              <Button variant="link" size="sm" type="button" className="p-1 h-auto">
-                o, Crear una nueva lista
+                Crear una nueva lista
             </Button>
           </EntityDialog>
       </div>
