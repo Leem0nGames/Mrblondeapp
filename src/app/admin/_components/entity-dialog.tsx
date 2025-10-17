@@ -105,25 +105,25 @@ export function EntityDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg grid-rows-[auto_1fr_auto] p-0 max-h-[90vh]">
+      <DialogContent className="sm:max-w-lg grid-rows-[auto_1fr_auto] p-0 max-h-[90vh] flex flex-col">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 overflow-y-auto">
-          <ScrollArea className="h-full w-full">
-            <FormProvider {...form}>
-              <form
-                id={`entity-form-${entityName}`}
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-4 px-6"
-              >
-                {renderFormContent()}
-              </form>
-            </FormProvider>
-          </ScrollArea>
-        </div>
-        <DialogFooter className="p-6 pt-2 border-t">
+        <ScrollArea className="h-full w-full">
+            <div className="px-6 pb-6">
+                <FormProvider {...form}>
+                <form
+                    id={`entity-form-${entityName}`}
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className="space-y-4"
+                >
+                    {renderFormContent()}
+                </form>
+                </FormProvider>
+            </div>
+        </ScrollArea>
+        <DialogFooter className="p-6 pt-2 border-t mt-auto">
           <DialogClose asChild>
             <Button variant="outline" type="button">
               Cancelar
