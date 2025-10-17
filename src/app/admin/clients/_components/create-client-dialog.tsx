@@ -19,35 +19,72 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { createClientForInvitation } from "@/app/admin/actions/clients.actions";
-import type { Agreement, Client } from "@/types";
+import { getAgreements } from "@/app/admin/actions/agreements.actions";
+import type { AgreementWithCount } from "@/types";
 import { Copy, Check, FilePen } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AssignAgreementDialog } from "./assign-agreement-dialog";
 import { useRouter } from "next/navigation";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+
+
+const formSchema = z.object({
+  agreementId: z.string().nullable(),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 
 export function CreateClientDialog({ children, open, onOpenChange }: { children: React.ReactNode, open: boolean, onOpenChange: (open: boolean) => void }) {
-  const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
-  
-  const [invitation, setInvitation] = useState<{link: string, client: Pick<Client, 'id' | 'agreement_id' | 'onboarding_token'>} | null>(null);
-  const [hasCopied, setHasCopied] = useState(false);
+  const [isGenerating, startGeneration] = useTransition();
+  const [isLoadingData, startLoadingData] = useTransition();
 
-  const handleInvite = () => {
-      startTransition(async () => {
-          const result = await createClientForInvitation();
+  const { toast } = useToast();
+  const router = useRouter();
+  
+  const [invitationLink, setInvitationLink] = useState<string | null>(null);
+  const [hasCopied, setHasCopied] = useState(false);
+  const [agreements, setAgreements] = useState<AgreementWithCount[]>([]);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      agreementId: null,
+    },
+  });
+
+  const fetchAgreements = useCallback(() => {
+    startLoadingData(async () => {
+      const { data } = await getAgreements();
+      setAgreements(data ?? []);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      fetchAgreements();
+    }
+  }, [open, fetchAgreements]);
+
+
+  const onSubmit = (values: FormValues) => {
+      startGeneration(async () => {
+          const result = await createClientForInvitation(values.agreementId);
           if (result.error || !result.data) {
-              toast({ title: "Error", description: result.error?.message || 'No se pudo crear la invitación para el cliente.', variant: "destructive" });
+              toast({ title: "Error", description: result.error?.message || 'No se pudo crear la invitación.', variant: "destructive" });
           } else {
-              const link = `${window.location.origin}/onboarding/${result.data.onboarding_token}`;
-              setInvitation({ link, client: result.data });
+              const link = `${window.location.origin}${result.data.link}`;
+              setInvitationLink(link);
+              toast({ title: "¡Enlace Generado!", description: "Ahora puedes copiar el enlace y enviarlo." });
+              router.refresh();
           }
       });
   };
 
   const handleCopyToClipboard = () => {
-    if (!invitation) return;
-    navigator.clipboard.writeText(invitation.link);
+    if (!invitationLink) return;
+    navigator.clipboard.writeText(invitationLink);
     setHasCopied(true);
     toast({ title: "Enlace copiado al portapapeles" });
     setTimeout(() => setHasCopied(false), 2000);
@@ -57,10 +94,82 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
       onOpenChange(isOpen);
       if (!isOpen) {
           setTimeout(() => {
-            setInvitation(null);
+            setInvitationLink(null);
             setHasCopied(false);
+            form.reset();
           }, 300);
       }
+  }
+  
+  const renderContent = () => {
+      if (invitationLink) {
+          return (
+             <div className="space-y-4">
+                <Alert>
+                    <AlertTitle>¡Enlace de Invitación Generado!</AlertTitle>
+                    <AlertDescription className="break-all mt-2">
+                        {invitationLink}
+                    </AlertDescription>
+                </Alert>
+                <Button onClick={handleCopyToClipboard} className="w-full">
+                    {hasCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                    {hasCopied ? "Copiado" : "Copiar Enlace"}
+                </Button>
+            </div>
+          );
+      }
+
+      if (isLoadingData) {
+          return (
+            <div className="space-y-4 py-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          );
+      }
+
+      return (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+               <FormField
+                control={form.control}
+                name="agreementId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Convenio a Asignar</FormLabel>
+                    <Select 
+                      onValueChange={(value) => field.onChange(value === 'null' ? null : value)} 
+                      defaultValue={field.value ?? 'null'}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un convenio..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="null">Ninguno (se asignará después)</SelectItem>
+                        {agreements.map(agreement => (
+                          <SelectItem key={agreement.id} value={agreement.id}>
+                            {agreement.agreement_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <DialogFooter className="pt-4 !mt-0">
+                  <DialogClose asChild>
+                      <Button variant="outline" type="button">Cancelar</Button>
+                  </DialogClose>
+                  <Button type="submit" disabled={isGenerating}>
+                      {isGenerating ? "Generando..." : "Generar Enlace"}
+                  </Button>
+              </DialogFooter>
+            </form>
+        </Form>
+      )
   }
 
   return (
@@ -68,55 +177,25 @@ export function CreateClientDialog({ children, open, onOpenChange }: { children:
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Agregar Nuevo Cliente por Invitación</DialogTitle>
+          <DialogTitle>Invitar Nuevo Cliente</DialogTitle>
           <DialogDescription>
-            Genera un enlace único para que el cliente complete sus datos. Puedes pre-asignar un convenio antes de enviar el enlace.
+            Selecciona un convenio para pre-asignar y genera un enlace único para que el cliente complete sus datos.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4 space-y-6">
-            {invitation ? (
-                <div className="space-y-4">
-                    <Alert>
-                        <AlertTitle>¡Enlace Generado!</AlertTitle>
-                        <AlertDescription className="break-all">
-                            {invitation.link}
-                        </AlertDescription>
-                    </Alert>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                        <Button onClick={handleCopyToClipboard} className="w-full">
-                            {hasCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-                            {hasCopied ? "Copiado" : "Copiar Enlace"}
-                        </Button>
-                        <AssignAgreementDialog client={invitation.client as Client}>
-                            <Button variant="secondary" className="w-full">
-                                <FilePen className="mr-2 h-4 w-4" />
-                                {invitation.client.agreement_id ? 'Cambiar Convenio' : 'Asignar Convenio'}
-                            </Button>
-                        </AssignAgreementDialog>
-                    </div>
-                </div>
-            ) : (
-                 <div className="text-center py-6">
-                    <Button onClick={handleInvite} disabled={isPending} className="w-full sm:w-auto">
-                        {isPending ? "Generando..." : "Generar Enlace de Invitación"}
-                    </Button>
-                 </div>
-            )}
+        <div className="py-4">
+           {renderContent()}
         </div>
         
-        <DialogFooter>
-           <DialogClose asChild>
-                <Button variant="outline">
-                    {invitation ? "Listo" : "Cancelar"}
-                </Button>
-           </DialogClose>
-            {invitation && (
-                 <Button onClick={handleInvite} disabled={isPending} variant="ghost">
-                    {isPending ? "Generando..." : "Generar Otro Enlace"}
-                </Button>
-            )}
-        </DialogFooter>
+         {invitationLink && (
+             <DialogFooter>
+                <DialogClose asChild>
+                    <Button variant="outline">
+                        Cerrar
+                    </Button>
+                </DialogClose>
+            </DialogFooter>
+         )}
       </DialogContent>
     </Dialog>
   );

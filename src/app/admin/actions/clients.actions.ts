@@ -62,27 +62,33 @@ export async function getClientStats(clientId: string): Promise<{ data: ClientSt
     return { data, error: null };
 }
 
-export async function createClientForInvitation(): Promise<{ data: Pick<Client, "id" | "onboarding_token" | "agreement_id"> | null, error: any }> {
+export async function createClientForInvitation(agreementId: string | null): Promise<{ data: { link: string; } | null, error: any }> {
     const supabase = await getSupabaseClientWithAuth();
     
     const placeholderName = `Cliente Pendiente - ${new Date().toISOString()}`;
+    const onboardingToken = crypto.randomUUID();
+
     const { data: client, error } = await supabase
         .from('clients')
         .insert({
             status: 'pending_onboarding',
-            onboarding_token: crypto.randomUUID(),
+            onboarding_token: onboardingToken,
             contact_name: placeholderName,
+            agreement_id: agreementId,
         })
-        .select('id, onboarding_token, agreement_id')
+        .select('id')
         .single();
 
     if (error || !client) {
         console.error("createClientForInvitation error:", error?.message);
         return { data: null, error: { message: 'No se pudo crear la invitación para el cliente.' } };
     }
+    
+    // The revalidation is what's causing issues with cookies. We'll handle state update on the client.
+    // revalidatePath("/admin/clients");
 
-    revalidatePath("/admin/clients");
-    return { data: client, error: null };
+    const link = `/onboarding/${onboardingToken}`;
+    return { data: { link }, error: null };
 }
 
 export async function createFullClient(payload: Omit<Client, 'id' | 'created_at' | 'status' | 'onboarding_token' | 'agreements'> & {
