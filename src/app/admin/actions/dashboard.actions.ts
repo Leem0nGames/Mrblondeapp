@@ -24,7 +24,16 @@ export async function getDashboardData() {
     }
     
     return {
-        stats: stats ?? { total_revenue: 0, month_revenue: 0, active_clients: 0, overdue_orders_count: 0 },
+        stats: stats ?? { 
+            total_revenue: 0, 
+            month_revenue: 0, 
+            active_clients: 0, 
+            overdue_orders_count: 0,
+            total_clients: 0,
+            total_pricelists: 0,
+            total_promotions: 0,
+            total_sales_conditions: 0,
+        },
         pendingOrders: pendingOrdersResult.data ?? [],
         pendingClients: pendingClientsResult.data ?? [],
         error: statsError || pendingOrdersResult.error || pendingClientsResult.error,
@@ -86,13 +95,16 @@ export async function completeOrder(orderId: string, orderTotal: number) {
         return { error: orderUpdateError };
     }
 
+    // Note: The RPC function 'increment_total_revenue' is a placeholder in this schema.
+    // In a real-world scenario, you might have a more robust way to update aggregated stats.
     const { error: rpcError } = await supabase.rpc('increment_total_revenue', {
       amount_to_add: orderTotal
     });
 
     if (rpcError) {
         console.error("completeOrder (rpc) error:", rpcError.message);
-        return { error: rpcError };
+        // We don't return the error here because the main action (completing order) was successful.
+        // Failing to update stats should not block the UX.
     }
 
     revalidatePath('/admin');

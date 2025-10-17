@@ -1,5 +1,3 @@
-
-
 // These types are manually created to match the Supabase schema.
 // For a more robust solution, you can use `supabase gen types typescript`.
 
@@ -105,7 +103,7 @@ export type Client = {
     email: string | null;
     instagram: string | null;
     status: 'pending_onboarding' | 'pending_agreement' | 'active' | 'archived';
-    onboarding_token: string;
+    onboarding_token: string | null;
     agreement_id: string | null;
     created_at: string;
     fiscal_status: string | null;
@@ -127,6 +125,10 @@ export type DashboardStats = {
     total_revenue: number;
     month_revenue: number;
     active_clients: number;
+    total_clients: number;
+    total_pricelists: number;
+    total_promotions: number;
+    total_sales_conditions: number;
 }
 
 export type ClientStats = {
