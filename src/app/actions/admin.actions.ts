@@ -752,7 +752,7 @@ export async function getPendingOrders(): Promise<Order[]> {
     const supabase = await getSupabaseClientWithAuth();
     const { data, error } = await supabase
         .from("orders")
-        .select("*")
+        .select("id, client_id, agreement_id, created_at, total_amount, status, client_name_cache, notes")
         .eq("status", "pending")
         .order("created_at", { ascending: false })
         .limit(5);
@@ -819,7 +819,7 @@ export async function completeOrder(orderId: string, orderTotal: number) {
         return { error: orderUpdateError };
     }
 
-    const { error: rpcError } = await supabase.rpc('increment_total_revenue(numeric)', {
+    const { error: rpcError } = await supabase.rpc('increment_total_revenue', {
       amount_to_add: orderTotal
     });
 
