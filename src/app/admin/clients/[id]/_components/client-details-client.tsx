@@ -4,7 +4,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useTransition, useCallback, useEffect, useState } from "react";
-import { Info, Landmark, ArrowLeft, Edit, FilePen, Printer } from "lucide-react";
+import { Info, Landmark, ArrowLeft, Edit, FilePen, MapPin } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ClientHeader } from "./client-header";
@@ -13,12 +13,13 @@ import { ClientStats } from "./client-stats";
 import { ClientOrders } from "./client-orders";
 import type { Client, ClientStats as StatsType, Order, AgreementSalesCondition } from "@/types";
 import { Skeleton } from '@/components/ui/skeleton';
-import { deleteClient } from "@/app/admin/actions/clients.actions";
+import { deleteClient, geocodeAddressAndSave } from "@/app/admin/actions/clients.actions";
 import { getAgreementSalesConditions } from "@/app/admin/actions/agreements.actions";
 import { useToast } from "@/hooks/use-toast";
 import { OnboardingFormDialog } from './onboarding-form-dialog';
 import { AssignAgreementDialog } from '../../_components/assign-agreement-dialog';
 import { ActionButton, ActionButtonWrapper } from './client-action-buttons';
+import { ClientMap } from '@/app/admin/_components/client-map';
 
 
 const formatRule = (rules: any): string => {
@@ -48,9 +49,10 @@ type ClientDetailsClientProps = {
     orders: Order[];
 }
 
-export function ClientDetailsClient({ client, stats, orders }: ClientDetailsClientProps) {
+export function ClientDetailsClient({ client: initialClient, stats, orders }: ClientDetailsClientProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const [client, setClient] = useState(initialClient);
   const [salesConditions, setSalesConditions] = useState<AgreementSalesCondition[]>([]);
   const [isLoadingConditions, setIsLoadingConditions] = useState(true);
 
@@ -61,6 +63,20 @@ export function ClientDetailsClient({ client, stats, orders }: ClientDetailsClie
       setOrderLink(`${window.location.origin}/pedido/${client.agreement_id}`);
     }
   }, [client.agreement_id, client.status]);
+  
+  useEffect(() => {
+      if (client.address && !client.latitude && !client.longitude) {
+          geocodeAddressAndSave(client.id, client.address).then(({data, error}) => {
+              if (data) {
+                  setClient(prev => ({...prev, latitude: data.latitude, longitude: data.longitude}));
+                  toast({title: "Geocodificación Exitosa", description: "Se encontraron y guardaron las coordenadas del cliente."});
+              }
+              if(error) {
+                   toast({title: "Geocodificación Fallida", description: error.message, variant: "destructive"});
+              }
+          })
+      }
+  }, [client.id, client.address, client.latitude, client.longitude, toast]);
 
   useEffect(() => {
     if (client.agreement_id) {
@@ -143,45 +159,61 @@ export function ClientDetailsClient({ client, stats, orders }: ClientDetailsClie
       />
 
       {stats && <div><ClientStats stats={stats} /></div>}
-      
-      <Card className="bg-secondary/50">
-          <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                  <Info className="h-5 w-5"/>
-                  Información Clave
-              </CardTitle>
-              <CardDescription>Resumen de las condiciones fiscales y comerciales más importantes para este cliente.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-1 rounded-lg bg-background p-4">
-                  <p className="text-sm font-medium text-muted-foreground">Condición Fiscal</p>
-                  <p className="text-lg font-semibold">{client.fiscal_status || "No especificada"}</p>
-              </div>
-               <div className="space-y-2 rounded-lg bg-background p-4">
-                  <p className="text-sm font-medium text-muted-foreground">Condiciones de Venta (del Convenio)</p>
-                   {isLoadingConditions ? <Skeleton className="h-8 w-3/4" /> : salesConditions.length > 0 ? (
-                      <ul className="space-y-2 text-sm">
-                          {salesConditions.map(sc => (
-                              <li key={sc.sales_conditions.id} className="flex items-center gap-2">
-                                 <Landmark className="h-4 w-4 text-primary"/>
-                                 <span className="font-medium">{sc.sales_conditions.name}:</span>
-                                 <span className="text-muted-foreground">{formatRule(sc.sales_conditions.rules)}</span>
-                              </li>
-                          ))}
-                      </ul>
-                  ) : (
-                      <p className="text-sm text-muted-foreground">No hay condiciones especiales asignadas.</p>
-                  )}
-              </div>
-          </CardContent>
-      </Card>
 
       <div className="grid gap-4 md:grid-cols-3 md:gap-8">
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 grid gap-4 auto-rows-min">
               <ClientOrders orders={orders} />
+              
+              <Card>
+                  <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <MapPin className="h-5 w-5"/>
+                        Ubicación
+                      </CardTitle>
+                      <CardDescription>Mapa interactivo con la ubicación del cliente.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                      <ClientMap 
+                        clients={[client]}
+                        center={{ lat: client.latitude ?? -34.6037, lng: client.longitude ?? -58.3816 }}
+                        zoom={client.latitude ? 14 : 4}
+                      />
+                  </CardContent>
+              </Card>
           </div>
           <div className="md:col-span-1 grid gap-4 auto-rows-min">
               <ClientInfo client={client} onCopy={copyToClipboard} />
+               <Card className="bg-secondary/50">
+                  <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                          <Info className="h-5 w-5"/>
+                          Información Clave
+                      </CardTitle>
+                      <CardDescription>Resumen de las condiciones fiscales y comerciales.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-4">
+                      <div className="space-y-1 rounded-lg bg-background p-4">
+                          <p className="text-sm font-medium text-muted-foreground">Condición Fiscal</p>
+                          <p className="text-lg font-semibold">{client.fiscal_status || "No especificada"}</p>
+                      </div>
+                      <div className="space-y-2 rounded-lg bg-background p-4">
+                          <p className="text-sm font-medium text-muted-foreground">Condiciones de Venta (del Convenio)</p>
+                          {isLoadingConditions ? <Skeleton className="h-8 w-3/4" /> : salesConditions.length > 0 ? (
+                              <ul className="space-y-2 text-sm">
+                                  {salesConditions.map(sc => (
+                                      <li key={sc.sales_conditions.id} className="flex items-center gap-2">
+                                        <Landmark className="h-4 w-4 text-primary"/>
+                                        <span className="font-medium">{sc.sales_conditions.name}:</span>
+                                        <span className="text-muted-foreground">{formatRule(sc.sales_conditions.rules)}</span>
+                                      </li>
+                                  ))}
+                              </ul>
+                          ) : (
+                              <p className="text-sm text-muted-foreground">No hay condiciones especiales asignadas.</p>
+                          )}
+                      </div>
+                  </CardContent>
+              </Card>
           </div>
       </div>
     </>

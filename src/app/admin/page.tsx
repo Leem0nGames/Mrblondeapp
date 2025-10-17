@@ -1,6 +1,6 @@
 
 import { getDashboardStats, getPendingOrders } from "@/app/admin/actions/dashboard.actions";
-import { getClientsWithPendingAgreements } from "@/app/admin/actions/clients.actions";
+import { getClients, getClientsWithPendingAgreements } from "@/app/admin/actions/clients.actions";
 import { PageHeader } from "@/components/shared/page-header";
 import { 
     Card,
@@ -12,11 +12,17 @@ import {
 import { DashboardStats } from "./_components/dashboard-stats";
 import { RecentOrders } from "./_components/recent-orders";
 import { PendingClients } from "./_components/pending-clients";
+import { ClientMap } from "./_components/client-map";
 
 export default async function AdminDashboardPage() {
-    const stats = await getDashboardStats();
-    const pendingOrders = await getPendingOrders();
-    const pendingClients = await getClientsWithPendingAgreements();
+    const [stats, pendingOrders, pendingClients, allClients] = await Promise.all([
+      getDashboardStats(),
+      getPendingOrders(),
+      getClientsWithPendingAgreements(),
+      getClients()
+    ]);
+    
+    const clientsWithCoords = allClients.data?.filter(c => c.latitude && c.longitude) ?? [];
 
     return (
         <div className="grid flex-1 items-start gap-4 md:gap-8">
@@ -37,17 +43,34 @@ export default async function AdminDashboardPage() {
                         <RecentOrders orders={pendingOrders} />
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Clientes Pendientes</CardTitle>
-                        <CardDescription>
-                            Clientes que completaron el alta y esperan un convenio.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <PendingClients clients={pendingClients} />
-                    </CardContent>
-                </Card>
+                <div className="space-y-4">
+                  <Card>
+                      <CardHeader>
+                          <CardTitle>Clientes Pendientes</CardTitle>
+                          <CardDescription>
+                              Clientes que completaron el alta y esperan un convenio.
+                          </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <PendingClients clients={pendingClients} />
+                      </CardContent>
+                  </Card>
+                   <Card>
+                      <CardHeader>
+                          <CardTitle>Mapa de Clientes</CardTitle>
+                          <CardDescription>
+                              Ubicación de tus clientes activos.
+                          </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ClientMap 
+                           clients={clientsWithCoords}
+                           center={{ lat: -38.4161, lng: -63.6167 }} // Center of Argentina
+                           zoom={4}
+                        />
+                      </CardContent>
+                  </Card>
+                </div>
             </div>
         </div>
     );
