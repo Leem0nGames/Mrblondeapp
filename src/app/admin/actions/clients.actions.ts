@@ -210,3 +210,44 @@ export async function getClientsWithPendingAgreements(): Promise<Client[]> {
     }
     return data;
 }
+
+export async function geocodeAddressAndSave(clientId: string, address: string) {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+        console.error("Google Maps API key is not configured.");
+        return { error: { message: "Google Maps API key is not configured." } };
+    }
+
+    try {
+        const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`);
+        const data = await response.json();
+
+        if (data.status !== 'OK' || !data.results[0]) {
+            console.warn(`Geocoding failed for address: ${address}. Status: ${data.status}`);
+            return { error: { message: `No se pudieron encontrar coordenadas para la dirección. Status: ${data.status}` } };
+        }
+
+        const location = data.results[0].geometry.location;
+        const { lat, lng } = location;
+
+        const supabase = await getSupabaseClientWithAuth();
+        const { error: updateError } = await supabase
+            .from('clients')
+            .update({ latitude: lat, longitude: lng })
+            .eq('id', clientId);
+
+        if (updateError) {
+            console.error("Error saving geocoded address:", updateError.message);
+            return { error: updateError };
+        }
+
+        revalidatePath(`/admin/clients/${clientId}`);
+        revalidatePath(`/admin`);
+
+        return { data: { latitude: lat, longitude: lng }, error: null };
+
+    } catch (error: any) {
+        console.error("Geocoding fetch error:", error.message);
+        return { error: { message: "Error al conectar con el servicio de geocodificación." } };
+    }
+}
