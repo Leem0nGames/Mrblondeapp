@@ -1,5 +1,3 @@
-
-
 import placeholderData from './placeholder-images.json';
 
 type ImageType = keyof typeof placeholderData;

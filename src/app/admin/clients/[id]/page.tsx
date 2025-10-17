@@ -1,23 +1,12 @@
 
 
 import Link from "next/link";
+import dynamic from 'next/dynamic';
 import { FileWarning } from "lucide-react";
 import { getClientById, getClientStats } from "@/app/admin/actions/clients.actions";
 import { getClientOrders } from "@/app/admin/actions/dashboard.actions";
 import { Button } from "@/components/ui/button";
-import ClientDetailsClient from "./_components/client-details-client";
-import dynamic from "next/dynamic";
 import { Skeleton } from "@/components/ui/skeleton";
-
-
-const ClientDetailsClientDynamic = dynamic(
-  () => import('./_components/client-details-client'),
-  {
-    loading: () => <ClientDetailsSkeleton />,
-    ssr: false
-  }
-);
-
 
 function ClientDetailsSkeleton() {
     return (
@@ -39,6 +28,15 @@ function ClientDetailsSkeleton() {
         </div>
     )
 }
+
+const ClientDetailsClient = dynamic(
+  () => import('./_components/client-details-client'),
+  {
+    loading: () => <ClientDetailsSkeleton />,
+    ssr: false
+  }
+);
+
 
 export default async function ClientDetailPage({
   params,
@@ -76,7 +74,7 @@ export default async function ClientDetailPage({
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
-        <ClientDetailsClientDynamic 
+        <ClientDetailsClient 
             client={client}
             stats={stats}
             orders={orders}

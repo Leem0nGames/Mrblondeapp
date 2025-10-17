@@ -1,6 +1,6 @@
-
-
 import type { Config } from "tailwindcss";
+
+const { fontFamily } = require("tailwindcss/defaultTheme");
 
 /**
  * TailwindCSS Configuration
@@ -25,8 +25,8 @@ export default {
     extend: {
       // Typography
       fontFamily: {
-        body: ["var(--font-body)"],
-        headline: ["var(--font-headline)"],
+        body: ["var(--font-body)", ...fontFamily.sans],
+        headline: ["var(--font-headline)", ...fontFamily.sans],
       },
 
       // Colors (mapped to CSS variables for theme flexibility)

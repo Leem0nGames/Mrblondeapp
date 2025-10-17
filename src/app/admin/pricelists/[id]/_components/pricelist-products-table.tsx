@@ -91,7 +91,7 @@ export function PriceListProductsTable({ items, priceListId }: { items: PriceLis
             <TableRow key={item.products.id}>
               <TableCell className="hidden sm:table-cell">
                  <Image
-                    src={getImageUrl("product", { seed: item.products.id, width: 48, height: 48 }, item.products.image_url)}
+                    src={getImageUrl("product", { seed: item.products.id }, item.products.image_url)}
                     alt={item.products.name}
                     width={48}
                     height={48}

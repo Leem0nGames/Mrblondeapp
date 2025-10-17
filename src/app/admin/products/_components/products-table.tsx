@@ -89,7 +89,7 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
           <Card key={product.id}>
             <CardHeader className="flex flex-row items-start gap-4">
               <Image
-                src={getImageUrl("product", { seed: product.id, width: 64, height: 64 }, product.image_url)}
+                src={getImageUrl("product", { seed: product.id }, product.image_url)}
                 alt={product.name}
                 width={64}
                 height={64}
@@ -168,7 +168,7 @@ export default function ProductsTable({ products, emptyState }: ProductsTablePro
                 <TableRow key={product.id}>
                   <TableCell>
                     <Image
-                      src={getImageUrl("product", { seed: product.id, width: 48, height: 48 }, product.image_url)}
+                      src={getImageUrl("product", { seed: product.id }, product.image_url)}
                       alt={product.name}
                       width={48}
                       height={48}
