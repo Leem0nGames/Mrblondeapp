@@ -4,7 +4,8 @@
 
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { createClient as createServerClient } from '@/lib/supabase/server';
+import { createClient as createPublicClient } from '@/lib/supabase/client';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { Client, CartItem } from '@/types';
 
@@ -48,7 +49,7 @@ export async function signupSuperAdmin(
     return { error: { message: 'El registro ya no está disponible. Ya existe un administrador.' } };
   }
 
-  const supabase = createClient();
+  const supabase = createServerClient();
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
@@ -85,7 +86,7 @@ export async function login(
   prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
-  const supabase = createClient();
+  const supabase = createServerClient();
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
@@ -112,13 +113,13 @@ export async function login(
 
 
 export async function logout() {
-  const supabase = createClient();
+  const supabase = createServerClient();
   await supabase.auth.signOut();
   redirect('/login');
 }
 
 export async function getOrderPageData(agreementId: string) {
-    const supabase = createClient();
+    const supabase = createPublicClient();
 
     // 1. Get Agreement and related Price List
     const { data: agreement, error: agreementError } = await supabase
@@ -208,7 +209,7 @@ export async function getOrderPageData(agreementId: string) {
 
 // --- Onboarding Actions ---
 export async function getOnboardingClient(token: string): Promise<{ data: Client | null, error: any }> {
-    const supabase = createClient();
+    const supabase = createPublicClient();
     const { data, error } = await supabase
         .from('clients')
         .select('*')
@@ -233,7 +234,7 @@ type SubmitOnboardingPayload = Omit<Client, 'id' | 'created_at' | 'status' | 'ag
 };
 
 export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
-    const supabase = createClient();
+    const supabase = createPublicClient();
     
     const { 
         onboarding_token, 
@@ -305,7 +306,7 @@ export async function submitOrder(payload: {
     clientName: string;
     notes?: string;
 }) {
-    const supabase = createClient();
+    const supabase = createPublicClient();
 
     // 1. Create the order
     const { data: order, error: orderError } = await supabase
