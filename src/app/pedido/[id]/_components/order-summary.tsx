@@ -1,6 +1,5 @@
 
 
-
 "use client";
 
 import { useEffect, useTransition, useState } from "react";
@@ -82,7 +81,7 @@ function formatWhatsAppMessage(
   }
 
   messageParts.push(
-    `IVA (21%): ${formatCurrency(vatAmount)}\n` +
+    `IVA: ${formatCurrency(vatAmount)}\n` +
     `*Total a Pagar: ${formatCurrency(totalPrice)}*`
   );
 
@@ -160,25 +159,30 @@ export function OrderSummary({
   clientName,
   pricesIncludeVat,
   promotions,
+  vatPercentage,
 }: {
   agreementId: string;
   clientId: string;
   clientName: string;
   pricesIncludeVat: boolean;
   promotions: Promotion[];
+  vatPercentage: number;
 }) {
   const { items, totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, clearCart, setAgreement, appliedPromotions, bonusInfo } = useCartStore();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [notes, setNotes] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
 
-  const whatsAppNumber =
-    process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5491123456789";
+  useEffect(() => {
+    // We can access NEXT_PUBLIC variables on the client
+    setWhatsappNumber(process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5491123456789");
+  }, []);
 
   useEffect(() => {
     // Set agreement details in the store, which will also trigger a cart reset if the agreement changes.
-    setAgreement(agreementId, pricesIncludeVat, promotions);
-  }, [agreementId, pricesIncludeVat, promotions, setAgreement]);
+    setAgreement(agreementId, pricesIncludeVat, promotions, vatPercentage);
+  }, [agreementId, pricesIncludeVat, promotions, vatPercentage, setAgreement]);
 
 
   const handleSend = () => {
@@ -224,7 +228,7 @@ export function OrderSummary({
             bonusInfo,
             notes
         );
-        const whatsappUrl = `https://wa.me/${whatsAppNumber}?text=${message}`;
+        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
         window.open(whatsappUrl, "_blank");
 
         // Clear cart on success
@@ -262,7 +266,7 @@ export function OrderSummary({
                         </div>
                       )}
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">IVA (21%)</span>
+                          <span className="text-muted-foreground">IVA ({vatPercentage}%)</span>
                           <span>{formatCurrency(vatAmount)}</span>
                       </div>
                       <Separator />

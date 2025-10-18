@@ -46,7 +46,7 @@ export default async function OrderPage({
     );
   }
 
-  const { agreement, client, productsByCategory } = data;
+  const { agreement, client, productsByCategory, vatPercentage } = data;
   const categories = Object.keys(productsByCategory);
   const promotions = agreement.agreement_promotions.map((ap: AgreementPromotion) => ap.promotions);
 
@@ -115,6 +115,7 @@ export default async function OrderPage({
               clientName={client.contact_name ?? "Cliente"}
               pricesIncludeVat={agreement.price_lists?.prices_include_vat ?? true}
               promotions={promotions}
+              vatPercentage={vatPercentage}
             />
           </Suspense>
         </div>

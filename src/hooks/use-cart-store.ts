@@ -12,7 +12,6 @@ export type BonusInfo = {
     }
 }
 const VOLUME_THRESHOLD = 150;
-const VAT_RATE = 0.21; // 21%
 
 type CartState = {
   items: CartItemType[];
@@ -28,7 +27,8 @@ type CartState = {
   bonusInfo: BonusInfo;
   agreementId: string | null;
   pricesIncludeVat: boolean;
-  setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[]) => void;
+  vatPercentage: number;
+  setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[], vatPercentage: number) => void;
   addItem: (product: ProductWithPrice, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -87,9 +87,10 @@ const calculatePromotions = (items: CartItemType[], subtotal: number, promotions
 
 
 // The single source of truth for all calculations.
-const calculateAll = (items: CartItemType[], pricesIncludeVat: boolean, promotions: Promotion[]) => {
+const calculateAll = (items: CartItemType[], pricesIncludeVat: boolean, promotions: Promotion[], vatPercentage: number) => {
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
   const isVolumePricingActive = totalItems >= VOLUME_THRESHOLD;
+  const vatRate = vatPercentage / 100;
 
   let subtotal = 0;
   
@@ -99,7 +100,7 @@ const calculateAll = (items: CartItemType[], pricesIncludeVat: boolean, promotio
         : item.product.price;
     
     if (pricesIncludeVat) {
-        const singleItemSubtotal = basePrice / (1 + VAT_RATE);
+        const singleItemSubtotal = basePrice / (1 + vatRate);
         subtotal += singleItemSubtotal * item.quantity;
     } else {
         const singleItemSubtotal = basePrice;
@@ -111,7 +112,7 @@ const calculateAll = (items: CartItemType[], pricesIncludeVat: boolean, promotio
 
   const discountApplied = subtotal * (discountPercentage / 100);
   const subtotalWithDiscount = subtotal - discountApplied;
-  const vatAmount = subtotalWithDiscount * VAT_RATE;
+  const vatAmount = subtotalWithDiscount * vatRate;
   const totalPrice = subtotalWithDiscount + vatAmount;
 
   return { totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, isVolumePricingActive, appliedPromotions, bonusInfo };
@@ -133,14 +134,16 @@ export const useCartStore = create<CartState>()(
       bonusInfo: {},
       agreementId: null,
       pricesIncludeVat: true,
+      vatPercentage: 21,
       
-      setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[]) => {
+      setAgreement: (id: string, pricesIncludeVat: boolean, promotions: Promotion[], vatPercentage: number) => {
         const currentAgreementId = get().agreementId;
         if (id !== currentAgreementId) {
             set({ 
                 agreementId: id, 
                 pricesIncludeVat: pricesIncludeVat,
                 promotions: promotions,
+                vatPercentage: vatPercentage,
                 items: [], 
                 totalItems: 0, 
                 subtotal: 0, 
@@ -157,13 +160,14 @@ export const useCartStore = create<CartState>()(
              set({ 
                 pricesIncludeVat: pricesIncludeVat,
                 promotions: promotions,
-                ...calculateAll(items, pricesIncludeVat, promotions)
+                vatPercentage: vatPercentage,
+                ...calculateAll(items, pricesIncludeVat, promotions, vatPercentage)
             });
         }
       },
 
       addItem: (product: ProductWithPrice, quantity: number = 1) => {
-        const { items, pricesIncludeVat, promotions } = get();
+        const { items, pricesIncludeVat, promotions, vatPercentage } = get();
         const existingItem = items.find(
           (item) => item.product.id === product.id
         );
@@ -180,11 +184,11 @@ export const useCartStore = create<CartState>()(
         }
 
         updatedItems = updatedItems.filter(item => item.quantity > 0);
-        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat, promotions) });
+        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat, promotions, vatPercentage) });
       },
 
       removeItem: (productId: string) => {
-        const { items, pricesIncludeVat, promotions } = get();
+        const { items, pricesIncludeVat, promotions, vatPercentage } = get();
         const existingItem = items.find(item => item.product.id === productId);
 
         if (!existingItem) return;
@@ -200,11 +204,11 @@ export const useCartStore = create<CartState>()(
             updatedItems = items.filter(item => item.product.id !== productId);
         }
 
-        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat, promotions) });
+        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat, promotions, vatPercentage) });
       },
 
       updateQuantity: (productId: string, quantity: number) => {
-        const { pricesIncludeVat, promotions } = get();
+        const { pricesIncludeVat, promotions, vatPercentage } = get();
         let updatedItems;
         if (quantity <= 0) {
           updatedItems = get().items.filter(
@@ -215,7 +219,7 @@ export const useCartStore = create<CartState>()(
             item.product.id === productId ? { ...item, quantity } : item
           );
         }
-        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat, promotions) });
+        set({ items: updatedItems, ...calculateAll(updatedItems, pricesIncludeVat, promotions, vatPercentage) });
       },
       
       getItemQuantity: (productId: string) => {
@@ -238,7 +242,7 @@ export const useCartStore = create<CartState>()(
       onRehydrateStorage: () => (state, error) => {
         if (state) {
             // Recalculate totals on rehydration, but with an empty promotions array
-            const { totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, isVolumePricingActive } = calculateAll(state.items, state.pricesIncludeVat, []);
+            const { totalItems, subtotal, subtotalWithDiscount, discountApplied, vatAmount, totalPrice, isVolumePricingActive } = calculateAll(state.items, state.pricesIncludeVat, [], state.vatPercentage);
             state.totalItems = totalItems;
             state.subtotal = subtotal;
             state.subtotalWithDiscount = subtotalWithDiscount;

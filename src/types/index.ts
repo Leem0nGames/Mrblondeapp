@@ -108,6 +108,8 @@ export type Client = {
     agreement_id: string | null;
     created_at: string;
     fiscal_status: string | null;
+    latitude: number | null;
+    longitude: number | null;
     agreements?: Agreement | null; // Joined data
 }
 
@@ -137,6 +139,7 @@ export type DashboardStats = {
     total_revenue: number;
     month_revenue: number;
     active_clients: number;
+    overdue_orders_count: number;
     total_clients: number;
     total_pricelists: number;
     total_promotions: number;
@@ -149,6 +152,10 @@ export type ClientStats = {
     total_orders: number;
 }
 
+export type AppSettings = {
+    whatsapp_number: string;
+    vat_percentage: number;
+}
 
 // --- AI Flow Types ---
 export type AnalyzeClientOutput = {

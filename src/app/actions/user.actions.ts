@@ -4,7 +4,6 @@
 
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { createClient as createPublicClient } from '@/lib/supabase/client';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { Client, CartItem } from '@/types';
@@ -119,7 +118,7 @@ export async function logout() {
 }
 
 export async function getOrderPageData(agreementId: string) {
-    const supabase = createPublicClient();
+    const supabase = createClient(); // Use server client for anon access
 
     // 1. Get Agreement and related Price List
     const { data: agreement, error: agreementError } = await supabase
@@ -175,8 +174,21 @@ export async function getOrderPageData(agreementId: string) {
     if (!client) {
          return { data: null, error: { message: "Este convenio no está asignado a ningún cliente activo." } };
     }
+
+    // 4. Get VAT percentage from settings
+    const { data: vatSetting, error: vatError } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'vat_percentage')
+        .single();
+
+    if (vatError) {
+        console.error("getOrderPageData (VAT) error:", vatError.message);
+    }
+
+    const vatPercentage = vatSetting ? Number(vatSetting.value) : 21;
     
-    // 4. Format products and group them by category
+    // 5. Format products and group them by category
     const products = priceListItems.map(pli => ({
         ...pli.products!,
         price: pli.price,
@@ -200,7 +212,8 @@ export async function getOrderPageData(agreementId: string) {
                 agreement_promotions: agreement.agreement_promotions ?? [],
             }, 
             client,
-            productsByCategory
+            productsByCategory,
+            vatPercentage,
         }, 
         error: null 
     };
@@ -209,7 +222,7 @@ export async function getOrderPageData(agreementId: string) {
 
 // --- Onboarding Actions ---
 export async function getOnboardingClient(token: string): Promise<{ data: Client | null, error: any }> {
-    const supabase = createPublicClient();
+    const supabase = createClient();
     const { data, error } = await supabase
         .from('clients')
         .select('*')
@@ -223,7 +236,7 @@ export async function getOnboardingClient(token: string): Promise<{ data: Client
     return { data, error: null };
 }
 
-type SubmitOnboardingPayload = Omit<Client, 'id' | 'created_at' | 'status' | 'agreement_id' | 'agreements'> & {
+type SubmitOnboardingPayload = Omit<Client, 'id' | 'created_at' | 'status' | 'agreement_id' | 'agreements' | 'latitude' | 'longitude'> & {
   street_address: string;
   street_number: string;
   locality: string;
@@ -234,7 +247,7 @@ type SubmitOnboardingPayload = Omit<Client, 'id' | 'created_at' | 'status' | 'ag
 };
 
 export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
-    const supabase = createPublicClient();
+    const supabase = createClient();
     
     const { 
         onboarding_token, 
@@ -306,7 +319,7 @@ export async function submitOrder(payload: {
     clientName: string;
     notes?: string;
 }) {
-    const supabase = createPublicClient();
+    const supabase = createClient();
 
     // 1. Create the order
     const { data: order, error: orderError } = await supabase
