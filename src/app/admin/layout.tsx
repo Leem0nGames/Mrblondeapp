@@ -19,6 +19,7 @@ import { Logo } from "@/app/logo";
 import { logout } from "@/app/actions/user.actions";
 import { Notifications } from "./_components/notifications";
 import { getNotificationData, getDashboardData } from "@/app/admin/actions/dashboard.actions";
+import { getSettings } from "@/app/admin/actions/settings.actions";
 import { AppNav } from "./_components/app-nav";
 import type { DashboardStats } from "@/types";
 
@@ -71,7 +72,7 @@ export default async function AdminLayout({
 }) {
   const { pending_orders_count, pending_clients_count, overdue_orders_count } = await getNotificationData();
   const { stats } = await getDashboardData();
-
+  const { logo_url } = await getSettings();
 
   const notifications = createNotifications(
     pending_orders_count,
@@ -88,7 +89,7 @@ export default async function AdminLayout({
             href="/admin"
             className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full text-lg font-semibold"
           >
-            <Logo />
+            <Logo logoUrl={logo_url} />
             <span className="sr-only">MR. BLONDE</span>
           </Link>
           <AppNav isMobile={false} stats={stats as DashboardStats} />
@@ -131,7 +132,7 @@ export default async function AdminLayout({
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
             <div className="sm:hidden">
               <Link href="/admin" className="flex items-center gap-2 text-lg font-semibold">
-                <Logo showText={true} />
+                <Logo logoUrl={logo_url} showText={true} />
               </Link>
             </div>
              <div className="ml-auto flex items-center gap-4">

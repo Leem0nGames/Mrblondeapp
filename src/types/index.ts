@@ -155,6 +155,7 @@ export type ClientStats = {
 export type AppSettings = {
     whatsapp_number: string;
     vat_percentage: number;
+    logo_url: string | null;
 }
 
 // --- AI Flow Types ---
