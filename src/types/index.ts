@@ -1,5 +1,6 @@
 // These types are manually created to match the Supabase schema.
 // For a more robust solution, you can use `supabase gen types typescript`.
+import type { analyzeClientFlow } from "@/ai/flows/analyze-client-flow";
 
 export type Product = {
   id: string;
@@ -121,6 +122,17 @@ export type Order = {
     notes?: string | null;
 }
 
+export type OrderWithItems = Order & {
+    order_items: {
+        quantity: number;
+        price_per_unit: number;
+        products: {
+            name: string;
+            category: string | null;
+        } | null;
+    }[];
+}
+
 export type DashboardStats = {
     total_revenue: number;
     month_revenue: number;
@@ -136,3 +148,12 @@ export type ClientStats = {
     average_order_value: number;
     total_orders: number;
 }
+
+
+// --- AI Flow Types ---
+export type AnalyzeClientOutput = {
+    summary: string;
+    observations: string[];
+    opportunities: string[];
+    risks: string[];
+};

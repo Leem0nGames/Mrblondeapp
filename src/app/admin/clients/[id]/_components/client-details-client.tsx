@@ -5,13 +5,14 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useTransition, useCallback, useEffect, useState } from "react";
-import { Info, Landmark, ArrowLeft, Edit, FilePen } from "lucide-react";
+import { Info, Landmark, ArrowLeft, Edit, FilePen, Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ClientHeader } from "./client-header";
 import { ClientInfo } from "./client-info";
 import { ClientStats } from "./client-stats";
 import { ClientOrders } from "./client-orders";
+import { ClientAnalysis } from './client-analysis';
 import type { Client, ClientStats as StatsType, Order, AgreementSalesCondition } from "@/types";
 import { Skeleton } from '@/components/ui/skeleton';
 import { deleteClient } from "@/app/admin/actions/clients.actions";
@@ -149,6 +150,7 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
 
       <div className="grid gap-4 md:grid-cols-3 md:gap-8">
           <div className="md:col-span-2 grid gap-4 auto-rows-min">
+              <ClientAnalysis clientId={client.id} />
               <ClientOrders orders={orders} />
           </div>
           <div className="md:col-span-1 grid gap-4 auto-rows-min">
