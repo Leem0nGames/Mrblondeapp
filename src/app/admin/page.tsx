@@ -12,10 +12,11 @@ import {
 import { DashboardStats } from "./_components/dashboard-stats";
 import { RecentOrders } from "./_components/recent-orders";
 import { PendingClients } from "./_components/pending-clients";
+import { ClientsHeatmap } from "./_components/clients-heatmap";
 import type { DashboardStats as Stats } from "@/types";
 
 export default async function AdminDashboardPage() {
-    const { stats, pendingOrders, pendingClients } = await getDashboardData();
+    const { stats, pendingOrders, pendingClients, heatmapData } = await getDashboardData();
 
     return (
         <div className="grid flex-1 items-start gap-4 md:gap-8">
@@ -27,17 +28,20 @@ export default async function AdminDashboardPage() {
             <DashboardStats stats={stats as Stats} />
 
             <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-                <Card className="xl:col-span-2">
-                    <CardHeader>
-                        <CardTitle>Pedidos Recientes</CardTitle>
-                        <CardDescription>
-                            Pedidos pendientes de cargar en el sistema de gestión.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <RecentOrders orders={pendingOrders} />
-                    </CardContent>
-                </Card>
+                <div className="xl:col-span-2 space-y-4">
+                  <ClientsHeatmap clients={heatmapData} />
+                  <Card>
+                      <CardHeader>
+                          <CardTitle>Pedidos Recientes</CardTitle>
+                          <CardDescription>
+                              Pedidos pendientes de cargar en el sistema de gestión.
+                          </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                          <RecentOrders orders={pendingOrders} />
+                      </CardContent>
+                  </Card>
+                </div>
                 <div className="space-y-4">
                   <Card>
                       <CardHeader>

@@ -3,17 +3,18 @@
 
 import { revalidatePath } from "next/cache";
 import { getSupabaseClientWithAuth } from "./_helpers";
-import type { DashboardStats, Order, Client } from "@/types";
+import type { DashboardStats, Order, Client, ClientHeatmapData } from "@/types";
 
 // --- Consolidated Dashboard Actions ---
 
 export async function getDashboardData() {
     const supabase = await getSupabaseClientWithAuth();
     
-    const [statsResult, pendingOrdersResult, pendingClientsResult] = await Promise.all([
+    const [statsResult, pendingOrdersResult, pendingClientsResult, heatmapResult] = await Promise.all([
         supabase.from("dashboard_stats").select("*").single(),
         supabase.from("orders").select("id, client_id, agreement_id, created_at, total_amount, status, client_name_cache, notes").eq("status", "pending").order("created_at", { ascending: false }).limit(5),
         supabase.from("clients").select("*").eq("status", "pending_agreement").order("created_at", { ascending: false }),
+        supabase.rpc('get_clients_heatmap_data'),
     ]);
 
     const statsError = statsResult.error;
@@ -36,7 +37,8 @@ export async function getDashboardData() {
         },
         pendingOrders: pendingOrdersResult.data ?? [],
         pendingClients: pendingClientsResult.data ?? [],
-        error: statsError || pendingOrdersResult.error || pendingClientsResult.error,
+        heatmapData: heatmapResult.data ?? [],
+        error: statsError || pendingOrdersResult.error || pendingClientsResult.error || heatmapResult.error,
     };
 }
 
