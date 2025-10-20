@@ -1,42 +1,10 @@
 
-
 import Link from "next/link";
-import dynamic from 'next/dynamic';
 import { FileWarning } from "lucide-react";
 import { getClientById, getClientStats } from "@/app/admin/actions/clients.actions";
 import { getClientOrders } from "@/app/admin/actions/dashboard.actions";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-
-function ClientDetailsSkeleton() {
-    return (
-        <div className="grid flex-1 items-start gap-4 md:gap-8">
-            <div className="flex items-center gap-4">
-                <Skeleton className="h-7 w-7 rounded-full" />
-                <Skeleton className="h-7 w-48" />
-            </div>
-            <Skeleton className="h-64 w-full" />
-            <div className="grid gap-4 md:grid-cols-3">
-                <Skeleton className="h-24" />
-                <Skeleton className="h-24" />
-                <Skeleton className="h-24" />
-            </div>
-            <div className="grid gap-4 md:grid-cols-3 md:gap-8">
-                <Skeleton className="h-96 md:col-span-2" />
-                <Skeleton className="h-96 md:col-span-1" />
-            </div>
-        </div>
-    )
-}
-
-const ClientDetailsClient = dynamic(
-  () => import('./_components/client-details-client'),
-  {
-    loading: () => <ClientDetailsSkeleton />,
-    ssr: false
-  }
-);
-
+import { ClientDetailsLoader } from "./_components/client-details-loader";
 
 export default async function ClientDetailPage({
   params,
@@ -74,11 +42,11 @@ export default async function ClientDetailPage({
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
-        <ClientDetailsClient 
-            client={client}
-            stats={stats}
-            orders={orders}
-        />
+      <ClientDetailsLoader 
+        client={client}
+        stats={stats}
+        orders={orders}
+      />
     </div>
   );
 }

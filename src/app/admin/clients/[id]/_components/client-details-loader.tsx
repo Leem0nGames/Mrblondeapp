@@ -9,7 +9,7 @@ function ClientDetailsSkeleton() {
     return (
         <div className="grid flex-1 items-start gap-4 md:gap-8">
             <div className="flex items-center gap-4">
-                <Skeleton className="h-7 w-7" />
+                <Skeleton className="h-7 w-7 rounded-full" />
                 <Skeleton className="h-7 w-48" />
             </div>
             <Skeleton className="h-64 w-full" />
@@ -23,13 +23,17 @@ function ClientDetailsSkeleton() {
                 <Skeleton className="h-96 md:col-span-1" />
             </div>
         </div>
-    )
+    );
 }
 
-const ClientDetailsClient = dynamic(() => import('./client-details-client').then(mod => mod.ClientDetailsClient), {
-  ssr: false,
-  loading: () => <ClientDetailsSkeleton />,
-});
+// This is the Client Component that correctly handles the dynamic import with ssr: false
+const ClientDetailsClient = dynamic(
+  () => import('./client-details-client'),
+  {
+    loading: () => <ClientDetailsSkeleton />,
+    ssr: false, // This is allowed inside a Client Component
+  }
+);
 
 type ClientDetailsLoaderProps = {
     client: Client;
@@ -38,5 +42,5 @@ type ClientDetailsLoaderProps = {
 }
 
 export function ClientDetailsLoader(props: ClientDetailsLoaderProps) {
-    return <ClientDetailsClient {...props} />
+    return <ClientDetailsClient {...props} />;
 }
