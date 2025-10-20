@@ -1,3 +1,4 @@
+
 -- 1. CLEANUP (DROP in reverse order of creation)
 -- Drop Views
 DROP VIEW IF EXISTS public.dashboard_stats CASCADE;
