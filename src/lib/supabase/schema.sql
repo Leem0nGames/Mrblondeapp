@@ -1,14 +1,13 @@
 -- 1. CLEANUP (DROP in reverse order of creation)
-
--- Drop Policies first
-DROP POLICY IF EXISTS "Allow public read on app_assets" ON storage.objects;
-DROP POLICY IF EXISTS "Allow admin write on app_assets" ON storage.objects;
-DROP POLICY IF EXISTS "Allow admin update on app_assets" ON storage.objects;
-DROP POLICY IF EXISTS "Allow public read on product_images" ON storage.objects;
-DROP POLICY IF EXISTS "Allow admin write on product_images" ON storage.objects;
-DROP POLICY IF EXISTS "Allow admin update on product_images" ON storage.objects;
-
--- RLS Policies
+-- Drop Views
+DROP VIEW IF EXISTS public.dashboard_stats CASCADE;
+DROP VIEW IF EXISTS public.agreements_with_counts CASCADE;
+-- Drop Functions
+DROP FUNCTION IF EXISTS public.get_notification_counts() CASCADE;
+DROP FUNCTION IF EXISTS public.get_client_stats(uuid) CASCADE;
+DROP FUNCTION IF EXISTS public.increment_total_revenue(numeric) CASCADE;
+DROP FUNCTION IF EXISTS public.get_clients_heatmap_data() CASCADE;
+-- Drop Policies (specific to tables)
 DROP POLICY IF EXISTS "Allow all for service_role" ON public.products;
 DROP POLICY IF EXISTS "Allow all for service_role" ON public.price_lists;
 DROP POLICY IF EXISTS "Allow all for service_role" ON public.price_list_items;
@@ -32,18 +31,12 @@ DROP POLICY IF EXISTS "Allow anon read on app_settings" ON public.app_settings;
 DROP POLICY IF EXISTS "Allow anon write on clients for onboarding" ON public.clients;
 DROP POLICY IF EXISTS "Allow anon write on orders" ON public.orders;
 DROP POLICY IF EXISTS "Allow anon write on order_items" ON public.order_items;
-
-
--- Drop Views
-DROP VIEW IF EXISTS public.dashboard_stats CASCADE;
-DROP VIEW IF EXISTS public.agreements_with_counts CASCADE;
-
--- Drop Functions
-DROP FUNCTION IF EXISTS public.get_notification_counts() CASCADE;
-DROP FUNCTION IF EXISTS public.get_client_stats(uuid) CASCADE;
-DROP FUNCTION IF EXISTS public.increment_total_revenue(numeric) CASCADE;
-DROP FUNCTION IF EXISTS public.get_clients_heatmap_data() CASCADE;
-
+DROP POLICY IF EXISTS "Allow public read on product_images" ON storage.objects;
+DROP POLICY IF EXISTS "Allow admin write on product_images" ON storage.objects;
+DROP POLICY IF EXISTS "Allow admin update on product_images" ON storage.objects;
+DROP POLICY IF EXISTS "Allow public read on app_assets" ON storage.objects;
+DROP POLICY IF EXISTS "Allow admin write on app_assets" ON storage.objects;
+DROP POLICY IF EXISTS "Allow admin update on app_assets" ON storage.objects;
 -- Drop Tables
 DROP TABLE IF EXISTS public.order_items CASCADE;
 DROP TABLE IF EXISTS public.orders CASCADE;
@@ -57,7 +50,6 @@ DROP TABLE IF EXISTS public.products CASCADE;
 DROP TABLE IF EXISTS public.promotions CASCADE;
 DROP TABLE IF EXISTS public.sales_conditions CASCADE;
 DROP TABLE IF EXISTS public.app_settings CASCADE;
-
 -- Drop Types
 DROP TYPE IF EXISTS public.client_status CASCADE;
 DROP TYPE IF EXISTS public.client_type CASCADE;
@@ -183,8 +175,8 @@ SELECT
   agr.client_type,
   agr.price_list_id,
   agr.created_at,
-  (SELECT COUNT(*) FROM public.agreement_promotions WHERE agreement_id = agr.id) AS promotion_count,
-  (SELECT COUNT(*) FROM public.agreement_sales_conditions WHERE agreement_id = agr.id) AS sales_condition_count
+  (SELECT COUNT(*) FROM public.agreement_promotions WHERE agreement_id = agr.id)::int AS promotion_count,
+  (SELECT COUNT(*) FROM public.agreement_sales_conditions WHERE agreement_id = agr.id)::int AS sales_condition_count
 FROM
   public.agreements AS agr;
 
@@ -273,54 +265,54 @@ ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 
 -- Create Policies
 -- Allow admin full access on all tables
-CREATE OR REPLACE POLICY "Allow all for service_role" ON public.products FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-CREATE OR REPLACE POLICY "Allow all for service_role" ON public.price_lists FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-CREATE OR REPLACE POLICY "Allow all for service_role" ON public.price_list_items FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-CREATE OR REPLACE POLICY "Allow all for service_role" ON public.promotions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-CREATE OR REPLACE POLICY "Allow all for service_role" ON public.sales_conditions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-CREATE OR REPLACE POLICY "Allow all for service_role" ON public.agreements FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-CREATE OR REPLACE POLICY "Allow all for service_role" ON public.agreement_promotions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-CREATE OR REPLACE POLICY "Allow all for service_role" ON public.agreement_sales_conditions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-CREATE OR REPLACE POLICY "Allow all for service_role" ON public.clients FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-CREATE OR REPLACE POLICY "Allow all for service_role" ON public.orders FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-CREATE OR REPLACE POLICY "Allow all for service_role" ON public.order_items FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-CREATE OR REPLACE POLICY "Allow all for service_role" ON public.app_settings FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.products FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.price_lists FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.price_list_items FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.promotions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.sales_conditions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.agreements FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.agreement_promotions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.agreement_sales_conditions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.clients FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.orders FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.order_items FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.app_settings FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
 -- Allow anon read access on specific tables for order page
-CREATE OR REPLACE POLICY "Allow anon read on agreements" ON public.agreements FOR SELECT USING (true);
-CREATE OR REPLACE POLICY "Allow anon read on price lists" ON public.price_lists FOR SELECT USING (true);
-CREATE OR REPLACE POLICY "Allow anon read on price list items" ON public.price_list_items FOR SELECT USING (true);
-CREATE OR REPLACE POLICY "Allow anon read on products" ON public.products FOR SELECT USING (true);
-CREATE OR REPLACE POLICY "Allow anon read on agreement promotions" ON public.agreement_promotions FOR SELECT USING (true);
-CREATE OR REPLACE POLICY "Allow anon read on promotions" ON public.promotions FOR SELECT USING (true);
-CREATE OR REPLACE POLICY "Allow anon read on clients for order page" ON public.clients FOR SELECT USING (true);
-CREATE OR REPLACE POLICY "Allow anon read on app_settings" ON public.app_settings FOR SELECT USING (true);
+CREATE POLICY "Allow anon read on agreements" ON public.agreements FOR SELECT USING (true);
+CREATE POLICY "Allow anon read on price lists" ON public.price_lists FOR SELECT USING (true);
+CREATE POLICY "Allow anon read on price list items" ON public.price_list_items FOR SELECT USING (true);
+CREATE POLICY "Allow anon read on products" ON public.products FOR SELECT USING (true);
+CREATE POLICY "Allow anon read on agreement promotions" ON public.agreement_promotions FOR SELECT USING (true);
+CREATE POLICY "Allow anon read on promotions" ON public.promotions FOR SELECT USING (true);
+CREATE POLICY "Allow anon read on clients for order page" ON public.clients FOR SELECT USING (true);
+CREATE POLICY "Allow anon read on app_settings" ON public.app_settings FOR SELECT USING (true);
 
 -- Allow anon write access on specific tables for onboarding and order submission
-CREATE OR REPLACE POLICY "Allow anon write on clients for onboarding" ON public.clients FOR UPDATE USING (onboarding_token IS NOT NULL);
-CREATE OR REPLACE POLICY "Allow anon write on orders" ON public.orders FOR INSERT WITH CHECK (true);
-CREATE OR REPLACE POLICY "Allow anon write on order_items" ON public.order_items FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow anon write on clients for onboarding" ON public.clients FOR UPDATE USING (onboarding_token IS NOT NULL);
+CREATE POLICY "Allow anon write on orders" ON public.orders FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow anon write on order_items" ON public.order_items FOR INSERT WITH CHECK (true);
 
 
 -- 5. STORAGE POLICIES
 -- Policy for product images
-CREATE OR REPLACE POLICY "Allow public read on product_images" ON storage.objects FOR SELECT
+CREATE POLICY "Allow public read on product_images" ON storage.objects FOR SELECT
 USING ( bucket_id = 'product_images' );
 
-CREATE OR REPLACE POLICY "Allow admin write on product_images" ON storage.objects FOR INSERT
+CREATE POLICY "Allow admin write on product_images" ON storage.objects FOR INSERT
 WITH CHECK ( bucket_id = 'product_images' AND auth.role() = 'service_role' );
 
-CREATE OR REPLACE POLICY "Allow admin update on product_images" ON storage.objects FOR UPDATE
+CREATE POLICY "Allow admin update on product_images" ON storage.objects FOR UPDATE
 USING ( bucket_id = 'product_images' AND auth.role() = 'service_role' );
 
 -- Policy for app assets (like logo)
-CREATE OR REPLACE POLICY "Allow public read on app_assets" ON storage.objects FOR SELECT
+CREATE POLICY "Allow public read on app_assets" ON storage.objects FOR SELECT
 USING ( bucket_id = 'app_assets' );
 
-CREATE OR REPLACE POLICY "Allow admin write on app_assets" ON storage.objects FOR INSERT
+CREATE POLICY "Allow admin write on app_assets" ON storage.objects FOR INSERT
 WITH CHECK ( bucket_id = 'app_assets' AND auth.role() = 'service_role' );
 
-CREATE OR REPLACE POLICY "Allow admin update on app_assets" ON storage.objects FOR UPDATE
+CREATE POLICY "Allow admin update on app_assets" ON storage.objects FOR UPDATE
 USING ( bucket_id = 'app_assets' AND auth.role() = 'service_role' );
 
 -- 6. INITIAL DATA SEEDING
