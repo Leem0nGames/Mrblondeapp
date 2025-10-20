@@ -8,8 +8,6 @@ import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { Client, CartItem, AuthState } from '@/types';
 
-export const runtime = 'nodejs';
-
 export async function hasUsers(): Promise<boolean> {
   if (!supabaseAdmin) {
     console.warn('Supabase admin client not configured. Assuming users exist for security.');

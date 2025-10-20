@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/middleware';
 import { hasUsers } from './app/actions/user.actions';
 
+export const runtime = 'nodejs';
+
 // Define las rutas públicas que no requieren autenticación
 const publicRoutes = ['/login', '/signup'];
 
