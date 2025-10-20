@@ -1,49 +1,51 @@
 -- 1. CLEANUP (DROP in reverse order of creation)
 -- Drop Policies
-DROP POLICY IF EXISTS "Allow authenticated users to manage agreements" ON public.agreements;
-DROP POLICY IF EXISTS "Allow authenticated users to manage promotions" ON public.promotions;
-DROP POLICY IF EXISTS "Allow authenticated users to manage price lists" ON public.price_lists;
-DROP POLICY IF EXISTS "Allow authenticated users to manage sales conditions" ON public.sales_conditions;
-DROP POLICY IF EXISTS "Allow authenticated users to manage agreement promotions" ON public.agreement_promotions;
-DROP POLICY IF EXISTS "Allow authenticated users to manage agreement sales conditions" ON public.agreement_sales_conditions;
-DROP POLICY IF EXISTS "Allow all for service_role" ON public.products;
-DROP POLICY IF EXISTS "Allow all for service_role" ON public.price_lists;
-DROP POLICY IF EXISTS "Allow all for service_role" ON public.price_list_items;
-DROP POLICY IF EXISTS "Allow all for service_role" ON public.promotions;
-DROP POLICY IF EXISTS "Allow all for service_role" ON public.sales_conditions;
-DROP POLICY IF EXISTS "Allow all for service_role" ON public.agreements;
-DROP POLICY IF EXISTS "Allow all for service_role" ON public.agreement_promotions;
-DROP POLICY IF EXISTS "Allow all for service_role" ON public.agreement_sales_conditions;
-DROP POLICY IF EXISTS "Allow all for service_role" ON public.clients;
-DROP POLICY IF EXISTS "Allow all for service_role" ON public.orders;
-DROP POLICY IF EXISTS "Allow all for service_role" ON public.order_items;
-DROP POLICY IF EXISTS "Allow all for service_role" ON public.app_settings;
-DROP POLICY IF EXISTS "Allow anon read on agreements" ON public.agreements;
-DROP POLICY IF EXISTS "Allow anon read on price lists" ON public.price_lists;
-DROP POLICY IF EXISTS "Allow anon read on price list items" ON public.price_list_items;
-DROP POLICY IF EXISTS "Allow anon read on products" ON public.products;
-DROP POLICY IF EXISTS "Allow anon read on agreement promotions" ON public.agreement_promotions;
-DROP POLICY IF EXISTS "Allow anon read on promotions" ON public.promotions;
-DROP POLICY IF EXISTS "Allow anon read on clients for order page" ON public.clients;
-DROP POLICY IF EXISTS "Allow anon read on app_settings" ON public.app_settings;
-DROP POLICY IF EXISTS "Allow anon write on clients for onboarding" ON public.clients;
-DROP POLICY IF EXISTS "Allow anon write on orders" ON public.orders;
 DROP POLICY IF EXISTS "Allow anon write on order_items" ON public.order_items;
-DROP POLICY IF EXISTS "Allow public read on product_images" ON storage.objects;
-DROP POLICY IF EXISTS "Allow admin write on product_images" ON storage.objects;
-DROP POLICY IF EXISTS "Allow admin update on product_images" ON storage.objects;
+DROP POLICY IF EXISTS "Allow anon write on orders" ON public.orders;
+DROP POLICY IF EXISTS "Allow anon write on clients for onboarding" ON public.clients;
+DROP POLICY IF EXISTS "Allow anon read on app_settings" ON public.app_settings;
+DROP POLICY IF EXISTS "Allow anon read on clients for order page" ON public.clients;
+DROP POLICY IF EXISTS "Allow anon read on promotions" ON public.promotions;
+DROP POLICY IF EXISTS "Allow anon read on agreement promotions" ON public.agreement_promotions;
+DROP POLICY IF EXISTS "Allow anon read on products" ON public.products;
+DROP POLICY IF EXISTS "Allow anon read on price list items" ON public.price_list_items;
+DROP POLICY IF EXISTS "Allow anon read on price lists" ON public.price_lists;
+DROP POLICY IF EXISTS "Allow anon read on agreements" ON public.agreements;
+DROP POLICY IF EXISTS "Allow authenticated users to manage agreement_sales_conditions" ON public.agreement_sales_conditions;
+DROP POLICY IF EXISTS "Allow authenticated users to manage agreement_promotions" ON public.agreement_promotions;
+DROP POLICY IF EXISTS "Allow authenticated users to manage agreements" ON public.agreements;
+DROP POLICY IF EXISTS "Allow authenticated users to manage sales_conditions" ON public.sales_conditions;
+DROP POLICY IF EXISTS "Allow authenticated users to manage promotions" ON public.promotions;
+DROP POLICY IF EXISTS "Allow authenticated users to manage price_lists" ON public.price_lists;
+DROP POLICY IF EXISTS "Allow all for service_role" ON public.app_settings;
+DROP POLICY IF EXISTS "Allow all for service_role" ON public.order_items;
+DROP POLICY IF EXISTS "Allow all for service_role" ON public.orders;
+DROP POLICY IF EXISTS "Allow all for service_role" ON public.clients;
+DROP POLICY IF EXISTS "Allow all for service_role" ON public.agreement_sales_conditions;
+DROP POLICY IF EXISTS "Allow all for service_role" ON public.agreement_promotions;
+DROP POLICY IF EXISTS "Allow all for service_role" ON public.agreements;
+DROP POLICY IF EXISTS "Allow all for service_role" ON public.sales_conditions;
+DROP POLICY IF EXISTS "Allow all for service_role" ON public.promotions;
+DROP POLICY IF EXISTS "Allow all for service_role" ON public.price_list_items;
+DROP POLICY IF EXISTS "Allow all for service_role" ON public.price_lists;
+DROP POLICY IF EXISTS "Allow all for service_role" ON public.products;
 DROP POLICY IF EXISTS "Allow public read on app_assets" ON storage.objects;
 DROP POLICY IF EXISTS "Allow admin write on app_assets" ON storage.objects;
 DROP POLICY IF EXISTS "Allow admin update on app_assets" ON storage.objects;
+DROP POLICY IF EXISTS "Allow public read on product_images" ON storage.objects;
+DROP POLICY IF EXISTS "Allow admin write on product_images" ON storage.objects;
+DROP POLICY IF EXISTS "Allow admin update on product_images" ON storage.objects;
 
 -- Drop Views
 DROP VIEW IF EXISTS public.dashboard_stats CASCADE;
 DROP VIEW IF EXISTS public.agreements_with_counts CASCADE;
+
 -- Drop Functions
 DROP FUNCTION IF EXISTS public.get_notification_counts() CASCADE;
 DROP FUNCTION IF EXISTS public.get_client_stats(uuid) CASCADE;
 DROP FUNCTION IF EXISTS public.increment_total_revenue(numeric) CASCADE;
 DROP FUNCTION IF EXISTS public.get_clients_heatmap_data() CASCADE;
+
 -- Drop Tables
 DROP TABLE IF EXISTS public.order_items CASCADE;
 DROP TABLE IF EXISTS public.orders CASCADE;
@@ -57,6 +59,7 @@ DROP TABLE IF EXISTS public.products CASCADE;
 DROP TABLE IF EXISTS public.promotions CASCADE;
 DROP TABLE IF EXISTS public.sales_conditions CASCADE;
 DROP TABLE IF EXISTS public.app_settings CASCADE;
+
 -- Drop Types
 DROP TYPE IF EXISTS public.client_status CASCADE;
 DROP TYPE IF EXISTS public.client_type CASCADE;
@@ -270,40 +273,40 @@ ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 
--- Create Policies
--- Allow admin full access on tables that are not publicly readable
+-- Create Policies for service_role (full access)
+CREATE POLICY "Allow all for service_role" ON public.products FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.price_lists FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.price_list_items FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.promotions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.sales_conditions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.agreements FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.agreement_promotions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.agreement_sales_conditions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.clients FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 CREATE POLICY "Allow all for service_role" ON public.orders FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 CREATE POLICY "Allow all for service_role" ON public.order_items FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow all for service_role" ON public.app_settings FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
--- Allow anon read access on specific tables for order page
+-- Create Policies for authenticated users (admins)
+CREATE POLICY "Allow authenticated users to manage price_lists" ON public.price_lists FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to manage promotions" ON public.promotions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to manage sales_conditions" ON public.sales_conditions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to manage agreements" ON public.agreements FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to manage agreement_promotions" ON public.agreement_promotions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated users to manage agreement_sales_conditions" ON public.agreement_sales_conditions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+-- Create Policies for anonymous users
 CREATE POLICY "Allow anon read on agreements" ON public.agreements FOR SELECT USING (true);
 CREATE POLICY "Allow anon read on price lists" ON public.price_lists FOR SELECT USING (true);
 CREATE POLICY "Allow anon read on price list items" ON public.price_list_items FOR SELECT USING (true);
 CREATE POLICY "Allow anon read on products" ON public.products FOR SELECT USING (true);
 CREATE POLICY "Allow anon read on agreement promotions" ON public.agreement_promotions FOR SELECT USING (true);
-CREATE POLICY "Allow anon read on agreement sales conditions" ON public.agreement_sales_conditions FOR SELECT USING (true);
 CREATE POLICY "Allow anon read on promotions" ON public.promotions FOR SELECT USING (true);
-CREATE POLICY "Allow anon read on sales_conditions" ON public.sales_conditions FOR SELECT USING (true);
 CREATE POLICY "Allow anon read on clients for order page" ON public.clients FOR SELECT USING (true);
 CREATE POLICY "Allow anon read on app_settings" ON public.app_settings FOR SELECT USING (true);
-
--- Allow authenticated users (admins) to manage everything else
-CREATE POLICY "Allow authenticated users to manage agreements" ON public.agreements FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Allow authenticated users to manage agreement promotions" ON public.agreement_promotions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Allow authenticated users to manage agreement sales conditions" ON public.agreement_sales_conditions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Allow authenticated users to manage clients" ON public.clients FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Allow authenticated users to manage price lists" ON public.price_lists FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Allow authenticated users to manage price list items" ON public.price_list_items FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Allow authenticated users to manage products" ON public.products FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Allow authenticated users to manage promotions" ON public.promotions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Allow authenticated users to manage sales conditions" ON public.sales_conditions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Allow authenticated users to manage settings" ON public.app_settings FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
-
-
--- Allow anon write access on specific tables for onboarding and order submission
 CREATE POLICY "Allow anon write on clients for onboarding" ON public.clients FOR UPDATE USING (onboarding_token IS NOT NULL);
-CREATE POLICY "Allow anon write on orders" ON public.orders FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow anon write on order_items" ON public.order_items FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow anon write on orders" ON public.orders FOR INSERT WITH CHECK (auth.role() = 'anon');
+CREATE POLICY "Allow anon write on order_items" ON public.order_items FOR INSERT WITH CHECK (auth.role() = 'anon');
 
 
 -- 5. STORAGE POLICIES
