@@ -5,7 +5,8 @@ import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { signupSuperAdmin, type AuthState } from '@/app/actions/user.actions';
+import { signupSuperAdmin } from '@/app/actions/user.actions';
+import type { AuthState } from '@/types';
 
 const initialState: AuthState = {
   error: null,

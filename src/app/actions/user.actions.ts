@@ -6,13 +6,9 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import type { Client, CartItem } from '@/types';
+import type { Client, CartItem, AuthState } from '@/types';
 
-export interface AuthState {
-  error: {
-    message: string;
-  } | null;
-}
+export const runtime = 'nodejs';
 
 export async function hasUsers(): Promise<boolean> {
   if (!supabaseAdmin) {
@@ -25,10 +21,12 @@ export async function hasUsers(): Promise<boolean> {
     
     if (error) {
       console.error('Error checking for users:', error.message);
+       // This handles the case where Vercel/Netlify/etc. can't reach Supabase during build time.
        if (error.message.includes('fetch failed')) {
         console.warn('Fetch failed, possibly due to missing Supabase ENV VARS. Assuming users exist for security.');
         return true;
       }
+      // For other errors, it's safer to assume no users exist to allow setup.
       return false;
     }
     

@@ -6,15 +6,9 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import type { Client, CartItem } from '@/types';
+import type { Client, CartItem, AuthState } from '@/types';
 
 export const runtime = 'nodejs';
-
-export interface AuthState {
-  error: {
-    message: string;
-  } | null;
-}
 
 export async function hasUsers(): Promise<boolean> {
   if (!supabaseAdmin) {

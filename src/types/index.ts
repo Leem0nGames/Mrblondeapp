@@ -2,6 +2,12 @@
 // For a more robust solution, you can use `supabase gen types typescript`.
 import type { analyzeClientFlow } from "@/ai/flows/analyze-client-flow";
 
+export type AuthState = {
+  error: {
+    message: string;
+  } | null;
+};
+
 export type Product = {
   id: string;
   name: string;
@@ -100,6 +106,8 @@ export type Client = {
     contact_name: string | null;
     contact_dni: string | null;
     address: string | null;
+    latitude: number | null;
+    longitude: number | null;
     delivery_window: string | null;
     email: string | null;
     instagram: string | null;
@@ -108,8 +116,6 @@ export type Client = {
     agreement_id: string | null;
     created_at: string;
     fiscal_status: string | null;
-    latitude: number | null;
-    longitude: number | null;
     agreements?: Agreement | null; // Joined data
 }
 
