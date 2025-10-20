@@ -9,8 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Gift, Truck, Percent } from "lucide-react";
-import { submitOrder } from "@/app/actions/user.actions";
-import { getWhatsappNumber } from "@/app/admin/actions/settings.actions";
+import { submitOrder, getWhatsappNumber } from "@/app/actions/user.actions";
 import type { Promotion } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";

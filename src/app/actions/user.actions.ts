@@ -363,3 +363,18 @@ export async function submitOrder(payload: {
 
     return { data: { orderId: order.id }, error: null };
 }
+
+export async function getWhatsappNumber(): Promise<string> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'whatsapp_number')
+        .single();
+    
+    if (error || !data) {
+        console.error("getWhatsappNumber error:", error?.message);
+        return "";
+    }
+    return data.value;
+}
