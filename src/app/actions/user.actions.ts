@@ -216,7 +216,7 @@ export async function getOrderPageData(agreementId: string) {
 
 // --- Onboarding Actions ---
 export async function getOnboardingClient(token: string): Promise<{ data: Client | null, error: any }> {
-    const supabase = createBrowserClient();
+    const supabase = await createServerClient();
     const { data, error } = await supabase
         .from('clients')
         .select('*')
