@@ -2,9 +2,40 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getSupabaseClientWithAuth } from './_helpers';
-import type { Client, ClientStats, OrderWithItems, AnalyzeClientOutput } from '@/types';
+import { getSupabaseClientWithAuth, upsertEntity } from './_helpers';
+import type {
+  Client,
+  ClientStats,
+  OrderWithItems,
+  AnalyzeClientOutput,
+} from '@/types';
 import { analyzeClientFlow } from '@/ai/flows/analyze-client-flow';
+
+async function geocodeAddress(
+  address: string
+): Promise<{ lat: number; lng: number } | null> {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    console.error('Google Maps API key is missing.');
+    return null;
+  }
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+    address
+  )}&key=${apiKey}`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    if (data.status === 'OK' && data.results[0]) {
+      return data.results[0].geometry.location;
+    }
+    console.warn('Geocoding failed:', data.status, data.error_message);
+    return null;
+  } catch (error: any) {
+    console.error('Error during geocoding fetch:', error.message);
+    return null;
+  }
+}
 
 // --- Client Actions ---
 export async function getClients(
@@ -20,7 +51,7 @@ export async function getClients(
             agreements ( agreement_name )
         `
     )
-    .in('status', ['active', 'pending_agreement', 'pending_onboarding'])
+    .in('status', ['active', 'pending_agreement'])
     .order('created_at', { ascending: false });
 
   if (query) {
@@ -45,7 +76,7 @@ export async function getClientById(
 ): Promise<{ data: Client | null; error: any }> {
   const supabase = await getSupabaseClientWithAuth();
 
-  const { data, error } = await supabase
+  const { data: client, error } = await supabase
     .from('clients')
     .select(
       `
@@ -61,7 +92,31 @@ export async function getClientById(
     return { data: null, error };
   }
 
-  return { data, error: null };
+  if (
+    client &&
+    client.address &&
+    (client.latitude === null || client.longitude === null)
+  ) {
+    const location = await geocodeAddress(client.address);
+    if (location) {
+      const { data: updatedClient, error: updateError } = await supabase
+        .from('clients')
+        .update({ latitude: location.lat, longitude: location.lng })
+        .eq('id', client.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error saving geocoded address:', updateError.message);
+        // No devuelvas error, simplemente usa el cliente original
+        return { data: client, error: null };
+      }
+      // Devuelve el cliente con las coordenadas actualizadas
+      return { data: updatedClient, error: null };
+    }
+  }
+
+  return { data: client, error: null };
 }
 
 export async function getClientStats(
@@ -81,37 +136,87 @@ export async function getClientStats(
   return { data, error: null };
 }
 
-export async function createClientForInvitation(
-  agreementId: string | null
-): Promise<{ data: { link: string } | null; error: any }> {
-  const supabase = await getSupabaseClientWithAuth();
+export async function upsertClient(
+  payload: Partial<Client> & {
+    id?: string;
+    street_address?: string;
+    street_number?: string;
+    locality?: string;
+    province?: string;
+    delivery_days?: string[];
+    delivery_time_from?: string;
+    delivery_time_to?: string;
+  }
+) {
+  const {
+    id,
+    street_address,
+    street_number,
+    locality,
+    province,
+    delivery_days,
+    delivery_time_from,
+    delivery_time_to,
+    ...clientData
+  } = payload;
 
-  const placeholderName = `Cliente Pendiente - ${new Date().toISOString()}`;
-  const onboardingToken = crypto.randomUUID();
-
-  const { data: client, error } = await supabase
-    .from('clients')
-    .insert({
-      status: 'pending_onboarding',
-      onboarding_token: onboardingToken,
-      contact_name: placeholderName,
-      agreement_id: agreementId,
-    })
-    .select('id')
-    .single();
-
-  if (error || !client) {
-    console.error('createClientForInvitation error:', error?.message);
-    return {
-      data: null,
-      error: { message: 'No se pudo crear la invitación para el cliente.' },
-    };
+  let address: string | undefined = undefined;
+  if (street_address && street_number && locality && province) {
+    address = `${street_address} ${street_number}, ${locality}, ${province}`;
   }
 
-  revalidatePath('/admin/clients');
+  let delivery_window: string | undefined = undefined;
+  if (delivery_days && delivery_time_from && delivery_time_to) {
+    delivery_window = `${delivery_days.join(
+      ', '
+    )} de ${delivery_time_from} a ${delivery_time_to}hs`;
+  }
 
-  const link = `/onboarding/${onboardingToken}`;
-  return { data: { link }, error: null };
+  const finalPayload: Partial<Client> = {
+    ...clientData,
+  };
+
+  if (address) finalPayload.address = address;
+  if (delivery_window) finalPayload.delivery_window = delivery_window;
+
+  // Si la dirección cambia, reseteamos las coordenadas para forzar la geocodificación
+  if (address) {
+    finalPayload.latitude = null;
+    finalPayload.longitude = null;
+  }
+
+  // Lógica de estado para creación
+  if (!id) {
+    finalPayload.status = clientData.agreement_id
+      ? 'active'
+      : 'pending_agreement';
+  }
+
+  const result = await upsertEntity('clients', { id, ...finalPayload }, [
+    '/admin/clients',
+    `/admin/clients/${id}`,
+  ]);
+
+  if (result.error && result.error.code === '23505') {
+    if (result.error.message.includes('cuit')) {
+      return {
+        data: null,
+        error: {
+          message: 'El CUIT ingresado ya está registrado en nuestro sistema.',
+        },
+      };
+    }
+    if (result.error.message.includes('email')) {
+      return {
+        data: null,
+        error: {
+          message: 'El email ingresado ya está registrado en nuestro sistema.',
+        },
+      };
+    }
+  }
+
+  return result;
 }
 
 export async function assignAgreementToClient(payload: {
@@ -170,65 +275,63 @@ export async function deleteClient(id: string) {
   return { error: null };
 }
 
-export async function getClientsWithPendingAgreements(): Promise<Client[]> {
+export async function getClientOrdersWithDetails(
+  clientId: string
+): Promise<{ data: OrderWithItems[] | null; error: any }> {
   const supabase = await getSupabaseClientWithAuth();
   const { data, error } = await supabase
-    .from('clients')
-    .select('*')
-    .eq('status', 'pending_agreement')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('getClientsWithPendingAgreements error:', error.message);
-    return [];
-  }
-  return data;
-}
-
-
-export async function getClientOrdersWithDetails(clientId: string): Promise<{ data: OrderWithItems[] | null, error: any }> {
-    const supabase = await getSupabaseClientWithAuth();
-    const { data, error } = await supabase
-        .from("orders")
-        .select(`
+    .from('orders')
+    .select(
+      `
             *,
             order_items (
                 quantity,
                 price_per_unit,
                 products ( name, category )
             )
-        `)
-        .eq("client_id", clientId)
-        .order("created_at", { ascending: false });
+        `
+    )
+    .eq('client_id', clientId)
+    .order('created_at', { ascending: false });
 
-    if (error) {
-        console.error("getClientOrdersWithDetails error:", error.message);
-        return { data: null, error };
-    }
-    return { data, error: null };
+  if (error) {
+    console.error('getClientOrdersWithDetails error:', error.message);
+    return { data: null, error };
+  }
+  return { data, error: null };
 }
 
-export async function analyzeClient(clientId: string): Promise<{data: AnalyzeClientOutput | null, error: any}> {
-    const [clientResult, ordersResult] = await Promise.all([
-        getClientById(clientId),
-        getClientOrdersWithDetails(clientId)
-    ]);
+export async function analyzeClient(
+  clientId: string
+): Promise<{ data: AnalyzeClientOutput | null; error: any }> {
+  const [clientResult, ordersResult] = await Promise.all([
+    getClientById(clientId),
+    getClientOrdersWithDetails(clientId),
+  ]);
 
-    if (clientResult.error || !clientResult.data) {
-        return { data: null, error: { message: "No se pudo encontrar al cliente." } };
-    }
-     if (ordersResult.error) {
-        return { data: null, error: { message: "No se pudieron obtener los pedidos del cliente." } };
-    }
+  if (clientResult.error || !clientResult.data) {
+    return { data: null, error: { message: 'No se pudo encontrar al cliente.' } };
+  }
+  if (ordersResult.error) {
+    return {
+      data: null,
+      error: { message: 'No se pudieron obtener los pedidos del cliente.' },
+    };
+  }
 
-    const client = clientResult.data;
-    const orders = ordersResult.data ?? [];
-    
-    try {
-        const analysis = await analyzeClientFlow({ client, orders });
-        return { data: analysis, error: null };
-    } catch (e: any) {
-        console.error("Error analyzing client:", e.message);
-        return { data: null, error: { message: "La IA no pudo completar el análisis en este momento." } };
-    }
+  const client = clientResult.data;
+  const orders = ordersResult.data ?? [];
+
+  try {
+    const analysis = await analyzeClientFlow({ client, orders });
+    return { data: analysis, error: null };
+  } catch (e: any) {
+    console.error('Error analyzing client:', e.message);
+    return {
+      data: null,
+      error: {
+        message: 'La IA no pudo completar el análisis en este momento.',
+      },
+    };
+  }
 }

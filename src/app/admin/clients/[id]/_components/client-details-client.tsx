@@ -2,11 +2,10 @@
 
 "use client";
 
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useTransition, useCallback, useEffect, useState } from "react";
 import { Info, Landmark, ArrowLeft, Edit, FilePen, Sparkles } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ClientHeader } from "./client-header";
 import { ClientInfo } from "./client-info";
@@ -15,12 +14,13 @@ import { ClientOrders } from "./client-orders";
 import { ClientAnalysis } from './client-analysis';
 import type { Client, ClientStats as StatsType, Order, AgreementSalesCondition } from "@/types";
 import { Skeleton } from '@/components/ui/skeleton';
-import { deleteClient } from "@/app/admin/actions/clients.actions";
 import { getAgreementSalesConditions } from "@/app/admin/actions/agreements.actions";
 import { useToast } from "@/hooks/use-toast";
-import { OnboardingFormDialog } from './onboarding-form-dialog';
 import { AssignAgreementDialog } from '../../_components/assign-agreement-dialog';
 import { ActionButton, ActionButtonWrapper } from './client-action-buttons';
+import { ClientMap } from '@/app/admin/_components/client-map';
+import { UpsertClientDialog } from '../../_components/upsert-client-dialog';
+import { deleteClient } from '@/app/admin/actions/clients.actions';
 
 
 const formatRule = (rules: any): string => {
@@ -65,6 +65,10 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
     }
   }, [client.agreement_id, client.status]);
   
+  useEffect(() => {
+    // Cuando el cliente inicial cambia (por una actualización de la página), actualizamos el estado.
+    setClient(initialClient);
+  }, [initialClient]);
 
   useEffect(() => {
     if (client.agreement_id) {
@@ -79,6 +83,7 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
         })
         .finally(() => setIsLoadingConditions(false));
     } else {
+      setSalesConditions([]);
       setIsLoadingConditions(false);
     }
   }, [client.agreement_id, toast]);
@@ -105,12 +110,12 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
   };
 
   const editDialog = (
-    <OnboardingFormDialog client={client}>
+    <UpsertClientDialog client={client}>
       <ActionButtonWrapper>
         <Edit className="h-6 w-6" />
         <span>Editar Datos</span>
       </ActionButtonWrapper>
-    </OnboardingFormDialog>
+    </UpsertClientDialog>
   );
 
   const agreementDialog = (
@@ -121,6 +126,10 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
       </ActionButtonWrapper>
     </AssignAgreementDialog>
   );
+  
+  const mapCenter = client.latitude && client.longitude 
+    ? { lat: client.latitude, lng: client.longitude } 
+    : { lat: -34.6037, lng: -58.3816 }; // Fallback to Buenos Aires
 
   return (
     <>
@@ -154,6 +163,14 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
               <ClientOrders orders={orders} />
           </div>
           <div className="md:col-span-1 grid gap-4 auto-rows-min">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Ubicación</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ClientMap clients={[client]} center={mapCenter} zoom={15} />
+                </CardContent>
+              </Card>
               <ClientInfo client={client} onCopy={copyToClipboard} />
                <Card className="bg-secondary/50">
                   <CardHeader>
