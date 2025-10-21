@@ -241,7 +241,7 @@ type SubmitOnboardingPayload = Omit<Client, 'id' | 'created_at' | 'status' | 'ag
 };
 
 export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
-    const supabase = createBrowserClient();
+    const supabase = await createServerClient();
     
     const { 
         onboarding_token, 
