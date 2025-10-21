@@ -12,8 +12,8 @@ export async function getSupabaseClientWithAuth() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    throw new Error("You must be logged in to perform this action.");
+  if (!user || user.role !== 'authenticated') {
+    throw new Error("You must be an authenticated administrator to perform this action.");
   }
   return supabase;
 }
