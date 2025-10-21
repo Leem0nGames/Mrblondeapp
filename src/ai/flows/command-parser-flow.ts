@@ -34,7 +34,7 @@ const PromotionRuleSchema = z.object({
 }).describe('Las reglas específicas de la promoción.');
 
 const ParsedPromotionSchema = z.object({
-  entity: z.literal('promotion'),
+  entity: z.enum(['promotion']),
   data: z.object({
     name: z.string().describe('Un nombre corto y descriptivo para la promoción.'),
     description: z.string().describe('Una descripción un poco más detallada.'),
@@ -43,7 +43,7 @@ const ParsedPromotionSchema = z.object({
 }).describe('Una entidad de promoción, creada a partir del comando.');
 
 const ParsedPriceListSchema = z.object({
-    entity: z.literal('pricelist'),
+    entity: z.enum(['pricelist']),
     data: z.object({
         name: z.string().describe('Un nombre descriptivo para la nueva lista de precios.'),
         base_price_list_id: z.string().uuid().describe('El ID de la lista de precios base sobre la cual se aplicará el descuento.'),
@@ -62,7 +62,7 @@ const SalesConditionRuleSchema = z.object({
 }).describe('Las reglas específicas para la condición de venta.');
 
 const ParsedSalesConditionSchema = z.object({
-    entity: z.literal('sales_condition'),
+    entity: z.enum(['sales_condition']),
     data: z.object({
         name: z.string().describe('Un nombre corto y descriptivo para la condición de venta.'),
         description: z.string().describe('Una descripción un poco más detallada.'),
@@ -184,5 +184,3 @@ const commandParserFlow = ai.defineFlow(
     return output;
   }
 );
-
-    
