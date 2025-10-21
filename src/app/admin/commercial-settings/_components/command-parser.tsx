@@ -32,24 +32,26 @@ export function CommandParser() {
         }
 
         let upsertPromise;
-        switch (result.entity) {
+        const entityName = result.entity;
+        
+        switch (entityName) {
           case 'promotion':
             upsertPromise = upsertPromotion(result.data);
             break;
           case 'pricelist':
-             const { base_price_list_id, ...restOfData } = result.data;
-             const payload = {
-                ...restOfData,
-                base_price_list_id: base_price_list_id || null, // Ensure null if it's empty string
-                // You might need to handle creation of prices in a separate step or flow for pricelists
-             };
-             upsertPromise = upsertPriceList(payload);
+             // The AI flow returns the full data object, which might include fields
+             // not directly in the pricelists table schema (like base_price_list_name).
+             // The `upsertPriceList` action is designed to handle this,
+             // we just need to pass the data as is.
+             upsertPromise = upsertPriceList(result.data);
             break;
           case 'sales_condition':
             upsertPromise = upsertSalesCondition(result.data);
             break;
           default:
-            throw new Error('Tipo de entidad no reconocido.');
+            // This is a type-safe way to handle unexpected entities
+            const exhaustiveCheck: never = entityName;
+            throw new Error(`Tipo de entidad no reconocido: ${exhaustiveCheck}`);
         }
 
         const { error } = await upsertPromise;
