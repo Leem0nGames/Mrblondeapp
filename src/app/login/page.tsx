@@ -1,5 +1,7 @@
+
 import { hasUsers } from '@/app/actions/user.actions';
-import { Logo } from '@/components/logo';
+import { getPublicLogoUrl } from '@/app/admin/actions/settings.actions';
+import { Logo } from '@/app/logo';
 import {
   Card,
   CardContent,
@@ -11,17 +13,16 @@ import { LoginForm } from './_components/login-form';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
-// Esta página es un Server Component.
-// Comprueba si existen usuarios antes de decidir qué renderizar.
 export default async function LoginPage() {
   const usersExist = await hasUsers();
+  const logo_url = await getPublicLogoUrl();
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="mb-4 flex justify-center">
-            <Logo showText={true} />
+            <Logo showText={true} logoUrl={logo_url} />
           </div>
           <CardTitle className="text-2xl">Admin Login</CardTitle>
           <CardDescription>

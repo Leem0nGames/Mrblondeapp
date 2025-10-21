@@ -1,6 +1,7 @@
 
 import { hasUsers } from '@/app/actions/user.actions';
-import { Logo } from '@/components/logo';
+import { getPublicLogoUrl } from '@/app/admin/actions/settings.actions';
+import { Logo } from '@/app/logo';
 import {
   Card,
   CardContent,
@@ -11,22 +12,20 @@ import {
 import { SignupForm } from './_components/signup-form';
 import { redirect } from 'next/navigation';
 
-// Esta página es un Server Component.
-// Realiza una comprobación de seguridad crítica en el servidor antes de renderizar.
 export default async function SignupPage() {
-  // Comprobamos si ya existe algún usuario en el sistema.
-  // Si ya existe, redirigimos inmediatamente al login para que no se pueda ver esta página.
   const usersExist = await hasUsers();
   if (usersExist) {
     redirect('/login');
   }
+
+  const logo_url = await getPublicLogoUrl();
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="mb-4 flex justify-center">
-            <Logo showText={true} />
+            <Logo showText={true} logoUrl={logo_url} />
           </div>
           <CardTitle className="text-2xl">Crear Cuenta de Administrador</CardTitle>
           <CardDescription>

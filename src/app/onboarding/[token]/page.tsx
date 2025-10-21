@@ -1,5 +1,4 @@
 
-
 import { getOnboardingClient } from "@/app/actions/user.actions";
 import { OnboardingForm } from "./_components/onboarding-form";
 import { Logo } from "@/app/logo";
@@ -7,11 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { AlertTriangle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { getSettings } from "@/app/admin/actions/settings.actions";
+import { getPublicLogoUrl } from "@/app/admin/actions/settings.actions";
 
 export default async function OnboardingPage({ params }: { params: { token: string } }) {
   const { data: client, error } = await getOnboardingClient(params.token);
-  const { logo_url } = await getSettings();
+  const logo_url = await getPublicLogoUrl();
 
   if (error || !client) {
     return (

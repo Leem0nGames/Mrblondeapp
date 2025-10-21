@@ -1,7 +1,8 @@
 
+
 import { getOrderPageData } from "@/app/actions/user.actions";
 import { ProductCard } from "./_components/product-card";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/app/logo";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AlertTriangle, Package2 } from "lucide-react";
 import {
@@ -26,7 +27,7 @@ export default async function OrderPage({
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
         <div className="mb-8">
-            <Logo showText={true} />
+            <Logo showText={true} logoUrl={null} />
         </div>
         <Card className="max-w-md mt-8">
           <CardHeader>
@@ -46,7 +47,7 @@ export default async function OrderPage({
     );
   }
 
-  const { agreement, client, productsByCategory, vatPercentage } = data;
+  const { agreement, client, productsByCategory, vatPercentage, logoUrl } = data;
   const categories = Object.keys(productsByCategory);
   const promotions = agreement.agreement_promotions.map((ap: AgreementPromotion) => ap.promotions);
 
@@ -54,7 +55,7 @@ export default async function OrderPage({
     <div className="min-h-screen bg-muted/20">
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Logo showText={true}/>
+          <Logo showText={true} logoUrl={logoUrl} />
           <div className="text-right">
             <p className="font-semibold text-foreground">{client?.contact_name ?? "Cliente"}</p>
             <p className="text-sm capitalize text-muted-foreground">{agreement.agreement_name}</p>

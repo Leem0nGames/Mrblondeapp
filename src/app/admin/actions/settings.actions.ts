@@ -46,6 +46,26 @@ export async function getPublicWhatsappNumber(): Promise<string> {
     return data.value;
 }
 
+/**
+ * Gets the Logo URL. This action is public and can be called from server components
+ * without authentication, as it uses an anonymous server client.
+ */
+export async function getPublicLogoUrl(): Promise<string | null> {
+    const supabase = await createServerClient();
+    const { data, error } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'logo_url')
+        .single();
+    
+    if (error || !data) {
+        // This is not a critical error, so we don't log it.
+        // It's normal for the logo not to be configured.
+        return null;
+    }
+    return data.value as string | null;
+}
+
 
 export async function updateSettings(formData: FormData): Promise<{ error?: string }> {
     const supabase = await getSupabaseClientWithAuth();
@@ -66,6 +86,8 @@ export async function updateSettings(formData: FormData): Promise<{ error?: stri
     }
 
     revalidatePath('/admin', 'layout');
+    revalidatePath('/login');
+    revalidatePath('/signup');
     
     return {};
 }
@@ -108,6 +130,8 @@ export async function updateLogo(formData: FormData): Promise<{ error?: string }
     }
 
     revalidatePath('/admin', 'layout');
+    revalidatePath('/login');
+    revalidatePath('/signup');
     return {};
 }
 
@@ -128,5 +152,7 @@ export async function deleteLogo(): Promise<{ error?: string }> {
     // For this app, we'll just remove the DB reference to keep it simple.
 
     revalidatePath('/admin', 'layout');
+    revalidatePath('/login');
+    revalidatePath('/signup');
     return {};
 }

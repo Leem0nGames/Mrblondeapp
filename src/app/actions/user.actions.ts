@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { redirect } from 'next/navigation';
@@ -113,18 +114,22 @@ export async function logout() {
 export async function getOrderPageData(agreementId: string) {
     const supabase = await createServerClient(); // Use server client for anon access
 
-    // 1. Get Agreement and related Price List
-    const { data: agreement, error: agreementError } = await supabase
-        .from('agreements')
-        .select(`
-            *,
-            agreement_promotions(
-                promotions(*)
-            ),
-            price_lists(id, name, prices_include_vat)
-        `)
-        .eq('id', agreementId)
-        .maybeSingle();
+    const [agreementResult, settingsResult] = await Promise.all([
+        supabase
+            .from('agreements')
+            .select(`
+                *,
+                agreement_promotions(
+                    promotions(*)
+                ),
+                price_lists(id, name, prices_include_vat)
+            `)
+            .eq('id', agreementId)
+            .maybeSingle(),
+        supabase.from('app_settings').select('key, value')
+    ]);
+
+    const { data: agreement, error: agreementError } = agreementResult;
         
     if (agreementError || !agreement) {
         console.error("getOrderPageData (agreement) error:", agreementError?.message);
@@ -135,7 +140,6 @@ export async function getOrderPageData(agreementId: string) {
         return { data: null, error: { message: "Este convenio no tiene una lista de precios asignada." } };
     }
 
-    // 2. Get Products with their specific prices from the assigned Price List
     const { data: priceListItems, error: itemsError } = await supabase
         .from('price_list_items')
         .select(`
@@ -144,16 +148,13 @@ export async function getOrderPageData(agreementId: string) {
             products(*)
         `)
         .eq('price_list_id', agreement.price_lists.id)
-        .not('products', 'is', null); // Ensure we only get items with valid products
+        .not('products', 'is', null);
 
     if (itemsError) {
         console.error("getOrderPageData (items) error:", itemsError.message);
         return { data: null, error: { message: "No se pudieron cargar los productos para este convenio." } };
     }
 
-    // 3. Get the client assigned to this agreement.
-    // Use .maybeSingle() because multiple clients can share an agreement.
-    // This gracefully handles cases of 0 or 1 client, and avoids errors on multiple clients.
     const { data: client, error: clientError } = await supabase
         .from('clients')
         .select('id, contact_name')
@@ -163,25 +164,22 @@ export async function getOrderPageData(agreementId: string) {
 
     if (clientError) {
          console.error("getOrderPageData (client) error:", clientError.message);
-        // We don't fail the whole page load, just log the error.
     }
-
     const defaultClient = { id: 'generic', contact_name: 'Cliente' };
 
-    // 4. Get VAT percentage from settings
-    const { data: vatSetting, error: vatError } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'vat_percentage')
-        .single();
-
-    if (vatError) {
-        console.error("getOrderPageData (VAT) error:", vatError.message);
+    const { data: settingsData, error: settingsError } = settingsResult;
+    if (settingsError) {
+        console.error("getOrderPageData (settings) error:", settingsError.message);
     }
 
-    const vatPercentage = vatSetting ? Number(vatSetting.value) : 21;
+    const settings = (settingsData || []).reduce((acc, { key, value }) => {
+        acc[key] = key === 'vat_percentage' ? Number(value) : value;
+        return acc;
+    }, {} as any);
     
-    // 5. Format products and group them by category
+    const vatPercentage = settings.vat_percentage || 21;
+    const logoUrl = settings.logo_url || null;
+
     const products = priceListItems.map(pli => ({
         ...pli.products!,
         price: pli.price,
@@ -207,6 +205,7 @@ export async function getOrderPageData(agreementId: string) {
             client: client || defaultClient,
             productsByCategory,
             vatPercentage,
+            logoUrl,
         }, 
         error: null 
     };
