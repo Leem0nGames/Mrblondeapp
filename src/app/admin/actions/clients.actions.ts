@@ -10,7 +10,7 @@ import type {
   AnalyzeClientOutput,
 } from '@/types';
 import { analyzeClientFlow } from '@/ai/flows/analyze-client-flow';
-
+import { z } from 'zod';
 
 // --- Client Actions ---
 export async function getClients(
@@ -26,7 +26,7 @@ export async function getClients(
             agreements ( agreement_name )
         `
     )
-    .in('status', ['active', 'pending_agreement'])
+    .in('status', ['active', 'pending_agreement', 'pending_onboarding'])
     .order('created_at', { ascending: false });
 
   if (query) {
@@ -70,22 +70,36 @@ export async function getClientById(
   return { data: client, error: null };
 }
 
-export async function getClientStats(
-  clientId: string
-): Promise<{ data: ClientStats | null; error: any }> {
+export async function createClientForInvitation(): Promise<{
+  data: Pick<Client, 'id' | 'onboarding_token' | 'agreement_id'> | null;
+  error: any;
+}> {
   const supabase = await getSupabaseClientWithAuth();
 
-  const { data, error } = await supabase
-    .rpc('get_client_stats', { p_client_id: clientId })
+  const placeholderName = `Cliente Pendiente - ${new Date().toISOString()}`;
+  const { data: client, error } = await supabase
+    .from('clients')
+    .insert({
+      status: 'pending_onboarding',
+      onboarding_token: crypto.randomUUID(),
+      contact_name: placeholderName,
+    })
+    .select('id, onboarding_token, agreement_id')
     .single();
 
-  if (error) {
-    console.error('getClientStats error:', error.message);
-    return { data: null, error };
+  if (error || !client) {
+    console.error('createClientForInvitation error:', error?.message);
+    return {
+      data: null,
+      error: { message: 'No se pudo crear la invitación para el cliente.' },
+    };
   }
 
-  return { data, error: null };
+  revalidatePath('/admin/clients');
+  return { data: client, error: null };
 }
+
+const CuitSchema = z.string().optional().or(z.literal(''));
 
 export async function upsertClient(
   payload: Partial<Client> & {
@@ -135,6 +149,10 @@ export async function upsertClient(
     finalPayload.status = clientData.agreement_id
       ? 'active'
       : 'pending_agreement';
+    finalPayload.onboarding_token = crypto.randomUUID();
+  } else {
+    // Para edición, no cambiamos el token de onboarding
+    delete (finalPayload as any).onboarding_token;
   }
 
   const result = await upsertEntity('clients', { id, ...finalPayload }, [
@@ -243,6 +261,23 @@ export async function getClientOrdersWithDetails(
     console.error('getClientOrdersWithDetails error:', error.message);
     return { data: null, error };
   }
+  return { data, error: null };
+}
+
+export async function getClientStats(
+  clientId: string
+): Promise<{ data: ClientStats | null; error: any }> {
+  const supabase = await getSupabaseClientWithAuth();
+
+  const { data, error } = await supabase
+    .rpc('get_client_stats', { p_client_id: clientId })
+    .single();
+
+  if (error) {
+    console.error('getClientStats error:', error.message);
+    return { data: null, error };
+  }
+
   return { data, error: null };
 }
 

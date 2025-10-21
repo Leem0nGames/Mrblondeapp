@@ -230,7 +230,7 @@ export async function getOnboardingClient(token: string): Promise<{ data: Client
     return { data, error: null };
 }
 
-type SubmitOnboardingPayload = Omit<Client, 'id' | 'created_at' | 'status' | 'agreement_id' | 'agreements' | 'latitude' | 'longitude'> & {
+type SubmitOnboardingPayload = Omit<Client, 'id' | 'created_at' | 'status' | 'agreement_id' | 'agreements'> & {
   street_address: string;
   street_number: string;
   locality: string;

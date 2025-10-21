@@ -3,7 +3,7 @@
 "use client";
 
 import { useTransition, useCallback, useEffect, useState } from "react";
-import { MoreHorizontal, Trash2, Copy, Link as LinkIcon, Archive, Edit, FilePen } from "lucide-react";
+import { MoreHorizontal, Archive, Link as LinkIcon, Copy, FilePen } from "lucide-react";
 import Link from "next/link";
 import {
   AlertDialog,
@@ -93,7 +93,6 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
       <div className="grid gap-4 sm:hidden">
         {clients.map((client) => {
           const onboardingLink = isClient ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
-          const orderLink = isClient && client.agreement_id && client.status === 'active' ? `${window.location.origin}/pedido/${client.agreement_id}` : null;
           return (
           <Card key={client.id}>
              <Link href={`/admin/clients/${client.id}`}>

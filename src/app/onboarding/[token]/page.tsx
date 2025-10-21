@@ -2,20 +2,22 @@
 
 import { getOnboardingClient } from "@/app/actions/user.actions";
 import { OnboardingForm } from "./_components/onboarding-form";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/app/logo";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { getSettings } from "@/app/admin/actions/settings.actions";
 
 export default async function OnboardingPage({ params }: { params: { token: string } }) {
   const { data: client, error } = await getOnboardingClient(params.token);
+  const { logo_url } = await getSettings();
 
   if (error || !client) {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
         <div className="mb-8">
-          <Logo showText={true} />
+            <Logo showText={true} logoUrl={logo_url} />
         </div>
         <Card className="max-w-md mt-8">
           <CardHeader>
@@ -42,7 +44,7 @@ export default async function OnboardingPage({ params }: { params: { token: stri
     return (
        <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
         <div className="mb-8">
-          <Logo showText={true} />
+          <Logo showText={true} logoUrl={logo_url}/>
         </div>
         <Card className="max-w-md mt-8">
           <CardHeader>
@@ -81,7 +83,7 @@ export default async function OnboardingPage({ params }: { params: { token: stri
     <div className="min-h-screen bg-muted/40 py-8 px-4">
       <header className="container mx-auto max-w-2xl text-center mb-8">
         <div className="inline-block">
-            <Logo showText={true} />
+            <Logo showText={true} logoUrl={logo_url}/>
         </div>
       </header>
       <main className="container mx-auto max-w-2xl">

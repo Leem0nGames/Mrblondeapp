@@ -140,14 +140,9 @@ export function OnboardingForm({ client }: { client: Client }) {
   }, [watchedProvince, availableLocalities, form]);
 
   const onSubmit = (values: OnboardingFormValues) => {
-    const address = `${values.street_address} ${values.street_number}, ${values.locality}, ${values.province}`;
-    const delivery_window = `${values.delivery_days.join(', ')} de ${values.delivery_time_from} a ${values.delivery_time_to}hs`;
-
     startTransition(async () => {
       const result = await submitOnboardingForm({
         ...values,
-        address: address,
-        delivery_window: delivery_window,
         onboarding_token: client.onboarding_token,
       });
 

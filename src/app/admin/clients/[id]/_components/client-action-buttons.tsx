@@ -53,10 +53,18 @@ export function ClientActionButtons({
     clientStatus
 }: ClientActionButtonsProps) {
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             {editDialog}
             
             {agreementDialog}
+
+            <ActionButton 
+                disabled={!onboardingLink || clientStatus !== 'pending_onboarding'}
+                onClick={() => onCopyLink(onboardingLink, 'Enlace de alta copiado!')}
+            >
+                <Copy className="h-5 w-5" />
+                <span>Link Alta</span>
+            </ActionButton>
 
             <ActionButton disabled={!orderLink} onClick={() => onCopyLink(orderLink, 'Enlace de pedido copiado!')}>
                 <LinkIcon className="h-5 w-5" />
