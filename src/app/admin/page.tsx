@@ -12,7 +12,6 @@ import {
 import { DashboardStats } from "./_components/dashboard-stats";
 import { RecentOrders } from "./_components/recent-orders";
 import { PendingClients } from "./_components/pending-clients";
-import { ClientsHeatmap } from "./_components/clients-heatmap";
 import type { DashboardStats as Stats } from "@/types";
 
 export default async function AdminDashboardPage() {

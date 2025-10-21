@@ -162,13 +162,6 @@ export type AppSettings = {
     logo_url: string | null;
 }
 
-export type ClientHeatmapData = {
-    id: string;
-    name: string;
-    value: number;
-    risk: number;
-}
-
 // --- AI Flow Types ---
 export type AnalyzeClientOutput = {
     summary: string;
