@@ -11,6 +11,7 @@ import type {
 } from '@/types';
 import { analyzeClientFlow } from '@/ai/flows/analyze-client-flow';
 import { z } from 'zod';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 
 // --- Client Actions ---
 export async function getClients(
@@ -70,34 +71,39 @@ export async function getClientById(
   return { data: client, error: null };
 }
 
-export async function createClientForInvitation(): Promise<{
-  data: Pick<Client, 'id' | 'onboarding_token' | 'agreement_id'> | null;
+export async function createClientForInvitation(payload: { name: string | null; agreementId: string | null }): Promise<{
+  data: Pick<Client, "id" | "onboarding_token"> | null;
   error: any;
 }> {
   const supabase = await getSupabaseClientWithAuth();
+  
+  const placeholderName = payload.name || `Cliente Pendiente - ${new Date().toISOString()}`;
+  
+  const status = payload.agreementId ? 'pending_onboarding' : 'pending_onboarding';
 
-  const placeholderName = `Cliente Pendiente - ${new Date().toISOString()}`;
   const { data: client, error } = await supabase
     .from('clients')
     .insert({
-      status: 'pending_onboarding',
+      status: status,
       onboarding_token: crypto.randomUUID(),
       contact_name: placeholderName,
+      agreement_id: payload.agreementId,
     })
-    .select('id, onboarding_token, agreement_id')
+    .select('id, onboarding_token')
     .single();
 
   if (error || !client) {
-    console.error('createClientForInvitation error:', error?.message);
+    console.error("createClientForInvitation error:", error?.message);
     return {
       data: null,
       error: { message: 'No se pudo crear la invitación para el cliente.' },
     };
   }
 
-  revalidatePath('/admin/clients');
+  revalidatePath("/admin/clients");
   return { data: client, error: null };
 }
+
 
 const CuitSchema = z.string().optional().or(z.literal(''));
 
@@ -144,14 +150,12 @@ export async function upsertClient(
   if (address) finalPayload.address = address;
   if (delivery_window) finalPayload.delivery_window = delivery_window;
 
-  // Lógica de estado para creación
   if (!id) {
     finalPayload.status = clientData.agreement_id
       ? 'active'
       : 'pending_agreement';
     finalPayload.onboarding_token = crypto.randomUUID();
   } else {
-    // Para edición, no cambiamos el token de onboarding
     delete (finalPayload as any).onboarding_token;
   }
 
@@ -313,5 +317,45 @@ export async function analyzeClient(
         message: 'La IA no pudo completar el análisis en este momento.',
       },
     };
+  }
+}
+
+export async function geocodeAddressAndSave(clientId: string, address: string) {
+  if (!process.env.GOOGLE_MAPS_API_KEY) {
+    console.warn('Google Maps API key is not configured. Skipping geocoding.');
+    return { data: null, error: { message: 'API key not configured.' } };
+  }
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+    address
+  )}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.status !== 'OK' || !data.results[0]) {
+      throw new Error(`Geocoding failed: ${data.status}`);
+    }
+
+    const { lat, lng } = data.results[0].geometry.location;
+
+    if (!supabaseAdmin) {
+      throw new Error('Admin client not available for updating coordinates.');
+    }
+
+    const { error: updateError } = await supabaseAdmin
+      .from('clients')
+      .update({ latitude: lat, longitude: lng })
+      .eq('id', clientId);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    revalidatePath(`/admin/clients/${clientId}`);
+    return { data: { latitude: lat, longitude: lng }, error: null };
+  } catch (error: any) {
+    console.error('Geocoding and saving error:', error.message);
+    return { data: null, error: { message: error.message } };
   }
 }

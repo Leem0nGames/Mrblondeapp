@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,24 +14,43 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { createClientForInvitation } from "@/app/admin/actions/clients.actions";
+import { getAgreements } from "@/app/admin/actions/agreements.actions";
 import { Copy, Check, Loader2, UserPlus, Link2 } from "lucide-react";
 import { UpsertClientDialog } from "./upsert-client-dialog";
+import type { Agreement } from "@/types";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 export function CreateClientDialog({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [view, setView] = useState<"options" | "link">("options");
+  const [view, setView] = useState<"options" | "invitation_config" | "link">("options");
+  const [agreements, setAgreements] = useState<Agreement[]>([]);
+  const [selectedAgreementId, setSelectedAgreementId] = useState<string | null>(null);
+  const [clientName, setClientName] = useState("");
   const [generatedLink, setGeneratedLink] = useState("");
   const [hasCopied, setHasCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (view === 'invitation_config') {
+        getAgreements().then(({ data }) => setAgreements(data ?? []));
+    }
+  }, [view]);
+
   const handleGenerateLink = () => {
     startTransition(async () => {
-      const result = await createClientForInvitation();
+      const result = await createClientForInvitation({
+        name: clientName || null,
+        agreementId: selectedAgreementId,
+      });
+
       if (result.error || !result.data) {
         toast({
           title: "Error",
-          description: result.error.message,
+          description: result.error?.message || "No se pudo generar el enlace.",
           variant: "destructive",
         });
       } else {
@@ -52,11 +71,12 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
-      // Reset state when closing
       setTimeout(() => {
         setView("options");
         setGeneratedLink("");
         setHasCopied(false);
+        setClientName("");
+        setSelectedAgreementId(null);
       }, 300);
     }
   };
@@ -67,8 +87,10 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Agregar Nuevo Cliente</DialogTitle>
-          <DialogDescription>
-            Elige cómo deseas agregar un nuevo cliente al sistema.
+           <DialogDescription>
+            {view === 'options' && "Elige cómo deseas agregar un nuevo cliente al sistema."}
+            {view === 'invitation_config' && "Configura la invitación antes de generar el enlace."}
+            {view === 'link' && "Comparte este enlace con tu cliente para que complete su alta."}
           </DialogDescription>
         </DialogHeader>
 
@@ -91,14 +113,9 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
             <Button
               variant="outline"
               className="h-20 flex flex-col gap-1"
-              onClick={handleGenerateLink}
-              disabled={isPending}
+              onClick={() => setView('invitation_config')}
             >
-              {isPending ? (
-                <Loader2 className="h-6 w-6 animate-spin" />
-              ) : (
-                <Link2 className="h-6 w-6" />
-              )}
+              <Link2 className="h-6 w-6" />
               <span>Generar Enlace de Invitación</span>
               <span className="text-xs text-muted-foreground">
                 (El cliente carga sus datos)
@@ -107,12 +124,51 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
           </div>
         )}
 
+        {view === "invitation_config" && (
+            <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                    <Label htmlFor="client-name">Nombre del Cliente (Opcional)</Label>
+                    <Input 
+                        id="client-name"
+                        placeholder="Para identificarlo en la lista"
+                        value={clientName}
+                        onChange={(e) => setClientName(e.target.value)}
+                    />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="agreement-select">Asignar Convenio (Opcional)</Label>
+                     <Select 
+                        onValueChange={(value) => setSelectedAgreementId(value === 'null' ? null : value)} 
+                        defaultValue="null"
+                    >
+                        <SelectTrigger id="agreement-select">
+                            <SelectValue placeholder="Selecciona un convenio..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="null">Ninguno por ahora</SelectItem>
+                            {agreements.map(agreement => (
+                                <SelectItem key={agreement.id} value={agreement.id}>
+                                {agreement.agreement_name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                        Si asignas un convenio, el cliente podrá hacer pedidos inmediatamente después de registrarse.
+                    </p>
+                </div>
+
+                <DialogFooter className="!mt-6">
+                    <Button variant="ghost" onClick={() => setView('options')}>Volver</Button>
+                    <Button onClick={handleGenerateLink} disabled={isPending}>
+                        {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generar Enlace"}
+                    </Button>
+                </DialogFooter>
+            </div>
+        )}
+
         {view === "link" && (
           <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">
-              Comparte este enlace con tu cliente para que complete su
-              formulario de alta.
-            </p>
             <div className="flex items-center space-x-2">
               <input
                 value={generatedLink}
@@ -132,7 +188,7 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
               </Button>
             </div>
             <DialogFooter className="!mt-6">
-                <Button variant="secondary" onClick={() => setView('options')}>Volver</Button>
+                <Button variant="secondary" onClick={() => setView('invitation_config')}>Volver</Button>
                 <Button onClick={() => handleOpenChange(false)}>Finalizar</Button>
             </DialogFooter>
           </div>
