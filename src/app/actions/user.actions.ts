@@ -4,7 +4,6 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient as createBrowserClient } from '@/lib/supabase/client';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { Client, CartItem, AuthState } from '@/types';
 
@@ -42,7 +41,7 @@ export async function signupSuperAdmin(
     return { error: { message: 'El registro ya no está disponible. Ya existe un administrador.' } };
   }
 
-  const supabase = createBrowserClient();
+  const supabase = await createServerClient();
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
@@ -313,7 +312,7 @@ export async function submitOrder(payload: {
     clientName: string;
     notes?: string;
 }) {
-    const supabase = createBrowserClient();
+    const supabase = await createServerClient();
 
     // 1. Create the order
     const { data: order, error: orderError } = await supabase
