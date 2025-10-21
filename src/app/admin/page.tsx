@@ -16,7 +16,7 @@ import { ClientsHeatmap } from "./_components/clients-heatmap";
 import type { DashboardStats as Stats } from "@/types";
 
 export default async function AdminDashboardPage() {
-    const { stats, pendingOrders, pendingClients, heatmapData } = await getDashboardData();
+    const { stats, pendingOrders, pendingClients } = await getDashboardData();
 
     return (
         <div className="grid flex-1 items-start gap-4 md:gap-8">
@@ -29,7 +29,6 @@ export default async function AdminDashboardPage() {
 
             <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
                 <div className="xl:col-span-2 space-y-4">
-                  <ClientsHeatmap clients={heatmapData} />
                   <Card>
                       <CardHeader>
                           <CardTitle>Pedidos Recientes</CardTitle>

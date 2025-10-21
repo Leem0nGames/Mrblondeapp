@@ -11,31 +11,6 @@ import type {
 } from '@/types';
 import { analyzeClientFlow } from '@/ai/flows/analyze-client-flow';
 
-async function geocodeAddress(
-  address: string
-): Promise<{ lat: number; lng: number } | null> {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  if (!apiKey) {
-    console.error('Google Maps API key is missing.');
-    return null;
-  }
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-    address
-  )}&key=${apiKey}`;
-
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-    if (data.status === 'OK' && data.results[0]) {
-      return data.results[0].geometry.location;
-    }
-    console.warn('Geocoding failed:', data.status, data.error_message);
-    return null;
-  } catch (error: any) {
-    console.error('Error during geocoding fetch:', error.message);
-    return null;
-  }
-}
 
 // --- Client Actions ---
 export async function getClients(
@@ -90,30 +65,6 @@ export async function getClientById(
   if (error) {
     console.error('getClientById error:', error.message);
     return { data: null, error };
-  }
-
-  if (
-    client &&
-    client.address &&
-    (client.latitude === null || client.longitude === null)
-  ) {
-    const location = await geocodeAddress(client.address);
-    if (location) {
-      const { data: updatedClient, error: updateError } = await supabase
-        .from('clients')
-        .update({ latitude: location.lat, longitude: location.lng })
-        .eq('id', client.id)
-        .select()
-        .single();
-
-      if (updateError) {
-        console.error('Error saving geocoded address:', updateError.message);
-        // No devuelvas error, simplemente usa el cliente original
-        return { data: client, error: null };
-      }
-      // Devuelve el cliente con las coordenadas actualizadas
-      return { data: updatedClient, error: null };
-    }
   }
 
   return { data: client, error: null };
@@ -178,12 +129,6 @@ export async function upsertClient(
 
   if (address) finalPayload.address = address;
   if (delivery_window) finalPayload.delivery_window = delivery_window;
-
-  // Si la dirección cambia, reseteamos las coordenadas para forzar la geocodificación
-  if (address) {
-    finalPayload.latitude = null;
-    finalPayload.longitude = null;
-  }
 
   // Lógica de estado para creación
   if (!id) {

@@ -106,8 +106,6 @@ export type Client = {
     contact_name: string | null;
     contact_dni: string | null;
     address: string | null;
-    latitude: number | null;
-    longitude: number | null;
     delivery_window: string | null;
     email: string | null;
     instagram: string | null;
