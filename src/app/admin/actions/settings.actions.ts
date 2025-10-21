@@ -2,6 +2,7 @@
 "use server";
 
 import { getSupabaseClientWithAuth } from "./_helpers";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { AppSettings } from "@/types";
 
@@ -24,6 +25,25 @@ export async function getSettings(): Promise<AppSettings> {
         vat_percentage: settings.vat_percentage || 21,
         logo_url: settings.logo_url || null,
     };
+}
+
+/**
+ * Gets the WhatsApp number. This action is public and can be called from client components
+ * without authentication, as it uses an anonymous server client.
+ */
+export async function getPublicWhatsappNumber(): Promise<string> {
+    const supabase = await createServerClient();
+    const { data, error } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'whatsapp_number')
+        .single();
+    
+    if (error || !data) {
+        console.error("getPublicWhatsappNumber error:", error?.message);
+        return "";
+    }
+    return data.value;
 }
 
 
