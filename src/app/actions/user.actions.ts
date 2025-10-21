@@ -152,7 +152,9 @@ export async function getOrderPageData(agreementId: string) {
         return { data: null, error: { message: "No se pudieron cargar los productos para este convenio." } };
     }
 
-    // 3. Get the client assigned to this agreement
+    // 3. Get the client assigned to this agreement.
+    // Use .maybeSingle() because multiple clients can share an agreement.
+    // This gracefully handles cases of 0 or 1 client, and avoids errors on multiple clients.
     const { data: client, error: clientError } = await supabase
         .from('clients')
         .select('id, contact_name')
@@ -162,12 +164,10 @@ export async function getOrderPageData(agreementId: string) {
 
     if (clientError) {
          console.error("getOrderPageData (client) error:", clientError.message);
-        return { data: null, error: { message: "Error al buscar el cliente para este convenio." } };
+        // We don't fail the whole page load, just log the error.
     }
 
-    if (!client) {
-         return { data: null, error: { message: "Este convenio no está asignado a ningún cliente activo." } };
-    }
+    const defaultClient = { id: 'generic', contact_name: 'Cliente' };
 
     // 4. Get VAT percentage from settings
     const { data: vatSetting, error: vatError } = await supabase
@@ -205,7 +205,7 @@ export async function getOrderPageData(agreementId: string) {
                 ...agreement,
                 agreement_promotions: agreement.agreement_promotions ?? [],
             }, 
-            client,
+            client: client || defaultClient,
             productsByCategory,
             vatPercentage,
         }, 
