@@ -104,6 +104,9 @@ export async function deleteLogo(): Promise<{ error?: string }> {
         return { error: "No se pudo eliminar el logo." };
     }
 
+    // Optional: Also delete the file from storage if desired
+    // For this app, we'll just remove the DB reference to keep it simple.
+
     revalidatePath('/admin', 'layout');
     return {};
 }
