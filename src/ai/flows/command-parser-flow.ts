@@ -3,15 +3,13 @@
 /**
  * @fileOverview Un agente de IA que interpreta comandos en lenguaje natural para crear entidades comerciales.
  *
- * - commandParserFlow: La función principal que interpreta el comando.
+ * - commandParser: La función principal que interpreta el comando y le pasa contexto dinámico a la IA.
  * - CommandParserInput: El tipo de entrada para el flujo.
- * - CommandParserOutput: El tipo de salida del flujo.
+ * - CommandParserOutput: El tipo de salida del flujo, que puede ser una promoción, una lista de precios o una condición de venta.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import type { Product, PriceList } from '@/types';
-import { getProducts } from '@/app/admin/actions/products.actions';
 import { getPriceLists } from '@/app/admin/actions/pricelists.actions';
 
 
@@ -23,6 +21,7 @@ export type CommandParserInput = z.infer<typeof CommandParserInputSchema>;
 
 // --- Output Schemas ---
 
+// Esquema para Promoción
 const PromotionRuleSchema = z.object({
   type: z.enum(['buy_x_get_y_free', 'free_shipping', 'min_amount_discount']),
   buy: z.number().optional(),
@@ -34,7 +33,7 @@ const PromotionRuleSchema = z.object({
 }).describe('Las reglas específicas de la promoción.');
 
 const ParsedPromotionSchema = z.object({
-  entity: z.enum(['promotion']),
+  entity: z.literal('promotion'),
   data: z.object({
     name: z.string().describe('Un nombre corto y descriptivo para la promoción.'),
     description: z.string().describe('Una descripción un poco más detallada.'),
@@ -42,16 +41,19 @@ const ParsedPromotionSchema = z.object({
   }),
 }).describe('Una entidad de promoción, creada a partir del comando.');
 
+
+// Esquema para Lista de Precios
 const ParsedPriceListSchema = z.object({
-    entity: z.enum(['pricelist']),
+    entity: z.literal('pricelist'),
     data: z.object({
         name: z.string().describe('Un nombre descriptivo para la nueva lista de precios.'),
-        base_price_list_id: z.string().uuid().describe('El ID de la lista de precios base sobre la cual se aplicará el descuento.'),
-        discount_percentage: z.number().min(1).max(99).describe('El porcentaje de descuento a aplicar sobre la lista base.'),
-        prices_include_vat: z.boolean().describe('Si los precios de la lista nueva incluyen IVA. Heredar de la lista base.'),
+        base_price_list_id: z.string().uuid().describe("El ID de la lista de precios base sobre la cual se aplicará el descuento. Debes encontrar este ID en el contexto de 'priceLists' que se te provee."),
+        discount_percentage: z.number().min(0).max(100).describe('El porcentaje de descuento a aplicar sobre la lista base (ej: 15 para 15%).'),
     }),
 }).describe('Una nueva lista de precios creada con un descuento sobre una existente.');
 
+
+// Esquema para Condición de Venta
 const SalesConditionRuleSchema = z.object({
     type: z.enum(['net_days', 'discount', 'installments', 'split_payment', 'cash_on_delivery']),
     days: z.number().optional(),
@@ -62,7 +64,7 @@ const SalesConditionRuleSchema = z.object({
 }).describe('Las reglas específicas para la condición de venta.');
 
 const ParsedSalesConditionSchema = z.object({
-    entity: z.enum(['sales_condition']),
+    entity: z.literal('sales_condition'),
     data: z.object({
         name: z.string().describe('Un nombre corto y descriptivo para la condición de venta.'),
         description: z.string().describe('Una descripción un poco más detallada.'),
@@ -70,6 +72,8 @@ const ParsedSalesConditionSchema = z.object({
     }),
 }).describe('Una condición de venta creada a partir del comando.');
 
+
+// Esquema de Salida Unificado
 const CommandParserOutputSchema = z.union([
     ParsedPromotionSchema,
     ParsedPriceListSchema,
@@ -80,19 +84,17 @@ export type CommandParserOutput = z.infer<typeof CommandParserOutputSchema>;
 
 // --- Main Exported Function ---
 export async function commandParser(input: CommandParserInput): Promise<CommandParserOutput> {
-  // Fetch dynamic data to provide context to the AI
-  const [{ data: products }, { data: priceLists }] = await Promise.all([getProducts(), getPriceLists()]);
+  // Obtiene datos dinámicos para darle contexto a la IA
+  const { data: priceLists } = await getPriceLists();
 
   return commandParserFlow({
       ...input,
-      products: products ?? [],
       priceLists: priceLists ?? [],
   });
 }
 
 // --- Genkit Flow Definition ---
 const dynamicInputSchema = CommandParserInputSchema.extend({
-    products: z.array(z.any()),
     priceLists: z.array(z.any()),
 });
 
@@ -104,7 +106,6 @@ const prompt = ai.definePrompt({
     Eres un asistente inteligente para "Mr. Blonde", una distribuidora de productos de belleza. Tu tarea es interpretar comandos en lenguaje natural de un administrador y convertirlos en objetos JSON estructurados para crear promociones, listas de precios o condiciones de venta.
 
     **Contexto disponible:**
-    - Lista de Productos: {{{json products}}}
     - Listas de Precios existentes: {{{json priceLists}}}
 
     **Instrucciones:**
@@ -112,7 +113,7 @@ const prompt = ai.definePrompt({
     2.  **Extrae los Datos:** Analiza el texto para extraer los detalles y poblar el campo 'data' del esquema correspondiente.
     3.  **Genera un Nombre y Descripción:** Crea un nombre y descripción claros y concisos basados en el comando.
     4.  **Aplica Lógica de Negocio:**
-        -   Para **listas de precios**, el usuario mencionará un descuento sobre una lista existente. Debes encontrar el ID de la lista base y heredar su configuración de IVA.
+        -   Para **listas de precios**, el usuario mencionará un descuento sobre una lista existente. Debes encontrar el 'base_price_list_id' correcto en el contexto de 'priceLists' que se te provee. El nombre de la lista en el comando puede no ser exacto, busca la coincidencia más cercana.
         -   Para **promociones y condiciones**, extrae los parámetros numéricos y de texto para las reglas.
     5.  **Responde ÚNICAMENTE con el objeto JSON** que se adhiere a uno de los esquemas de salida. No incluyas explicaciones.
 
@@ -142,9 +143,8 @@ const prompt = ai.definePrompt({
         "entity": "pricelist",
         "data": {
             "name": "Lista Revendedores (15% OFF)",
-            "base_price_list_id": "uuid-de-la-lista-base",
-            "discount_percentage": 15,
-            "prices_include_vat": true
+            "base_price_list_id": "uuid-de-la-lista-base-encontrado-en-el-contexto",
+            "discount_percentage": 15
         }
     }
     \`\`\`
