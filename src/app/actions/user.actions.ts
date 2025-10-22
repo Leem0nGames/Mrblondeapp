@@ -6,8 +6,6 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { Client, CartItem, AuthState } from '@/types';
 
-export const runtime = 'nodejs';
-
 export async function hasUsers(): Promise<boolean> {
   // If the admin client isn't configured (e.g., missing ENV VARS in Vercel),
   // securely assume users exist to prevent the signup page from showing.
