@@ -63,6 +63,17 @@ const deliveryDays = [
   { id: 'jueves', label: 'J' }, { id: 'viernes', label: 'V' }, { id: 'sabado', label: 'S' },
 ];
 
+const generateTimeOptions = () => {
+    const options = [];
+    for (let h = 8; h <= 20; h++) {
+        const hour = h.toString().padStart(2, '0');
+        options.push(`${hour}:00`);
+    }
+    return options;
+};
+const timeOptions = generateTimeOptions();
+
+
 const formSchema = z.object({
   contact_name: z.string().min(3, "El nombre es requerido."),
   email: z.string().email("Debe ser un email válido."),
@@ -225,10 +236,24 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Cli
               )}/>
               <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="delivery_time_from" render={({ field }) => (
-                      <FormItem><FormLabel>Desde</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem>
+                      <FormItem>
+                        <FormLabel>Desde</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                          <SelectContent>{timeOptions.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
                   )}/>
                   <FormField control={form.control} name="delivery_time_to" render={({ field }) => (
-                      <FormItem><FormLabel>Hasta</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem>
+                      <FormItem>
+                        <FormLabel>Hasta</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                          <SelectContent>{timeOptions.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
                   )}/>
               </div>
             </div>
