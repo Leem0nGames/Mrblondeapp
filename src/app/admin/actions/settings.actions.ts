@@ -1,7 +1,7 @@
 
 "use server";
 
-import { getSupabaseClientWithAuth } from "./_helpers";
+import { getSupabaseClientWithAuth } from "@/app/admin/actions/_helpers";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { AppSettings } from "@/types";
