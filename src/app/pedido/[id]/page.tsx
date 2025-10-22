@@ -62,8 +62,11 @@ export default async function OrderPage({
     if (category === 'Facial & Beard') {
       return 'FacialBeard / Barba';
     }
+    if (category === 'Hairstyle') {
+      return 'Hairstyle / Cabello';
+    }
     if (categoryTranslations[category]) {
-      return `${category} / ${categoryTranslations[category]}`;
+      return categoryTranslations[category];
     }
     return category;
   }
