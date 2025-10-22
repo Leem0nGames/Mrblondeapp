@@ -23,7 +23,6 @@ import type { Client, Agreement } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { provinces, getLocalitiesByProvince } from "@/lib/geo-data";
-import { Checkbox } from "@/components/ui/checkbox";
 import { DialogFooter } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
@@ -119,7 +118,12 @@ const getDeliveryParts = (deliveryWindow: string | null) => {
   const parts = deliveryWindow.split(' de ');
   if (parts.length < 2) return { days: [], from: '09:00', to: '18:00' };
   const dayString = parts[0].toLowerCase();
-  const days = deliveryDays.map(d => d.id).filter(d => dayString.includes(d.id.slice(0, 3)));
+  
+  // Corrected logic: filter first, then map.
+  const days = deliveryDays
+    .filter(day => dayString.includes(day.id.slice(0, 3)))
+    .map(day => day.id);
+
   const timeParts = parts[1].replace('hs', '').split(' a ');
   return {
     days,
@@ -240,7 +244,7 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Cli
                 <FormItem>
                   <FormLabel>Días de Entrega</FormLabel>
                   <FormControl>
-                    <div className="flex items-center gap-2 pt-2">
+                    <div className="flex items-center gap-2 pt-2 flex-wrap">
                       {deliveryDays.map((day) => {
                         const isSelected = field.value?.includes(day.id);
                         return (
