@@ -59,14 +59,15 @@ export default async function OrderPage({
   const promotions = agreement.agreement_promotions.map((ap: AgreementPromotion) => ap.promotions);
 
   const formatCategoryTitle = (category: string) => {
-    if (category === 'Facial & Beard') {
-      return 'FacialBeard / Barba';
+    const translation = categoryTranslations[category];
+    if (category === 'Hairstyle' && translation) {
+      return `Hairstyle / ${translation}`;
     }
-    if (category === 'Hairstyle') {
-      return 'Hairstyle / Cabello';
+    if (category === 'Facial & Beard' && translation) {
+      return `FacialBeard / ${translation}`;
     }
-    if (categoryTranslations[category]) {
-      return categoryTranslations[category];
+    if (translation) {
+      return translation;
     }
     return category;
   }
