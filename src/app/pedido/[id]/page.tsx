@@ -1,5 +1,4 @@
 
-
 import { getOrderPageData } from "@/app/actions/user.actions";
 import { ProductCard } from "./_components/product-card";
 import { Logo } from "@/app/logo";
@@ -13,7 +12,7 @@ import {
 } from "@/components/ui/accordion";
 import { OrderSummary } from "./_components/order-summary";
 import { Suspense } from "react";
-import { AgreementPromotion } from "@/types";
+import type { AgreementPromotion } from "@/types";
 
 
 export default async function OrderPage({

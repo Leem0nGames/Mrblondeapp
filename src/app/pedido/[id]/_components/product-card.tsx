@@ -40,7 +40,7 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
 
         const hasNoScope = !promo.rules.product_ids && !promo.rules.category_names;
         const appliesToProduct = promo.rules.product_ids?.includes(product.id);
-        const appliesToCategory = promo.rules.category_names?.includes(product.category);
+        const appliesToCategory = product.category && promo.rules.category_names?.includes(product.category);
 
         return hasNoScope || appliesToProduct || appliesToCategory;
     });
