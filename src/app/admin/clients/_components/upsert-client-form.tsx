@@ -60,8 +60,12 @@ const cuitSchema = z.string().superRefine((cuit, ctx) => {
 });
 
 const deliveryDays = [
-  { id: 'lunes', label: 'L' }, { id: 'martes', label: 'M' }, { id: 'miercoles', label: 'Mi' },
-  { id: 'jueves', label: 'J' }, { id: 'viernes', label: 'V' }, { id: 'sabado', label: 'S' },
+  { id: 'lunes', label: 'L' },
+  { id: 'martes', label: 'M' },
+  { id: 'miercoles', label: 'Mi' },
+  { id: 'jueves', label: 'J' },
+  { id: 'viernes', label: 'V' },
+  { id: 'sabado', label: 'S' },
 ];
 
 const generateTimeOptions = () => {
