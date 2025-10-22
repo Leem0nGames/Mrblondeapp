@@ -5,7 +5,6 @@ import { FileWarning } from "lucide-react";
 import { getClientById, getClientStats } from "@/app/admin/actions/clients.actions";
 import { getClientOrders } from "@/app/admin/actions/dashboard.actions";
 import { Button } from "@/components/ui/button";
-import ClientDetailsClient from "./_components/client-details-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import dynamic from "next/dynamic";
 
@@ -13,7 +12,6 @@ const ClientDetailsLoader = dynamic(
   () => import('./_components/client-details-client'),
   {
     loading: () => <ClientDetailsSkeleton />,
-    ssr: false, // Important for components that use client-side hooks like useEffect
   }
 );
 
