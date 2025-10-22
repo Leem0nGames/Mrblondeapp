@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useMemo } from "react";
@@ -8,16 +7,45 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { ProductWithPrice } from "@/types";
+import type { ProductWithPrice, Promotion } from "@/types";
 import Image from "next/image";
 import { QuantitySelector } from "./add-to-cart-button";
 import { getImageUrl } from "@/lib/placeholder-images";
 import { useCartStore } from "@/hooks/use-cart-store";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
-export function ProductCard({ product }: { product: ProductWithPrice }) {
-  const { isVolumePricingActive } = useCartStore();
+const PromoButton = ({ promo, onClick }: { promo: Promotion, onClick: (quantity: number) => void }) => {
+    const buyQuantity = promo.rules.buy;
+    if (!buyQuantity) return null;
+
+    return (
+        <Button
+            size="sm"
+            variant="outline"
+            className="h-auto px-2 py-1 text-xs"
+            onClick={() => onClick(buyQuantity)}
+        >
+            Llevar {buyQuantity}
+        </Button>
+    )
+}
+
+export function ProductCard({ product, promotions }: { product: ProductWithPrice, promotions: Promotion[] }) {
+  const { isVolumePricingActive, addItem } = useCartStore();
   
+  const applicablePromos = useMemo(() => {
+    return promotions.filter(promo => {
+        if (promo.rules?.type !== 'buy_x_get_y_free') return false;
+
+        const hasNoScope = !promo.rules.product_ids && !promo.rules.category_names;
+        const appliesToProduct = promo.rules.product_ids?.includes(product.id);
+        const appliesToCategory = promo.rules.category_names?.includes(product.category);
+
+        return hasNoScope || appliesToProduct || appliesToCategory;
+    });
+  }, [promotions, product.id, product.category]);
+
   const isVolumePriceApplicable = isVolumePricingActive && product.volume_price && product.volume_price < product.price;
   const displayPrice = isVolumePriceApplicable ? product.volume_price : product.price;
   
@@ -47,8 +75,8 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
             
             <p className="text-muted-foreground text-sm line-clamp-2 sm:h-10">{product.description}</p>
             
-            <div className="flex items-center justify-between mt-2">
-              <div className="flex items-baseline gap-2">
+            <div className="flex flex-col sm:flex-row items-center justify-between mt-2 gap-4">
+              <div className="flex items-baseline gap-2 self-start sm:self-center">
                  <p className={cn(
                     "text-lg font-bold",
                     isVolumePriceApplicable && "text-primary"
@@ -62,8 +90,17 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
                   )}
               </div>
 
-              <div className="w-32 flex-shrink-0">
-                 <QuantitySelector product={product} />
+              <div className="flex items-center gap-2 justify-end w-full">
+                {applicablePromos.length > 0 && (
+                    <div className="flex items-center gap-1 border-r pr-2">
+                        {applicablePromos.map(promo => (
+                            <PromoButton key={promo.id} promo={promo} onClick={(quantity) => addItem(product, quantity)} />
+                        ))}
+                    </div>
+                )}
+                <div className="w-32 flex-shrink-0">
+                  <QuantitySelector product={product} />
+                </div>
               </div>
             </div>
         </div>
