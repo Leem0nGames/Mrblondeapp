@@ -1,3 +1,4 @@
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/middleware';
 import { hasUsers } from '@/app/actions/user.actions';
@@ -17,9 +18,11 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Rutas de Onboarding de Cliente
+  // Rutas públicas dinámicas (onboarding y pedidos)
   const isOnboardingRoute = pathname.startsWith('/onboarding');
-  if (isOnboardingRoute) {
+  const isOrderRoute = pathname.startsWith('/pedido');
+
+  if (isOnboardingRoute || isOrderRoute) {
     return response;
   }
 
@@ -43,12 +46,6 @@ export async function middleware(request: NextRequest) {
   }
 
   const isPublicRoute = publicRoutes.includes(pathname);
-  const isOrderRoute = pathname.startsWith('/pedido');
-
-  // Las páginas de pedido son siempre públicas
-  if (isOrderRoute) {
-    return response;
-  }
 
   // Si el usuario no está autenticado y la ruta no es pública, redirigir a login
   if (!session && !isPublicRoute) {
