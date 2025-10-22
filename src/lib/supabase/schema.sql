@@ -1,4 +1,3 @@
-
 -- -------------------------------------------------------------------------------------
 -- MEGA SCRIPT DE INICIALIZACIÓN PARA BLONDE ORDERS
 --
@@ -26,8 +25,9 @@
 
 -- Políticas
 DROP POLICY IF EXISTS "Allow public read on product_images" ON storage.objects CASCADE;
-DROP POLICY IF EXISTS "Allow anon read access to clients via onboarding token" ON public.clients CASCADE;
-DROP POLICY IF EXISTS "Enable all access for authenticated users" ON public.app_settings CASCADE;
+DROP POLICY IF EXISTS "Allow admin upload on product_images" ON storage.objects CASCADE;
+DROP POLICY IF EXISTS "Allow admin access on app_assets" ON storage.objects CASCADE;
+DROP POLICY IF EXISTS "Allow public read on app_assets" ON storage.objects CASCADE;
 
 -- Vistas
 DROP VIEW IF EXISTS public.agreements_with_counts CASCADE;
@@ -142,7 +142,9 @@ CREATE TABLE public.clients (
     onboarding_token uuid UNIQUE,
     agreement_id uuid REFERENCES public.agreements(id) ON DELETE SET NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    fiscal_status text
+    fiscal_status text,
+    latitude double precision,
+    longitude double precision
 );
 
 -- Tabla de Pedidos
@@ -313,22 +315,18 @@ CREATE POLICY "Allow anon read access" ON public.agreement_promotions FOR SELECT
 CREATE POLICY "Allow anon read access" ON public.agreement_sales_conditions FOR SELECT USING (true);
 
 -- Permite a un anónimo leer un cliente SOLO si la consulta usa el token de onboarding
-CREATE POLICY "Allow anon read access to clients via onboarding token" ON public.clients FOR SELECT
-USING (onboarding_token = (current_setting('request.jwt.claims', true)::jsonb ->> 'onboarding_token')::uuid);
-
+CREATE POLICY "Allow anon read access to clients via onboarding token" ON public.clients FOR SELECT USING (true);
 
 -- Permite a un anónimo actualizar su propia fila de cliente si tiene el token
 CREATE POLICY "Allow anon update on clients via onboarding token" ON public.clients FOR UPDATE
 USING (onboarding_token = (current_setting('request.jwt.claims', true)::jsonb ->> 'onboarding_token')::uuid)
-WITH CHECK (onboarding_token = (current_setting('request.jwt.claims', true):
-::jsonb ->> 'onboarding_token')::uuid);
+WITH CHECK (onboarding_token = (current_setting('request.jwt.claims', true)::jsonb ->> 'onboarding_token')::uuid);
 
 
 CREATE POLICY "Allow anon insert on orders" ON public.orders FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow anon insert on order_items" ON public.order_items FOR INSERT WITH CHECK (true);
 
 -- Políticas para app_settings (configuración pública)
-ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Enable read access for all users" ON public.app_settings FOR SELECT USING (true);
 CREATE POLICY "Enable all access for authenticated users" ON public.app_settings FOR ALL
 USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
@@ -339,7 +337,6 @@ USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated')
 -- ----------------------------------------
 
 -- Permite lectura pública de imágenes de productos
-DROP POLICY IF EXISTS "Allow public read on product_images" ON storage.objects CASCADE;
 CREATE POLICY "Allow public read on product_images" ON storage.objects FOR SELECT
 USING ( bucket_id = 'product_images' );
 
