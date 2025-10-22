@@ -14,6 +14,14 @@ import { OrderSummary } from "./_components/order-summary";
 import { Suspense } from "react";
 import type { AgreementPromotion } from "@/types";
 
+const categoryTranslations: Record<string, string> = {
+  "Wax": "Ceras",
+  "Powder": "Polvos",
+  "Shaving": "Afeitado",
+  "Hairstyle": "Peinado",
+  "Facial & Beard": "Facial y Barba",
+  "Shampoo & Conditioners": "Shampoo y Acondicionadores",
+};
 
 export default async function OrderPage({
   params,
@@ -77,7 +85,7 @@ export default async function OrderPage({
                   <Card>
                     <CardHeader className="p-4">
                       <AccordionTrigger className="p-2 -m-2 text-xl font-bold hover:no-underline">
-                          {category}
+                          {categoryTranslations[category] ? `${category} / ${categoryTranslations[category]}` : category}
                       </AccordionTrigger>
                     </CardHeader>
                     <AccordionContent className="px-4 pb-4">
