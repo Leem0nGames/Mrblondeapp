@@ -17,7 +17,8 @@ import { Button } from "@/components/ui/button";
 
 const PromoButton = ({ promo, onClick }: { promo: Promotion, onClick: (quantity: number) => void }) => {
     const buyQuantity = promo.rules.buy;
-    if (!buyQuantity) return null;
+    const getQuantity = promo.rules.get;
+    if (!buyQuantity || !getQuantity) return null;
 
     return (
         <Button
@@ -26,7 +27,7 @@ const PromoButton = ({ promo, onClick }: { promo: Promotion, onClick: (quantity:
             className="h-auto px-2 py-1 text-xs"
             onClick={() => onClick(buyQuantity)}
         >
-            Llevar {buyQuantity}
+            Promo {buyQuantity}x{getQuantity}
         </Button>
     )
 }
@@ -94,7 +95,7 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
 
               <div className="flex items-center gap-2 justify-end w-full">
                 {applicablePromos.length > 0 && (
-                    <div className="flex items-center gap-1 border-r pr-2">
+                    <div className="flex items-center gap-1">
                         {applicablePromos.map(promo => (
                             <PromoButton key={promo.id} promo={promo} onClick={(quantity) => addItem(product, quantity)} />
                         ))}
