@@ -1,7 +1,5 @@
 import type { Config } from "tailwindcss";
 
-const { fontFamily } = require("tailwindcss/defaultTheme");
-
 /**
  * TailwindCSS Configuration
  * - Dark mode: class-based
@@ -25,8 +23,8 @@ export default {
     extend: {
       // Typography
       fontFamily: {
-        body: ["var(--font-body)", ...fontFamily.sans],
-        headline: ["var(--font-headline)", ...fontFamily.sans],
+        body: ["var(--font-body)"],
+        headline: ["var(--font-headline)"],
       },
 
       // Colors (mapped to CSS variables for theme flexibility)

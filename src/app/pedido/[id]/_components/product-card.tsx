@@ -32,8 +32,8 @@ export function ProductCard({ product }: { product: ProductWithPrice }) {
             <Image
                 src={getImageUrl("product_card", { seed: product.id }, product.image_url)}
                 alt={product.name}
-                fill
-                sizes="(max-width: 640px) 90vw, 96px"
+                width={96}
+                height={96}
                 className="rounded-lg object-cover"
                 data-ai-hint="product image"
             />

@@ -3,8 +3,6 @@ import placeholderData from './placeholder-images.json';
 type ImageType = keyof typeof placeholderData;
 type ImageParams = {
     seed: string;
-    width?: number;
-    height?: number;
 }
 
 const typedPlaceholderData = placeholderData as Record<ImageType, { seed: string, width: number, height: number }>;
@@ -20,8 +18,8 @@ export function getImageUrl(
     
     const seedInfo = typedPlaceholderData[type];
     const seed = `${seedInfo.seed}_${params.seed}`;
-    const width = params.width ?? seedInfo.width;
-    const height = params.height ?? seedInfo.height;
+    const width = seedInfo.width;
+    const height = seedInfo.height;
     
     return `https://picsum.photos/seed/${seed}/${width}/${height}`;
 }

@@ -1,10 +1,42 @@
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { FileWarning } from "lucide-react";
 import { getClientById, getClientStats } from "@/app/admin/actions/clients.actions";
 import { getClientOrders } from "@/app/admin/actions/dashboard.actions";
 import { Button } from "@/components/ui/button";
-import { ClientDetailsLoader } from "./_components/client-details-loader";
+import ClientDetailsClient from "./_components/client-details-client";
+import { Skeleton } from "@/components/ui/skeleton";
+import dynamic from "next/dynamic";
+
+const ClientDetailsLoader = dynamic(
+  () => import('./_components/client-details-client'),
+  {
+    loading: () => <ClientDetailsSkeleton />,
+    ssr: false, // Important for components that use client-side hooks like useEffect
+  }
+);
+
+function ClientDetailsSkeleton() {
+    return (
+        <div className="grid flex-1 items-start gap-4 md:gap-8">
+            <div className="flex items-center gap-4">
+                <Skeleton className="h-7 w-7 rounded-full" />
+                <Skeleton className="h-7 w-48" />
+            </div>
+            <Skeleton className="h-64 w-full" />
+            <div className="grid gap-4 md:grid-cols-3">
+                <Skeleton className="h-24" />
+                <Skeleton className="h-24" />
+                <Skeleton className="h-24" />
+            </div>
+            <div className="grid gap-4 md:grid-cols-3 md:gap-8">
+                <Skeleton className="h-96 md:col-span-2" />
+                <Skeleton className="h-96 md:col-span-1" />
+            </div>
+        </div>
+    );
+}
 
 export default async function ClientDetailPage({
   params,
@@ -42,11 +74,13 @@ export default async function ClientDetailPage({
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
-      <ClientDetailsLoader 
-        client={client}
-        stats={stats}
-        orders={orders}
-      />
+      <Suspense fallback={<ClientDetailsSkeleton />}>
+        <ClientDetailsLoader 
+          client={client}
+          stats={stats}
+          orders={orders}
+        />
+      </Suspense>
     </div>
   );
 }
