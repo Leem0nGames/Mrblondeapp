@@ -15,10 +15,10 @@ export async function getSettings(): Promise<AppSettings> {
         return { whatsapp_number: "", vat_percentage: 21, logo_url: null };
     }
 
-    const settings = (data || []).reduce((acc, { key, value }) => {
+    const settings = (data || []).reduce((acc: any, { key, value }: { key: string, value: any }) => {
         acc[key] = key === 'vat_percentage' ? Number(value) : value;
         return acc;
-    }, {} as any);
+    }, {} as AppSettings);
 
     return {
         whatsapp_number: settings.whatsapp_number || "",
