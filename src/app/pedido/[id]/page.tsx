@@ -60,16 +60,18 @@ export default async function OrderPage({
 
   const formatCategoryTitle = (category: string) => {
     const translation = categoryTranslations[category];
-    if (category === 'Hairstyle' && translation) {
+    if (!translation) {
+      return category;
+    }
+    
+    if (category === 'Hairstyle') {
       return `Hairstyle / ${translation}`;
     }
-    if (category === 'Facial & Beard' && translation) {
-      return `FacialBeard / ${translation}`;
+    if (category === 'Facial & Beard') {
+      return `Facial & Beard / ${translation}`;
     }
-    if (translation) {
-      return translation;
-    }
-    return category;
+    
+    return translation;
   }
 
   return (
