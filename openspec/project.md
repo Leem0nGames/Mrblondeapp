@@ -18,7 +18,7 @@
 - Adherence to modern React best practices: Functional Components and Hooks.
 - TypeScript is used for all new code, with a preference for strict type safety.
 - File and component naming follows PascalCase (`MyComponent.tsx`).
-- Server Actions are named descriptively (e.g., `upsertProduct`, `getAgreements`) and co-located in `src/app/actions/`.
+- Server Actions are named descriptively (e.g., `upsertProduct`, `getAgreements`) and co-located by domain in `src/app/admin/actions/` and `src/app/actions/`.
 - Code is formatted using Prettier defaults.
 
 ### Architecture Patterns
@@ -53,10 +53,9 @@ The core of the application revolves around the concept of a **Convenio (Agreeme
 - **Order Flow**: The client receives the unique link, adds products to their cart, and submits the order. This action saves the order in the database and generates a pre-formatted WhatsApp message for the client to send to the company's contact number.
 
 ## Important Constraints
-- **Admin Authentication**: The admin login relies on a standard email/password, not a dynamic PIN. The initial "super admin" is created on the first run of the application.
-- **Client Access**: Clients do not log in. Their access is entirely dependent on the unique, shareable `/pedido/[id]` link provided by the administrator.
+- **Admin Authentication**: The admin login relies on a standard email/password. The initial "super admin" is created on the first run of the application.
+- **Client Access**:
+  - **Order Link**: Clients access the order page via a unique, shareable `/pedido/[id]` link. They do not log in.
+  - **Onboarding Link**: New clients can be onboarded via a separate unique link `/onboarding/[token]`.
 - **Database Schema**: The application is tightly coupled to the Supabase database schema defined in `src/lib/supabase/schema.sql`. Changes to the schema must be reflected in the Server Actions and TypeScript types.
-
-## External Dependencies
-- **Supabase**: The project is entirely dependent on a Supabase project for its database, authentication, and file storage (`product_images`).
 - **WhatsApp**: The final step of the order submission relies on redirecting the user to `wa.me` with a pre-formatted message. It does not use the WhatsApp Business API.

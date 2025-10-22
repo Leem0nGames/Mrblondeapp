@@ -2,7 +2,18 @@
 
 Este documento contiene las instrucciones para configurar y poner en marcha la aplicación.
 
-## 1. Configuración de la Base de Datos
+## 1. Configuración de Variables de Entorno
+
+Antes de nada, crea un archivo llamado `.env.local` en la raíz del proyecto. Copia el contenido del archivo `.env` (que está vacío) y rellénalo con las siguientes claves de tu proyecto de Supabase:
+
+```bash
+# Variables de Supabase (las encuentras en Project Settings > API)
+NEXT_PUBLIC_SUPABASE_URL="tu-url-de-supabase"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="tu-anon-key-publica"
+SUPABASE_SERVICE_ROLE_KEY="tu-service-role-key-secreta"
+```
+
+## 2. Configuración de la Base de Datos
 
 El paso más importante es configurar la base de datos para que coincida con la aplicación.
 
@@ -15,6 +26,8 @@ El script SQL en `src/lib/supabase/schema.sql` está diseñado para ser **idempo
 3.  **Ve al "SQL Editor"** en tu panel de Supabase.
 4.  **Pega el script** en el editor y haz clic en **"RUN"**.
 
+Esto creará todas las tablas, vistas, funciones y políticas de seguridad necesarias.
+
 ### b. (Opcional) Cargar Datos de Ejemplo
 
 Si quieres empezar con productos, precios y promociones de ejemplo, puedes ejecutar el script de "seed".
@@ -23,7 +36,7 @@ Si quieres empezar con productos, precios y promociones de ejemplo, puedes ejecu
 2.  **Copia todo el contenido**.
 3.  **Pega el script** en el SQL Editor de Supabase y haz clic en **"RUN"**.
 
-## 2. Crear el Usuario Administrador
+## 3. Crear el Usuario Administrador
 
 La aplicación te guiará para crear el primer usuario administrador la primera vez que la ejecutes. Después de configurar la base de datos y las variables de entorno, simplemente inicia la aplicación.
 

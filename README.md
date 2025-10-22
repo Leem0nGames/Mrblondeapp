@@ -6,9 +6,12 @@ Built with a powerful stack including Next.js, Supabase, and Tailwind CSS, this 
 
 ## Core Features
 
-- **Dynamic Link Generation**: Admins can generate unique, temporary (24-hour) links for clients, leading them to a personalized order form.
-- **Client-Specific Pricing**: The system automatically calculates prices based on client type (`barberia`, `distribuidor`) and custom agreements.
-- **Intelligent Promotion Suggestions**: An integrated AI tool analyzes the shopping cart and suggests the most advantageous promotions to the client, helping to increase order value.
+- **Dual Client Onboarding**: Admins can create clients manually for quick setup or generate unique invitation links for clients to self-register, saving administrative time.
+- **Dynamic Link Generation**: Admins can generate unique ordering links for clients based on commercial agreements.
+- **Client-Specific Pricing & Promotions**: The system automatically calculates prices and applies promotions based on assigned commercial agreements.
+- **Intelligent Admin Commands**: An integrated AI tool allows admins to create promotions, price lists, and more using natural language commands (e.g., "create 2x1 promo for all waxes").
+- **AI-Powered Client Analysis**: Generate strategic insights, opportunities, and risks for any client based on their purchase history.
+- **Customizable Branding**: Easily upload your company logo to be displayed across the application.
 - **Seamless Order Submission**: Clients can preview their order with all calculations and send a pre-formatted summary directly to the company's WhatsApp.
 - **Comprehensive Admin Dashboard**: A secure area for admins to manage the entire product catalog, pricing rules, promotions, and client agreements.
 
@@ -16,7 +19,8 @@ Built with a powerful stack including Next.js, Supabase, and Tailwind CSS, this 
 
 - **Framework**: Next.js 14+ (App Router)
 - **UI**: React 18, TypeScript, Tailwind CSS, shadcn/ui
-- **Backend & Database**: Supabase (PostgreSQL, Auth)
+- **Backend & Database**: Supabase (PostgreSQL, Auth, Storage)
+- **AI Features**: Google AI with Genkit
 - **State Management**: Zustand
 - **Forms**: React Hook Form & Zod
 - **Icons**: Lucide React
@@ -49,9 +53,7 @@ npm install
 
 **C. Set Up Supabase & Environment**
 
-1.  **Crucial Step**: Follow the complete database and environment setup guide in the `INSTRUCCIONES.md` file located in the root of this project. It contains the necessary SQL script and instructions for environment variables.
-
-2.  Create a `.env.local` file in the root of the project and fill in the values as described in `INSTRUCCIONES.md`.
+1.  **Crucial Step**: Follow the complete database and environment setup guide in the `INSTRUCCIONES.md` file located in the root of this project. It contains the necessary SQL script and instructions for environment variables (`.env.local`).
 
 ### 3. Running the Development Server
 
@@ -61,7 +63,7 @@ Start the app in development mode:
 npm run dev
 ```
 
-- The application will be available at `http://localhost:3000`.
+- The application will be available at `http://localhost:9002` (o el puerto que configures).
 - The first time you run the app, you will be redirected to `/signup` to create the main administrator account.
 
 ## Deployment
@@ -70,7 +72,7 @@ This project is optimized for deployment on [Vercel](https://vercel.com/).
 
 1.  **Push to GitHub/GitLab/Bitbucket**: Ensure your code is on a Git provider.
 2.  **Import Project on Vercel**: From your Vercel dashboard, import the repository.
-3.  **Configure Environment Variables**: In the Vercel project settings, add the same environment variables from your `.env.local` file.
+3.  **Configure Environment Variables**: In the Vercel project settings, add the same environment variables from your `.env.local` file (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
 4.  **Deploy**: Vercel will automatically detect it's a Next.js app and deploy it.
 
 Once deployed, your application will be live!

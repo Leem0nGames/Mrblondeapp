@@ -18,26 +18,30 @@ Este documento sirve como guía de referencia para la estructura, lógica y fluj
 /
 ├── src/
 │   ├── ai/                 # Lógica de Inteligencia Artificial (Genkit)
-│   │   ├── flows/          # Flujos de Genkit (e.g., sugerencia de promociones)
+│   │   ├── flows/          # Flujos de Genkit (e.g., análisis de clientes, parser de comandos)
 │   │   └── genkit.ts       # Configuración e inicialización de Genkit
 │   │
 │   ├── app/                # Rutas y lógica principal (Next.js App Router)
 │   │   ├── (admin)/        # Rutas protegidas del panel de administración
 │   │   │   ├── admin/
-│   │   │   │   ├── agreements/ # Gestión de convenios (crear, editar, asignar)
-│   │   │   │   ├── products/   # CRUD de productos
-│   │   │   │   └── promotions/ # CRUD de promociones
-│   │   │   └── layout.tsx    # Layout principal del panel de admin (navegación)
+│   │   │   │   ├── actions/      # Server Actions específicas del admin (separadas por entidad)
+│   │   │   │   ├── agreements/   # Gestión de convenios (crear, editar, asignar)
+│   │   │   │   ├── clients/      # CRUD de clientes
+│   │   │   │   ├── products/     # CRUD de productos
+│   │   │   │   └── commercial-settings/ # Pestañas para Listas de precios, Promociones, etc.
+│   │   │   └── layout.tsx      # Layout principal del panel de admin (navegación, notificaciones)
 │   │   │
 │   │   ├── (auth)/         # Rutas de autenticación
-│   │   │   ├── login/      # Página de login con PIN
+│   │   │   ├── login/      # Página de login con email/contraseña
 │   │   │   └── signup/     # Página de registro del primer admin
 │   │   │
 │   │   ├── pedido/[id]/    # Página PÚBLICA para que los clientes realicen pedidos
 │   │   │
-│   │   ├── actions/        # Server Actions (lógica de backend)
-│   │   │   ├── admin.actions.ts # Acciones para el panel de admin
-│   │   │   └── user.actions.ts  # Acciones de usuario (auth, pedidos)
+│   │   ├── onboarding/[token]/ # Página PÚBLICA para que clientes completen su alta
+│   │   │
+│   │   ├── actions/        # Server Actions (lógica de backend general y de usuario)
+│   │   │   ├── user.actions.ts  # Acciones de usuario (auth, pedidos, onboarding)
+│   │   │   └── settings.actions.ts # Acciones para la configuración de la app
 │   │   │
 │   │   ├── globals.css     # Estilos globales y variables de tema (Tailwind)
 │   │   └── layout.tsx      # Layout raíz de la aplicación
@@ -51,7 +55,6 @@ Este documento sirve como guía de referencia para la estructura, lógica y fluj
 │   │
 │   ├── lib/                # Utilidades y configuración
 │   │   ├── supabase/       # Clientes de Supabase (client, server, admin, middleware)
-│   │   ├── placeholder-images.ts # Lógica para imágenes de placeholder
 │   │   └── utils.ts        # Funciones de utilidad (e.g., cn, formatDate)
 │   │
 │   └── types/              # Definiciones de tipos de TypeScript
@@ -71,27 +74,45 @@ Este documento sirve como guía de referencia para la estructura, lógica y fluj
 3.  **Redirección**:
     -   Si `hasUsers()` devuelve `false`, el middleware redirige **forzosamente** a `/signup`. Cualquier otro intento de acceso es bloqueado.
     -   Si `hasUsers()` devuelve `true`, el middleware bloquea el acceso a `/signup` y procede con el flujo de autenticación normal.
-4.  **Registro**: El formulario en `/signup` llama a la `Server Action` `signupSuperAdmin`. Esta acción crea el usuario con credenciales predefinidas (`admin@blonde.com`).
-5.  **Redirección Post-Registro**: Tras el éxito, redirige a `/login` para que el administrador inicie sesión por primera vez con el PIN.
+4.  **Registro**: El formulario en `/signup` llama a la `Server Action` `signupSuperAdmin`. Esta acción crea el primer usuario administrador con el email y contraseña proporcionados.
+5.  **Redirección Post-Registro**: Tras el éxito, redirige a `/login` para que el administrador inicie sesión por primera vez.
 
 ### b. Flujo de Autenticación de Administrador
 
-1.  **Acceso a `/login`**: El usuario (administrador) accede a la página de login e introduce el PIN estático (`1234`).
+1.  **Acceso a `/login`**: El administrador accede a la página de login e introduce su email y contraseña.
 2.  **Acción de Login**: El formulario llama a la `Server Action` `login()`.
-3.  **Validación y Sesión**: `login()` verifica el PIN. Si es correcto, usa `signInWithPassword` de Supabase con las credenciales fijas del administrador para establecer una sesión.
-4.  **Redirección a Admin**: Con una sesión válida, el `middleware` redirige al usuario a `/admin/agreements`. Las rutas dentro de `/admin` están protegidas y requieren una sesión activa.
+3.  **Validación y Sesión**: `login()` verifica las credenciales usando `signInWithPassword` de Supabase para establecer una sesión.
+4.  **Redirección a Admin**: Con una sesión válida, el `middleware` redirige al usuario a `/admin`. Las rutas dentro de `/admin` están protegidas y requieren una sesión activa.
 
-### c. Flujo de Creación y Envío de Pedido
+### c. Flujo de Creación de Cliente
+
+Existen dos maneras de crear un cliente:
+
+**1. Creación Manual (por el Admin):**
+1.  El admin va a la sección "Clientes" y hace clic en "Agregar Cliente".
+2.  Elige la opción "Crear Manualmente".
+3.  Se abre un formulario completo donde el admin introduce todos los datos del cliente (nombre, CUIT, dirección, etc.) y puede asignarle un convenio existente.
+4.  Al enviar, la `server action` `upsertClient` crea el cliente en la base de datos con estado "active" (si se asignó convenio) o "pending_agreement" (si no).
+
+**2. Creación por Invitación (auto-gestionado por el cliente):**
+1.  El admin va a la sección "Clientes" y hace clic en "Agregar Cliente".
+2.  Elige la opción "Generar Enlace de Invitación".
+3.  Puede (opcionalmente) pre-asignar un convenio.
+4.  La `server action` `createClientForInvitation` crea un cliente con estado `pending_onboarding` y devuelve un token único.
+5.  El admin copia el enlace `/onboarding/[token]` y se lo envía al cliente.
+6.  El cliente abre el enlace, ve un formulario de alta y completa sus datos.
+7.  Al enviar, la `server action` `submitOnboardingForm` actualiza los datos del cliente y cambia su estado a `active` o `pending_agreement`.
+
+### d. Flujo de Envío de Pedido del Cliente
 
 1.  **Admin Genera Link**: En el panel de admin (`/admin/agreements`), el admin copia el enlace único para un convenio. Este enlace contiene el ID del convenio (e.g., `/pedido/uuid-del-convenio`).
 2.  **Cliente Accede al Link**: El cliente abre el enlace. La página `/pedido/[id]/page.tsx` se renderiza en el servidor.
 3.  **Obtención de Datos**: La página llama a la `Server Action` `getOrderPageData(id)`. Esta acción consulta la base de datos para obtener los detalles del convenio, los productos asignados con sus precios específicos y las promociones aplicables.
-4.  **Renderizado de la Página**: La página se muestra al cliente con los productos agrupados por categoría en `Accordions`.
+4.  **Renderizado de la Página**: La página se muestra al cliente con los productos agrupados por categoría.
 5.  **Interacción del Cliente**:
     -   El cliente añade o quita productos. El estado del carrito se gestiona en el cliente con `useCartStore` (Zustand) para una experiencia instantánea.
-    -   Con cada cambio en el carrito, el componente `IntelligentSuggestions` llama de forma asíncrona al flujo de Genkit `suggestPromotions`.
-    -   La IA analiza el carrito y las promociones disponibles y devuelve sugerencias personalizadas, que se muestran en tiempo real.
+    -   El `store` del carrito recalcula automáticamente las promociones (ej. 2x1) y descuentos por volumen o monto mínimo.
 6.  **Finalización del Pedido**:
-    -   El cliente abre el `CartWidget` y procede a la `OrderSummarySheet`.
-    -   El resumen muestra el detalle del pedido y las bonificaciones calculadas.
-    -   Al hacer clic en "Enviar", la función `formatWhatsAppMessage` construye un texto pre-formateado y abre la URL de WhatsApp para enviar el pedido.
+    -   El cliente revisa el `OrderSummary`.
+    -   Al hacer clic en "Enviar", la `server action` `submitOrder` guarda el pedido en la base de datos.
+    -   Luego, la función `formatWhatsAppMessage` construye un texto pre-formateado y abre la URL de WhatsApp para enviar el pedido al número de la empresa.
