@@ -18,8 +18,8 @@ const categoryTranslations: Record<string, string> = {
   "Wax": "Ceras",
   "Powder": "Polvos",
   "Shaving": "Afeitado",
-  "Hairstyle": "Peinado",
-  "Facial & Beard": "Facial y Barba",
+  "Hairstyle": "Cabello",
+  "Facial & Beard": "Barba",
   "Shampoo & Conditioners": "Shampoo y Acondicionadores",
 };
 
@@ -58,6 +58,16 @@ export default async function OrderPage({
   const categories = Object.keys(productsByCategory);
   const promotions = agreement.agreement_promotions.map((ap: AgreementPromotion) => ap.promotions);
 
+  const formatCategoryTitle = (category: string) => {
+    if (category === 'Facial & Beard') {
+      return 'FacialBeard / Barba';
+    }
+    if (categoryTranslations[category]) {
+      return `${category} / ${categoryTranslations[category]}`;
+    }
+    return category;
+  }
+
   return (
     <div className="min-h-screen bg-muted/20">
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-sm">
@@ -85,7 +95,7 @@ export default async function OrderPage({
                   <Card>
                     <CardHeader className="p-4">
                       <AccordionTrigger className="p-2 -m-2 text-xl font-bold hover:no-underline">
-                          {categoryTranslations[category] ? `${category} / ${categoryTranslations[category]}` : category}
+                          {formatCategoryTitle(category)}
                       </AccordionTrigger>
                     </CardHeader>
                     <AccordionContent className="px-4 pb-4">
