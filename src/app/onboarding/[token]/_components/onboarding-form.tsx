@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useTransition, useEffect } from "react";
@@ -24,7 +23,7 @@ import { useRouter } from "next/navigation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { provinces, getLocalitiesByProvince } from "@/lib/geo-data";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 
 // --- CUIT Validation Logic ---
 const validateCuit = (cuit: string): boolean | number => {
@@ -75,12 +74,8 @@ const cuitSchema = z.string().superRefine((cuit, ctx) => {
 
 
 const deliveryDays = [
-  { id: 'lunes', label: 'Lunes' },
-  { id: 'martes', label: 'Martes' },
-  { id: 'miercoles', label: 'Miércoles' },
-  { id: 'jueves', label: 'Jueves' },
-  { id: 'viernes', label: 'Viernes' },
-  { id: 'sabado', label: 'Sábado' },
+  { id: 'lunes', label: 'L' }, { id: 'martes', label: 'M' }, { id: 'miercoles', label: 'Mi' },
+  { id: 'jueves', label: 'J' }, { id: 'viernes', label: 'V' }, { id: 'sabado', label: 'S' },
 ];
 
 const generateTimeOptions = () => {
@@ -264,32 +259,37 @@ export function OnboardingForm({ client }: { client: Client }) {
         </div>
 
         <div className="space-y-4 rounded-lg border p-4">
-            <h4 className="font-medium">Ventana Horaria de Entrega</h4>
-            <FormField control={form.control} name="delivery_days" render={() => (
-              <FormItem>
-                <FormLabel>Días de Entrega</FormLabel>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2">
-                  {deliveryDays.map((item) => (
-                    <FormField key={item.id} control={form.control} name="delivery_days" render={({ field }) => (
-                      <FormItem key={item.id} className="flex flex-row items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value?.includes(item.id)}
-                            onCheckedChange={(checked) => {
-                              return checked
-                                ? field.onChange([...(field.value || []), item.id])
-                                : field.onChange(field.value?.filter((value) => value !== item.id));
-                            }}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal">{item.label}</FormLabel>
-                      </FormItem>
-                    )} />
-                  ))}
+          <h4 className="font-medium">Ventana Horaria de Entrega</h4>
+          <FormField control={form.control} name="delivery_days" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Días de Entrega</FormLabel>
+              <FormControl>
+                <div className="flex items-center gap-2 pt-2">
+                  {deliveryDays.map((day) => {
+                    const isSelected = field.value?.includes(day.id);
+                    return (
+                      <Button
+                        key={day.id}
+                        type="button"
+                        variant={isSelected ? "default" : "outline"}
+                        size="sm"
+                        className={cn("h-8 w-8 p-0 rounded-full", isSelected && "shadow-md")}
+                        onClick={() => {
+                          const newValue = isSelected
+                            ? field.value?.filter((d) => d !== day.id)
+                            : [...(field.value || []), day.id];
+                          field.onChange(newValue);
+                        }}
+                      >
+                        {day.label}
+                      </Button>
+                    );
+                  })}
                 </div>
-                <FormMessage />
-              </FormItem>
-            )}/>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}/>
             <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="delivery_time_from" render={({ field }) => (
                   <FormItem>
