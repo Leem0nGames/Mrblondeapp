@@ -29,7 +29,7 @@ DROP POLICY IF EXISTS "Enable read access for all users" ON public.app_settings 
 DROP POLICY IF EXISTS "Allow anon insert on order_items" ON public.order_items CASCADE;
 DROP POLICY IF EXISTS "Allow anon insert on orders" ON public.orders CASCADE;
 DROP POLICY IF EXISTS "Allow anon update on clients via onboarding token" ON public.clients CASCADE;
-DROP POLICY IF EXISTS "Allow anon read access to clients via onboarding token" ON public.clients CASCADE;
+DROP POLICY IF EXISTS "Allow anon read access" ON public.clients CASCADE;
 DROP POLICY IF EXISTS "Allow anon read access" ON public.agreement_sales_conditions CASCADE;
 DROP POLICY IF EXISTS "Allow anon read access" ON public.agreement_promotions CASCADE;
 DROP POLICY IF EXISTS "Allow anon read access" ON public.agreements CASCADE;
@@ -49,11 +49,13 @@ DROP POLICY IF EXISTS "Allow all for authenticated users" ON public.promotions C
 DROP POLICY IF EXISTS "Allow all for authenticated users" ON public.price_list_items CASCADE;
 DROP POLICY IF EXISTS "Allow all for authenticated users" ON public.price_lists CASCADE;
 DROP POLICY IF EXISTS "Allow all for authenticated users" ON public.products CASCADE;
+-- Policies de Storage
 DROP POLICY IF EXISTS "Allow public read on product_images" ON storage.objects CASCADE;
 DROP POLICY IF EXISTS "Allow admin upload on product_images" ON storage.objects CASCADE;
+DROP POLICY IF EXISTS "Allow admin update on product_images" ON storage.objects CASCADE;
+DROP POLICY IF EXISTS "Allow admin delete on product_images" ON storage.objects CASCADE;
 DROP POLICY IF EXISTS "Allow public read on app_assets" ON storage.objects CASCADE;
 DROP POLICY IF EXISTS "Allow admin access on app_assets" ON storage.objects CASCADE;
-
 
 -- Vistas
 DROP VIEW IF EXISTS public.agreements_with_counts CASCADE;
@@ -166,7 +168,9 @@ CREATE TABLE public.clients (
     onboarding_token text UNIQUE,
     agreement_id uuid REFERENCES public.agreements(id) ON DELETE SET NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    fiscal_status text
+    fiscal_status text,
+    latitude float8,
+    longitude float8
 );
 
 -- Tabla de Pedidos
@@ -216,7 +220,7 @@ CREATE TABLE public.app_settings (
 -- ----------------------------------------
 
 -- Vista para obtener convenios con contadores de promociones y condiciones
-CREATE VIEW public.agreements_with_counts AS
+CREATE OR REPLACE VIEW public.agreements_with_counts AS
 SELECT
     a.id,
     a.agreement_name,
@@ -229,7 +233,7 @@ FROM
     public.agreements a;
 
 -- Vista para estadísticas del dashboard
-CREATE VIEW public.dashboard_stats AS
+CREATE OR REPLACE VIEW public.dashboard_stats AS
 SELECT
     coalesce((SELECT sum(o.total_amount) FROM public.orders o WHERE o.status = 'completed'), 0) AS total_revenue,
     coalesce((SELECT sum(o.total_amount) FROM public.orders o WHERE o.status = 'completed' AND o.created_at >= date_trunc('month', now())), 0) AS month_revenue,
