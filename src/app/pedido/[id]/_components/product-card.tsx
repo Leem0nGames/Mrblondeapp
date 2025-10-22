@@ -39,10 +39,12 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
         if (promo.rules?.type !== 'buy_x_get_y_free') return false;
 
         const hasNoScope = !promo.rules.product_ids && !promo.rules.category_names;
+        if (hasNoScope) return true;
+
         const appliesToProduct = promo.rules.product_ids?.includes(product.id);
         const appliesToCategory = product.category && promo.rules.category_names?.includes(product.category);
 
-        return hasNoScope || appliesToProduct || appliesToCategory;
+        return !!(appliesToProduct || appliesToCategory);
     });
   }, [promotions, product.id, product.category]);
 
