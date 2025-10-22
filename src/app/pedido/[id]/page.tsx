@@ -64,6 +64,7 @@ export default async function OrderPage({
       return category;
     }
     
+    // Explicitly handle the special formats
     if (category === 'Hairstyle') {
       return `Hairstyle / ${translation}`;
     }
@@ -71,6 +72,7 @@ export default async function OrderPage({
       return `Facial & Beard / ${translation}`;
     }
     
+    // Fallback for other translations
     return translation;
   }
 
