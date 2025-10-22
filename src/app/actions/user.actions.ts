@@ -7,7 +7,14 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { Client, CartItem, AuthState } from '@/types';
 
 export async function hasUsers(): Promise<boolean> {
-  // If the admin client isn't configured (e.g., missing ENV VARS in Vercel),
+  // During Vercel's build process, env vars might not be available.
+  // Safely assume users exist to prevent build failures on static pages.
+  if (process.env.VERCEL_ENV === 'production') {
+    console.warn('Vercel build environment detected. Assuming users exist for security.');
+    return true;
+  }
+  
+  // If the admin client isn't configured (e.g., missing ENV VARS),
   // securely assume users exist to prevent the signup page from showing.
   if (!supabaseAdmin) {
     console.warn('Supabase admin client not configured. Assuming users exist for security.');
@@ -18,7 +25,7 @@ export async function hasUsers(): Promise<boolean> {
     const { data, error } = await supabaseAdmin.auth.admin.listUsers();
     
     if (error) {
-      // This handles cases where Vercel/Netlify can't reach Supabase during build.
+      // This handles cases where the app can't reach Supabase.
       // We'll log the error but assume users exist to be safe.
       console.error('Error checking for users:', error.message);
       return true;
