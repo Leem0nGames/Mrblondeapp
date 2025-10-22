@@ -9,8 +9,8 @@ import type { Client, CartItem, AuthState } from '@/types';
 export async function hasUsers(): Promise<boolean> {
   // During Vercel's build process, env vars might not be available.
   // Safely assume users exist to prevent build failures on static pages.
-  if (process.env.VERCEL_ENV === 'production') {
-    console.warn('Vercel build environment detected. Assuming users exist for security.');
+  if (process.env.VERCEL_ENV === 'production' && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn('Vercel build environment detected without service key. Assuming users exist.');
     return true;
   }
   
