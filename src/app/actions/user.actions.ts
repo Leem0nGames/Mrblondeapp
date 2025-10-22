@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { redirect } from 'next/navigation';
@@ -7,6 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { Client, CartItem, AuthState } from '@/types';
+
+export const runtime = 'nodejs';
 
 export async function hasUsers(): Promise<boolean> {
   // If the admin client isn't configured (e.g., missing ENV VARS in Vercel),
@@ -17,7 +17,7 @@ export async function hasUsers(): Promise<boolean> {
   }
   
   try {
-    const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers();
     
     if (error) {
       // This handles cases where Vercel/Netlify can't reach Supabase during build.
@@ -26,7 +26,7 @@ export async function hasUsers(): Promise<boolean> {
       return true;
     }
     
-    return users.length > 0;
+    return data.users.length > 0;
   } catch (err: any) {
     console.error('Catastrophic error checking for users:', err.message);
     // As a final security measure, assume users exist if the check fails.
@@ -172,7 +172,7 @@ export async function getOrderPageData(agreementId: string) {
         console.error("getOrderPageData (settings) error:", settingsError.message);
     }
 
-    const settings = (settingsData || []).reduce((acc, { key, value }) => {
+    const settings = (settingsData || []).reduce((acc: any, { key, value }: { key: string, value: any }) => {
         acc[key] = key === 'vat_percentage' ? Number(value) : value;
         return acc;
     }, {} as any);
