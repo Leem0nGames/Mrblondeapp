@@ -48,7 +48,7 @@ export async function getPriceListById(id: string): Promise<{ data: DetailedPric
     return { data: detailedPriceList, error: null };
 }
 
-type UpsertPriceListPayload = { name: string, prices_include_vat: boolean, id?: string };
+type UpsertPriceListPayload = { name: string, prices_include_vat: boolean, id?: string, base_price_list_id?: string, discount_percentage?: number };
 export async function upsertPriceList(payload: UpsertPriceListPayload) {
   const result = await upsertEntity("price_lists", payload, ["/admin/commercial-settings"]);
    if (result.error && result.error.code === '23505') { // Unique constraint violation

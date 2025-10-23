@@ -22,9 +22,12 @@ type UpsertPromotionPayload = Omit<Promotion, "id" | "created_at" | "rules"> & {
 };
 
 export async function upsertPromotion(payload: UpsertPromotionPayload) {
-  return await upsertEntity("promotions", payload, ["/admin/commercial-settings", "/admin/agreements"]);
+  const revalidatePaths = ["/admin/commercial-settings", `/admin/agreements`];
+  return await upsertEntity("promotions", payload, revalidatePaths);
 }
 
 export async function deletePromotion(id: string) {
-  return await deleteEntity("promotions", id, ["/admin/commercial-settings", "/admin/agreements"]);
+  const revalidatePaths = ["/admin/commercial-settings", "/admin/agreements"];
+  return await deleteEntity("promotions", id, revalidatePaths);
 }
+
