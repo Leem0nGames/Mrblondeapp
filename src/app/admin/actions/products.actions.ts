@@ -2,7 +2,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getSupabaseClientWithAuth, deleteEntity } from "./_helpers";
+import { getSupabaseClientWithAuth, upsertEntity, deleteEntity } from "./_helpers";
 
 // --- Product Actions ---
 
@@ -49,26 +49,16 @@ export async function upsertProduct(formData: FormData) {
   }
   
   const productData = {
+      id: id || undefined,
       name,
       description,
       category,
       image_url: finalImageUrl
   };
   
-  const query = supabase.from("products");
-  const { data: result, error } = id
-      ? await query.update(productData).eq("id", id).select().single()
-      : await query.insert(productData).select().single();
-
-  if (error) {
-      console.error(`upsertProduct error:`, error.message);
-      return { data: null, error };
-  }
-
-  revalidatePath("/admin/products");
-  revalidatePath("/admin/pricelists");
+  const revalidatePaths = ["/admin/products", "/admin/pricelists"];
   
-  return { data: result, error: null };
+  return await upsertEntity("products", productData, revalidatePaths);
 }
 
 export async function deleteProduct(id: string) {

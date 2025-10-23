@@ -1,5 +1,5 @@
 
-'use server';
+"use server";
 
 import { revalidatePath } from 'next/cache';
 import { getSupabaseClientWithAuth, upsertEntity } from './_helpers';
@@ -75,33 +75,27 @@ export async function createClientForInvitation(payload: { name: string | null; 
   data: Pick<Client, "id" | "onboarding_token"> | null;
   error: any;
 }> {
-  const supabase = await getSupabaseClientWithAuth();
-  
   const placeholderName = payload.name || `Cliente Pendiente - ${new Date().toISOString()}`;
   
   const status = payload.agreementId ? 'pending_onboarding' : 'pending_onboarding';
 
-  const { data: client, error } = await supabase
-    .from('clients')
-    .insert({
-      status: status,
-      onboarding_token: crypto.randomUUID(),
-      contact_name: placeholderName,
-      agreement_id: payload.agreementId,
-    })
-    .select('id, onboarding_token')
-    .single();
+  const result = await upsertEntity("clients", {
+    status: status,
+    onboarding_token: crypto.randomUUID(),
+    contact_name: placeholderName,
+    agreement_id: payload.agreementId,
+  }, ["/admin/clients"]);
 
-  if (error || !client) {
-    console.error("createClientForInvitation error:", error?.message);
+
+  if (result.error || !result.data) {
+    console.error("createClientForInvitation error:", result.error?.message);
     return {
       data: null,
       error: { message: 'No se pudo crear la invitación para el cliente.' },
     };
   }
 
-  revalidatePath("/admin/clients");
-  return { data: client, error: null };
+  return { data: { id: result.data.id, onboarding_token: result.data.onboarding_token }, error: null };
 }
 
 
@@ -143,8 +137,9 @@ export async function upsertClient(
     )} de ${delivery_time_from} a ${delivery_time_to}hs`;
   }
 
-  const finalPayload: Partial<Client> = {
+  const finalPayload: Partial<Client> & { id?: string } = {
     ...clientData,
+    id: id,
   };
 
   if (address) finalPayload.address = address;
@@ -159,7 +154,7 @@ export async function upsertClient(
     delete (finalPayload as any).onboarding_token;
   }
 
-  const result = await upsertEntity('clients', { id, ...finalPayload }, [
+  const result = await upsertEntity('clients', finalPayload , [
     '/admin/clients',
     `/admin/clients/${id}`,
   ]);
