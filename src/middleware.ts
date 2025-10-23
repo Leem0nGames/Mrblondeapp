@@ -1,7 +1,6 @@
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/middleware';
-import { hasUsers } from '@/app/actions/user.actions';
 
 export const runtime = 'nodejs';
 
@@ -24,25 +23,6 @@ export async function middleware(request: NextRequest) {
 
   if (isOnboardingRoute || isOrderRoute) {
     return response;
-  }
-
-  // 1. Lógica de Primer Arranque (Setup)
-  const usersExist = await hasUsers();
-
-  if (!usersExist) {
-    // Si no hay usuarios, la única página permitida es la de registro.
-    if (pathname !== '/signup') {
-      return NextResponse.redirect(new URL('/signup', request.url));
-    }
-    // Permite el acceso a la página de registro.
-    return response;
-  }
-
-  // 2. Lógica de Aplicación Normal (Después del Setup)
-  
-  // Si ya existen usuarios, la página de registro ya no es accesible.
-  if (pathname === '/signup') {
-    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   const isPublicRoute = publicRoutes.includes(pathname);
