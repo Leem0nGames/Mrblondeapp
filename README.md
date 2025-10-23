@@ -50,7 +50,7 @@ cd blonde-orders
 ```bash
 npm install
 ```
-1co
+
 **C. Set Up Supabase & Environment**
 
 1.  **Crucial Step**: Follow the complete database and environment setup guide in the `INSTRUCCIONES.md` file located in the root of this project. It contains the necessary SQL script and instructions for environment variables (`.env.local`).
@@ -63,7 +63,7 @@ Start the app in development mode:
 npm run dev
 ```
 
-- The application will be available at `http://localhost:9002` (o el puerto que configures).
+- The application will be available at `http://localhost:9003`.
 - The first time you run the app, you will be redirected to `/signup` to create the main administrator account.
 
 ## Deployment
@@ -72,7 +72,16 @@ This project is optimized for deployment on [Vercel](https://vercel.com/).
 
 1.  **Push to GitHub/GitLab/Bitbucket**: Ensure your code is on a Git provider.
 2.  **Import Project on Vercel**: From your Vercel dashboard, import the repository.
-3.  **Configure Environment Variables**: In the Vercel project settings, add the same environment variables from your `.env.local` file (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
-4.  **Deploy**: Vercel will automatically detect it's a Next.js app and deploy it.
+3.  **Configure Environment Variables (CRITICAL STEP)**:
+    - In your Vercel project's settings, navigate to the **Environment Variables** section.
+    - You **MUST** add the same three environment variables from your local `.env.local` file:
+      - `NEXT_PUBLIC_SUPABASE_URL`
+      - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+      - `SUPABASE_SERVICE_ROLE_KEY`
+    - If you are using the maps feature, you must also add:
+      - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
+    - Copy the values from your local file (or directly from your Supabase project settings) into Vercel. Ensure there are no extra spaces or characters.
+    - **This step is mandatory. Without these variables, the deployed application will show an "Internal Server Error".**
+4.  **Deploy**: Trigger a new deployment in Vercel. With the environment variables now correctly configured, the build and deployment will succeed and the application will be accessible.
 
 Once deployed, your application will be live!

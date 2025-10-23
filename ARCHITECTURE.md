@@ -69,13 +69,15 @@ Este documento sirve como guía de referencia para la estructura, lógica y fluj
 
 ### a. Flujo de Primer Uso (Registro de Administrador)
 
-1.  **Verificación Inicial**: El `middleware.ts` intercepta la primera visita. Llama a la `Server Action` `hasUsers()` de `user.actions.ts`.
-2.  **`hasUsers()`**: Esta función usa el cliente de Supabase con `SERVICE_ROLE_KEY` (`supabaseAdmin`) para comprobar si existe algún usuario en la tabla `auth.users`. Es la única función que requiere estos privilegios.
-3.  **Redirección**:
-    -   Si `hasUsers()` devuelve `false`, el middleware redirige **forzosamente** a `/signup`. Cualquier otro intento de acceso es bloqueado.
-    -   Si `hasUsers()` devuelve `true`, el middleware bloquea el acceso a `/signup` y procede con el flujo de autenticación normal.
-4.  **Registro**: El formulario en `/signup` llama a la `Server Action` `signupSuperAdmin`. Esta acción crea el primer usuario administrador con el email y contraseña proporcionados.
-5.  **Redirección Post-Registro**: Tras el éxito, redirige a `/login` para que el administrador inicie sesión por primera vez.
+1.  **Acceso a `/login`**: El usuario visita la página de login por primera vez.
+2.  **Verificación en la Página**: La `Server Component` de `/login/page.tsx` llama a la `Server Action` `hasUsers()` de `user.actions.ts`.
+3.  **`hasUsers()`**: Esta función usa el cliente de Supabase con `SERVICE_ROLE_KEY` (`supabaseAdmin`) para comprobar si existe algún usuario en la tabla `auth.users`. Es la única función que requiere estos privilegios.
+4.  **Redirección Condicional**:
+    -   Si `hasUsers()` devuelve `false`, la página de login redirige inmediatamente a `/signup`.
+    -   Si `hasUsers()` devuelve `true`, la página de login se renderiza normalmente.
+5.  **Acceso a `/signup`**: De manera similar, la página de `/signup` también llama a `hasUsers()`. Si devuelve `true`, redirige a `/login` para impedir nuevos registros.
+6.  **Registro**: El formulario en `/signup` llama a la `Server Action` `signupSuperAdmin`. Esta acción crea el primer usuario administrador con el email y contraseña proporcionados.
+7.  **Redirección Post-Registro**: Tras el éxito, redirige a `/login` para que el administrador inicie sesión por primera vez.
 
 ### b. Flujo de Autenticación de Administrador
 

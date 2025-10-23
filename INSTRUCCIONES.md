@@ -11,6 +11,10 @@ Antes de nada, crea un archivo llamado `.env.local` en la raíz del proyecto. Co
 NEXT_PUBLIC_SUPABASE_URL="tu-url-de-supabase"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="tu-anon-key-publica"
 SUPABASE_SERVICE_ROLE_KEY="tu-service-role-key-secreta"
+
+# Clave de Google Maps (opcional, para la funcionalidad de mapas)
+# Encuéntrala en tu consola de Google Cloud Platform.
+# NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="tu-api-key-de-google-maps"
 ```
 
 ## 2. Configuración de la Base de Datos
@@ -36,13 +40,18 @@ Si quieres empezar con productos, precios y promociones de ejemplo, puedes ejecu
 2.  **Copia todo el contenido**.
 3.  **Pega el script** en el SQL Editor de Supabase y haz clic en **"RUN"**.
 
-## 3. Crear el Usuario Administrador
+## 3. Iniciar la Aplicación
 
-La aplicación te guiará para crear el primer usuario administrador la primera vez que la ejecutes. Después de configurar la base de datos y las variables de entorno, simplemente inicia la aplicación.
+1.  **Instala las dependencias**: `npm install`
+2.  **Inicia la aplicación** en modo de desarrollo: `npm run dev`.
+3.  Abre tu navegador y ve a `http://localhost:9003`.
 
-1.  **Inicia la aplicación** (ej. `npm run dev`).
-2.  Serás redirigido a `/signup`.
-3.  **Crea la cuenta** con tu email y una contraseña segura.
-4.  Una vez creada, serás redirigido a `/login`, donde podrás iniciar sesión.
+## 4. Crear el Usuario Administrador
+
+La aplicación te guiará para crear el primer usuario administrador la primera vez que la ejecutes.
+
+1.  Al visitar `http://localhost:9003`, serás redirigido a la página de registro (`/signup`).
+2.  **Crea la cuenta** con tu email y una contraseña segura.
+3.  Una vez creada, serás redirigido a `/login`, donde podrás iniciar sesión.
 
 Con esto, tu aplicación estará lista para usarse.
