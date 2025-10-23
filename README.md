@@ -50,7 +50,7 @@ cd blonde-orders
 ```bash
 npm install
 ```
-1
+1co
 **C. Set Up Supabase & Environment**
 
 1.  **Crucial Step**: Follow the complete database and environment setup guide in the `INSTRUCCIONES.md` file located in the root of this project. It contains the necessary SQL script and instructions for environment variables (`.env.local`).
