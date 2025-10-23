@@ -50,7 +50,7 @@ export async function getPriceListById(id: string): Promise<{ data: DetailedPric
 
 type UpsertPriceListPayload = { name: string, prices_include_vat: boolean, id?: string };
 export async function upsertPriceList(payload: UpsertPriceListPayload) {
-  const result = await upsertEntity("price_lists", payload, ["/admin/pricelists"]);
+  const result = await upsertEntity("price_lists", payload, ["/admin/commercial-settings"]);
    if (result.error && result.error.code === '23505') { // Unique constraint violation
       return { data: null, error: { ...result.error, message: `El nombre '${payload.name}' ya existe.` } };
   }
@@ -58,7 +58,7 @@ export async function upsertPriceList(payload: UpsertPriceListPayload) {
 }
 
 export async function deletePriceList(id: string) {
-    return await deleteEntity("price_lists", id, ["/admin/pricelists"]);
+    return await deleteEntity("price_lists", id, ["/admin/commercial-settings"]);
 }
 
 export async function getUnassignedProductsForPriceList(priceListId: string) {
