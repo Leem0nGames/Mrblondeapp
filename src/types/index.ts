@@ -29,6 +29,30 @@ export type CartItem = {
   quantity: number;
 };
 
+// Re-export for use-cart-store compatibility
+export type { CartItem as CartItemType };
+
+export type UpsertPriceListPayload = {
+  name: string;
+  base_price_list_id?: string;
+  discount_percentage?: number;
+  prices_include_vat: boolean;
+};
+
+export type UpsertPromotionPayload = Omit<Promotion, 'id' | 'created_at' | 'rules'> & {
+  rules: any;
+};
+
+export type UpsertSalesConditionPayload = Omit<SalesCondition, 'id' | 'created_at' | 'rules'> & {
+  rules: any;
+};
+
+export type SubmitOnboardingPayload = Omit<Client, 'status' | 'agreements' | 'id' | 'agreement_id' | 'created_at'> & {
+  onboarding_token: string | null;
+  address?: string;
+  delivery_window?: string;
+};
+
 export type Promotion = {
   id: string;
   name: string;
@@ -161,6 +185,20 @@ export type AppSettings = {
     vat_percentage: number;
     logo_url: string | null;
 }
+
+// --- Database Response Types ---
+export type AppSettingsRow = {
+    key: string;
+    value: any;
+};
+
+export type PriceListItemWithProduct = {
+    price: number;
+    volume_price: number | null;
+    products: Product;
+};
+
+export type AgreementPriceListItems = PriceListItemWithProduct[];
 
 // --- AI Flow Types ---
 export type AnalyzeClientOutput = {

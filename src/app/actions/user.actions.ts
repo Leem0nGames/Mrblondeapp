@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import type { Client, CartItem, AuthState } from '@/types';
+import type { Client, CartItem, AuthState, AppSettingsRow, AgreementPriceListItems } from '@/types';
 
 export async function hasUsers(): Promise<boolean> {
   // During Vercel's build process, env vars might not be available.
@@ -177,19 +177,27 @@ export async function getOrderPageData(agreementId: string) {
         console.error("getOrderPageData (settings) error:", settingsError.message);
     }
 
-    const settings = (settingsData || []).reduce((acc: any, { key, value }: { key: string, value: any }) => {
-        acc[key] = key === 'vat_percentage' ? Number(value) : value;
+    const settings = (settingsData || []).reduce((acc: Record<string, any>, setting: AppSettingsRow) => {
+        acc[setting.key] = setting.key === 'vat_percentage' ? Number(setting.value) : setting.value;
         return acc;
-    }, {} as any);
+    }, {} as Record<string, any>);
     
     const vatPercentage = settings.vat_percentage || 21;
     const logoUrl = settings.logo_url || null;
 
-    const products = priceListItems.map(pli => ({
-        ...pli.products!,
-        price: pli.price,
-        volume_price: pli.volume_price,
-    })).sort((a, b) => a.name.localeCompare(b.name));
+    const products = priceListItems.map((pli: any) => {
+        const productData = pli.products as any;
+        return {
+            id: productData.id,
+            name: productData.name,
+            description: productData.description,
+            category: productData.category,
+            image_url: productData.image_url,
+            created_at: productData.created_at,
+            price: pli.price,
+            volume_price: pli.volume_price,
+        };
+    }).sort((a, b) => a.name.localeCompare(b.name));
     
     const productsByCategory = products.reduce((acc, product) => {
         const category = product.category || 'Sin Categoría';

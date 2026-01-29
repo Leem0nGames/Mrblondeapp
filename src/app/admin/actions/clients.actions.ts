@@ -277,7 +277,7 @@ export async function getClientStats(
     return { data: null, error };
   }
 
-  return { data, error: null };
+  return { data: data as ClientStats, error: null };
 }
 
 export async function analyzeClient(
@@ -340,7 +340,7 @@ export async function geocodeAddressAndSave(clientId: string, address: string) {
 
     const { error: updateError } = await supabaseAdmin
       .from('clients')
-      .update({ latitude: lat, longitude: lng })
+      .update({ latitude: lat as number, longitude: lng as number })
       .eq('id', clientId);
 
     if (updateError) {
