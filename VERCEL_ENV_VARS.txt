@@ -1,0 +1,10 @@
+# Variables de entorno para Vercel (Producción)
+
+NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
+SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=tu-maps-api-key
+NEXT_PUBLIC_WHATSAPP_NUMBER=5491144276120
+GEMINI_API_KEY=tu-gemini-api-key
+
+# Para desarrollo local usa .env con tus keys de desarrollo

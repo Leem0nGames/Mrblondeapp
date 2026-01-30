@@ -297,22 +297,22 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Cli
             <FormField control={form.control} name="agreement_id" render={({ field }) => (
               <FormItem><FormLabel>Convenio Comercial</FormLabel><Select onValueChange={(v) => field.onChange(v === 'null' ? null : v)} value={field.value || 'null'}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un convenio..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="null">Ninguno</SelectItem>{agreements.map(a => <SelectItem key={a.id} value={a.id}>{a.agreement_name}</SelectItem>)}</SelectContent></Select><FormDescription>Opcional. Asigna un convenio comercial a este cliente.</FormDescription><FormMessage /></FormItem>
             )}/>
+            <DialogFooter className="pt-4 border-t">
+                <Button variant="outline" type="button" onClick={onCancel}>
+                    Cancelar
+                </Button>
+                <Button
+                    type="submit"
+                    form="upsert-client-form"
+                    disabled={isPending}
+                >
+                    {isPending ? "Guardando..." : "Guardar Cliente"}
+                </Button>
+            </DialogFooter>
           </form>
         </Form>
       </div>
     </ScrollArea>
-    <DialogFooter className="p-6 pt-2 border-t">
-        <Button variant="outline" type="button" onClick={onCancel}>
-            Cancelar
-        </Button>
-        <Button
-            type="submit"
-            form="upsert-client-form"
-            disabled={isPending}
-        >
-            {isPending ? "Guardando..." : "Guardar Cliente"}
-        </Button>
-    </DialogFooter>
     </>
   );
 }

@@ -1,7 +1,7 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { FileWarning } from "lucide-react";
+import { FileWarning, ChevronRight, Home } from "lucide-react";
 import { getClientById, getClientStats } from "@/app/admin/actions/clients.actions";
 import { getClientOrders } from "@/app/admin/actions/dashboard.actions";
 import { Button } from "@/components/ui/button";
@@ -72,6 +72,20 @@ export default async function ClientDetailPage({
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
+      <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link href="/admin" className="hover:text-foreground transition-colors">
+          <Home className="h-4 w-4" />
+          <span className="sr-only">Inicio</span>
+        </Link>
+        <ChevronRight className="h-4 w-4" />
+        <Link href="/admin/clients" className="hover:text-foreground transition-colors">
+          Clientes
+        </Link>
+        <ChevronRight className="h-4 w-4" />
+        <span className="text-foreground font-medium truncate max-w-[200px]">
+          {client.contact_name || 'Cliente'}
+        </span>
+      </nav>
       <Suspense fallback={<ClientDetailsSkeleton />}>
         <ClientDetailsLoader 
           client={client}

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabaseErrorMessage } from '@/lib/supabase-error-messages';
 import type { Client, CartItem, AuthState, AppSettingsRow, AgreementPriceListItems } from '@/types';
 
 export async function hasUsers(): Promise<boolean> {
@@ -66,10 +67,7 @@ export async function signupSuperAdmin(
 
   if (error) {
     console.error('Supabase signup error:', error.message);
-    if (error.message.includes('User already registered')) {
-        return { error: { message: 'Este correo electrónico ya está registrado.' } };
-    }
-    return { error: { message: 'No se pudo crear la cuenta. ' + error.message } };
+    return { error: { message: getSupabaseErrorMessage(error) } };
   }
 
   if (data.user) {
@@ -99,10 +97,7 @@ export async function login(
 
   if (error) {
     console.error('Supabase login error:', error.message);
-    if(error.message.includes('Invalid login credentials')) {
-        return { error: { message: 'Credenciales de acceso inválidas.'}};
-    }
-    return { error: { message: 'Error de autenticación. Verifique la consola del servidor.' } };
+    return { error: { message: getSupabaseErrorMessage(error) } };
   }
   
   revalidatePath('/admin');
@@ -236,7 +231,7 @@ export async function getOnboardingClient(token: string): Promise<{ data: Client
 
     if (error) {
         console.error("getOnboardingClient error:", error.message);
-        return { data: null, error: { message: error.message } };
+        return { data: null, error: { message: getSupabaseErrorMessage(error) } };
     }
     return { data, error: null };
 }
@@ -299,15 +294,7 @@ export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
 
     if (error) {
         console.error("submitOnboardingForm error:", error.message);
-        if (error.code === '23505') { 
-             if (error.message.includes('cuit')) {
-                return { error: { message: 'El CUIT ingresado ya está registrado en nuestro sistema.' }};
-            }
-            if (error.message.includes('email')) {
-                return { error: { message: 'El email ingresado ya está registrado en nuestro sistema.' }};
-            }
-        }
-        return { error };
+        return { error: { message: getSupabaseErrorMessage(error) } };
     }
 
     revalidatePath('/admin/clients');
@@ -342,7 +329,7 @@ export async function submitOrder(payload: {
 
     if (orderError || !order) {
         console.error("submitOrder (order) error:", orderError?.message);
-        return { error: { message: "No se pudo registrar el pedido en la base de datos." } };
+        return { error: { message: getSupabaseErrorMessage(orderError || { message: 'Error al crear el pedido' }) } };
     }
 
     const totalItemsInCart = payload.cart.reduce((acc, item) => acc + item.quantity, 0);
@@ -365,9 +352,8 @@ export async function submitOrder(payload: {
 
     if (itemsError) {
         console.error("submitOrder (items) error:", itemsError.message);
-        // We should probably delete the order we just created for consistency
         await supabase.from('orders').delete().eq('id', order.id);
-        return { error: { message: "No se pudieron guardar los productos del pedido." } };
+        return { error: { message: getSupabaseErrorMessage(itemsError) } };
     }
 
     // 3. Revalidate paths to update admin dashboard
