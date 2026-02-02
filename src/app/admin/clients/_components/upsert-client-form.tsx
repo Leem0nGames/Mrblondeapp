@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useTransition, useEffect, useState } from "react";
@@ -141,16 +142,38 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
   const onSubmit = (values: UpsertClientFormValues) => {
     startTransition(async () => {
       const address = `${values.street_address} ${values.street_number}, ${values.locality}, ${values.province}`;
-      const delivery_window = `${values.delivery_days?.join(', ')} de ${values.delivery_time_from} a ${values.delivery_time_to}hs`;
+      const delivery_window = (values.delivery_days && values.delivery_days.length > 0)
+        ? `${values.delivery_days.join(', ')} de ${values.delivery_time_from} a ${values.delivery_time_to}hs`
+        : undefined;
 
-      const finalPayload = {
+      // Destructure to remove form-only fields
+      const {
+        province,
+        locality,
+        street_address,
+        street_number,
+        delivery_days,
+        delivery_time_from,
+        delivery_time_to,
+        ...clientData // This now contains only the properties that are valid DB columns
+      } = values;
+
+      const finalPayload: Partial<Client> & { id?: string } = {
         id: client?.id,
-        ...values,
-        address: (values.street_address && values.street_number && values.locality && values.province) ? address : client?.address,
-        delivery_window: (values.delivery_days && values.delivery_time_from && values.delivery_time_to) ? delivery_window : client?.delivery_window,
+        ...clientData,
       };
 
+      // Only add address and delivery_window if they were actually constructed
+      if (values.street_address && values.street_number && values.locality && values.province) {
+        finalPayload.address = address;
+      }
+
+      if (delivery_window) {
+        finalPayload.delivery_window = delivery_window;
+      }
+
       const result = await upsertClient(finalPayload);
+
       if (result.error) {
         toast({ title: "Error al guardar", description: result.error.message, variant: "destructive" });
       } else {
