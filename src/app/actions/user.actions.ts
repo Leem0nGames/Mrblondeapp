@@ -115,7 +115,7 @@ export async function logout() {
 }
 
 export async function getOnboardingClient(token: string) {
-  const supabase = createClient();
+  const supabase = await createServerClient();
   if (!token) return { data: null, error: { message: "Token inválido." } };
 
   const { data, error } = await supabase
@@ -133,7 +133,7 @@ export async function getOnboardingClient(token: string) {
 }
 
 export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
-  const supabase = createClient();
+  const supabase = await createServerClient();
   const { onboarding_token, ...clientData } = payload;
   
   if (!onboarding_token) {
