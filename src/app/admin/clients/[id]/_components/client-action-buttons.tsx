@@ -29,7 +29,7 @@ type ClientActionButtonsProps = {
     clientStatus: Client['status'];
 }
 
-const ActionButton = ({ children, className, ...props }: React.ComponentProps<typeof Button>) => (
+export const ActionButton = ({ children, className, ...props }: React.ComponentProps<typeof Button>) => (
     <Button
         variant="secondary"
         className={cn(
@@ -95,11 +95,3 @@ export function ClientActionButtons({
         </div>
     )
 }
-
-const ActionButtonWrapper = ({ children }: { children: React.ReactNode }) => (
-     <ActionButton>
-        {children}
-    </ActionButton>
-);
-
-export { ActionButtonWrapper, ActionButton };

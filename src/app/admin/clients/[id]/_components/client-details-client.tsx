@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { getAgreementSalesConditions } from "@/app/admin/actions/agreements.actions";
 import { useToast } from "@/hooks/use-toast";
 import { AssignAgreementDialog } from '../../_components/assign-agreement-dialog';
-import { ActionButtonWrapper } from './client-action-buttons';
+import { ActionButton } from './client-action-buttons';
 import { deleteClient } from '@/app/admin/actions/clients.actions';
 import { OnboardingFormDialog } from './onboarding-form-dialog';
 
@@ -120,19 +120,19 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
 
   const editDialog = (
     <OnboardingFormDialog client={client}>
-      <ActionButtonWrapper>
+      <ActionButton>
         <Edit className="h-6 w-6" />
         <span>Editar Datos</span>
-      </ActionButtonWrapper>
+      </ActionButton>
     </OnboardingFormDialog>
   );
 
   const agreementDialog = (
     <AssignAgreementDialog client={client}>
-      <ActionButtonWrapper>
+      <ActionButton>
         <FilePen className="h-6 w-6" />
         <span>Convenio</span>
-      </ActionButtonWrapper>
+      </ActionButton>
     </AssignAgreementDialog>
   );
 
