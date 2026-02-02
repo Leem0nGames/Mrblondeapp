@@ -2,7 +2,7 @@
 
 "use client"
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import type { Client } from "@/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -52,14 +52,6 @@ export function ClientHeader({
     editDialog: React.ReactNode;
     agreementDialog: React.ReactNode;
  }) {
-  const [onboardingLink, setOnboardingLink] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && client.onboarding_token) {
-      setOnboardingLink(`${window.location.origin}/onboarding/${client.onboarding_token}`);
-    }
-  }, [client.onboarding_token]);
-
 
   return (
     <div className="w-full">
@@ -81,7 +73,6 @@ export function ClientHeader({
                 isArchiving={isArchiving}
                 onCopyLink={onCopyLink}
                 orderLink={orderLink}
-                onboardingLink={onboardingLink}
                 editDialog={editDialog}
                 agreementDialog={agreementDialog}
                 clientStatus={client.status}

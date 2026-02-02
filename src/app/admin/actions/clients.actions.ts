@@ -71,34 +71,6 @@ export async function getClientById(
   return { data: client, error: null };
 }
 
-export async function createClientForInvitation(payload: { name: string | null; agreementId: string | null }): Promise<{
-  data: Pick<Client, "id" | "onboarding_token"> | null;
-  error: any;
-}> {
-  const placeholderName = payload.name || `Cliente Pendiente - ${new Date().toISOString()}`;
-  
-  const status = payload.agreementId ? 'pending_onboarding' : 'pending_onboarding';
-
-  const result = await upsertEntity("clients", {
-    status: status,
-    onboarding_token: crypto.randomUUID(),
-    contact_name: placeholderName,
-    agreement_id: payload.agreementId,
-  }, ["/admin/clients"]);
-
-
-  if (result.error || !result.data) {
-    console.error("createClientForInvitation error:", result.error?.message);
-    return {
-      data: null,
-      error: { message: 'No se pudo crear la invitación para el cliente.' },
-    };
-  }
-
-  return { data: { id: result.data.id, onboarding_token: result.data.onboarding_token }, error: null };
-}
-
-
 const CuitSchema = z.string().optional().or(z.literal(''));
 
 export async function upsertClient(
@@ -201,7 +173,13 @@ export async function assignAgreementToClient(payload: {
 
   if (client.status !== 'pending_onboarding') {
     newStatus = payload.agreementId ? 'active' : 'pending_agreement';
+  } else {
+    // If the client was pending onboarding, and we assign an agreement, they become active.
+    if (payload.agreementId) {
+      newStatus = 'active';
+    }
   }
+
 
   const { error } = await supabase
     .from('clients')

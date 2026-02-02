@@ -2,6 +2,7 @@
 "use client";
 
 import { z } from "zod";
+import { useState, useEffect } from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,7 +11,6 @@ import type { FormConfig } from "../../_components/entity-dialog";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
 
-// 1. Esquema de validación para Producto
 const productSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
   description: z.string().optional(),
@@ -18,7 +18,6 @@ const productSchema = z.object({
   image: z.any().optional(),
 });
 
-// 2. Función para obtener los valores por defecto del formulario de Producto
 const getProductDefaultValues = (product?: any) => ({
   name: product?.name ?? "",
   description: product?.description ?? "",
@@ -27,9 +26,9 @@ const getProductDefaultValues = (product?: any) => ({
   image: undefined,
 });
 
-// 3. Función para renderizar los campos del formulario de Producto
 const renderProductFields = (form: any) => {
   const currentImageUrl = form.watch("image_url");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   return (
   <>
@@ -40,33 +39,54 @@ const renderProductFields = (form: any) => {
           <FormItem>
             <FormLabel>Imagen del Producto</FormLabel>
             <FormControl>
-                <Input 
-                    type="file" 
-                    accept="image/png, image/jpeg, image/webp" 
-                    onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
+                <Input
+                    type="file"
+                    accept="image/png, image/jpeg, image/webp"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        field.onChange(file);
+                        const objectUrl = URL.createObjectURL(file);
+                        setPreviewUrl(objectUrl);
+                      }
+                    }}
                 />
             </FormControl>
             <FormDescription>
-                Sube una imagen para el producto (recomendado: formato cuadrado).
+                Sube una imagen (máx. 5MB, recomendado: formato cuadrado).
             </FormDescription>
             <FormMessage />
           </FormItem>
         )}
       />
 
-    {currentImageUrl && (
+    {previewUrl && (
+        <div className="space-y-2">
+            <Label>Vista Previa</Label>
+            <div className="relative w-32 h-32 rounded-lg overflow-hidden border">
+                <Image
+                    src={previewUrl}
+                    alt="Vista previa"
+                    fill
+                    className="object-cover"
+                />
+            </div>
+        </div>
+    )}
+
+    {currentImageUrl && !previewUrl && (
         <div className="space-y-2">
             <Label>Imagen Actual</Label>
             <div className="relative w-24 h-24">
-                <Image 
+                <Image
                     src={currentImageUrl}
-                    alt="Imagen actual del producto"
+                    alt="Imagen actual"
                     fill
                     className="rounded-md object-cover"
                 />
             </div>
             <p className="text-xs text-muted-foreground">
-                Sube una nueva imagen para reemplazar la actual.
+                Sube una nueva imagen para reemplazar.
             </p>
         </div>
     )}

@@ -3,12 +3,13 @@
 "use client";
 
 import { useEffect, useTransition, useState } from "react";
-import { useCartStore, type CartItem, type BonusInfo } from "@/hooks/use-cart-store";
+import { useCartStore, type BonusInfo } from "@/hooks/use-cart-store";
+import type { CartItem } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Gift, Truck, Percent } from "lucide-react";
+import { ArrowRight, Gift, Truck, Percent, Trash2 } from "lucide-react";
 import { submitOrder } from "@/app/actions/user.actions";
 import { getPublicWhatsappNumber } from "@/app/admin/actions/settings.actions";
 import type { Promotion } from "@/types";
@@ -282,9 +283,24 @@ export function OrderSummary({
                           <span>Total</span>
                           <span>{formatCurrency(totalPrice)}</span>
                       </div>
-                        <div className="flex justify-between items-center text-sm">
+                      <div className="flex justify-between items-center text-sm">
                           <span className="text-muted-foreground">{totalItems} Unidades</span>
                       </div>
+                      <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                              clearCart();
+                              toast({
+                                  title: "Carrito vacío",
+                                  description: "Todos los productos han sido eliminados.",
+                              });
+                          }}
+                          className="w-full"
+                      >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Vaciar Carrito
+                      </Button>
                   </div>
 
                   <div className="space-y-2">

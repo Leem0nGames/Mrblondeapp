@@ -21,8 +21,6 @@ import {
   Card,
   CardContent,
   CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -115,7 +113,7 @@ export default function ProductsTable({ products, emptyState, page = 1, totalCou
                   data-ai-hint="product image"
                 />
                 <div className="flex-grow">
-                  <CardTitle className="text-lg">{product.name}</CardTitle>
+                  <h3 className="font-semibold text-lg">{product.name}</h3>
                   {product.category && (
                     <Badge variant="outline" className="mt-1">{product.category}</Badge>
                   )}
@@ -129,7 +127,7 @@ export default function ProductsTable({ products, emptyState, page = 1, totalCou
                     <Edit className="mr-2 h-4 w-4" /> Editar
                   </Button>
                 </EntityDialog>
-                  <AlertDialog>
+                <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" size="sm">
                       <Trash2 className="mr-2 h-4 w-4" /> Eliminar

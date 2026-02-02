@@ -24,6 +24,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { provinces, getLocalitiesByProvince } from "@/lib/geo-data";
 import { DialogFooter } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // CUIT Validation Logic
@@ -295,7 +297,37 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Cli
             </div>
 
             <FormField control={form.control} name="agreement_id" render={({ field }) => (
-              <FormItem><FormLabel>Convenio Comercial</FormLabel><Select onValueChange={(v) => field.onChange(v === 'null' ? null : v)} value={field.value || 'null'}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un convenio..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="null">Ninguno</SelectItem>{agreements.map(a => <SelectItem key={a.id} value={a.id}>{a.agreement_name}</SelectItem>)}</SelectContent></Select><FormDescription>Opcional. Asigna un convenio comercial a este cliente.</FormDescription><FormMessage /></FormItem>
+              <FormItem>
+                <div className="flex items-center gap-2">
+                  <FormLabel>Convenio Comercial</FormLabel>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="font-medium mb-1">¿Qué es un convenio?</p>
+                        <p className="text-sm text-muted-foreground">
+                          Un convenio define los precios especiales, promociones y condiciones comerciales asignadas a este cliente. Cada cliente debe tener un convenio activo para poder realizar pedidos.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <Select onValueChange={(v) => field.onChange(v === 'null' ? null : v)} value={field.value || 'null'}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione un convenio..." />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="null">Ninguno</SelectItem>
+                    {agreements.map(a => <SelectItem key={a.id} value={a.id}>{a.agreement_name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormDescription>Opcional. Asigna precios y promociones especiales.</FormDescription>
+                <FormMessage />
+              </FormItem>
             )}/>
             <DialogFooter className="pt-4 border-t">
                 <Button variant="outline" type="button" onClick={onCancel}>

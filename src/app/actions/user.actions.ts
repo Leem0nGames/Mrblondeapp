@@ -1,3 +1,4 @@
+
 'use server';
 
 import { redirect } from 'next/navigation';
@@ -217,89 +218,6 @@ export async function getOrderPageData(agreementId: string) {
         }, 
         error: null 
     };
-}
-
-
-// --- Onboarding Actions ---
-export async function getOnboardingClient(token: string): Promise<{ data: Client | null, error: any }> {
-    const supabase = await createServerClient();
-    const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('onboarding_token', token)
-        .maybeSingle();
-
-    if (error) {
-        console.error("getOnboardingClient error:", error.message);
-        return { data: null, error: { message: getSupabaseErrorMessage(error) } };
-    }
-    return { data, error: null };
-}
-
-type SubmitOnboardingPayload = Omit<Client, 'id' | 'created_at' | 'status' | 'agreement_id' | 'agreements'> & {
-  street_address: string;
-  street_number: string;
-  locality: string;
-  province: string;
-  delivery_days: string[];
-  delivery_time_from: string;
-  delivery_time_to: string;
-};
-
-export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
-    const supabase = await createServerClient();
-    
-    const { 
-        onboarding_token, 
-        delivery_days,
-        delivery_time_from,
-        delivery_time_to,
-        street_address,
-        street_number,
-        locality,
-        province,
-        ...clientData 
-    } = payload;
-
-    const { data: existingClient, error: fetchError } = await supabase
-        .from('clients')
-        .select('agreement_id, status')
-        .eq('onboarding_token', onboarding_token)
-        .single();
-    
-    if (fetchError || !existingClient) {
-        return { error: { message: 'Enlace de alta inválido.' } };
-    }
-
-    let newStatus: Client['status'];
-    if (existingClient.agreement_id) {
-        newStatus = 'active';
-    } else {
-        newStatus = 'pending_agreement';
-    }
-    
-    const address = `${street_address} ${street_number}, ${locality}, ${province}`;
-    const delivery_window = `${delivery_days.join(', ')} de ${delivery_time_from} a ${delivery_time_to}hs`;
-
-    const { error } = await supabase
-        .from('clients')
-        .update({ 
-            ...clientData,
-            address,
-            delivery_window, 
-            status: newStatus,
-            contact_name: payload.contact_name
-        })
-        .eq('onboarding_token', onboarding_token);
-
-    if (error) {
-        console.error("submitOnboardingForm error:", error.message);
-        return { error: { message: getSupabaseErrorMessage(error) } };
-    }
-
-    revalidatePath('/admin/clients');
-    revalidatePath(`/onboarding/${onboarding_token}`);
-    return { error: null };
 }
 
 // --- Order Submission ---

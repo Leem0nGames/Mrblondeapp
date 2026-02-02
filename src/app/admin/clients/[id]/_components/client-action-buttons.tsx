@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import type { Client } from "@/types";
-import { Archive, Edit, FilePen, Link as LinkIcon, Copy } from "lucide-react";
+import { Archive, Edit, FilePen, Link as LinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ClientActionButtonsProps = {
@@ -23,7 +23,6 @@ type ClientActionButtonsProps = {
     isArchiving: boolean;
     onCopyLink: (link: string | null, message: string, errorMessage?: string) => void;
     orderLink: string | null;
-    onboardingLink: string | null;
     editDialog: React.ReactNode;
     agreementDialog: React.ReactNode;
     clientStatus: Client['status'];
@@ -47,24 +46,15 @@ export function ClientActionButtons({
     isArchiving, 
     onCopyLink, 
     orderLink, 
-    onboardingLink,
     editDialog, 
     agreementDialog,
     clientStatus
 }: ClientActionButtonsProps) {
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {editDialog}
             
             {agreementDialog}
-
-            <ActionButton 
-                disabled={!onboardingLink || clientStatus !== 'pending_onboarding'}
-                onClick={() => onCopyLink(onboardingLink, 'Enlace de alta copiado!')}
-            >
-                <Copy className="h-5 w-5" />
-                <span>Link Alta</span>
-            </ActionButton>
 
             <ActionButton disabled={!orderLink} onClick={() => onCopyLink(orderLink, 'Enlace de pedido copiado!')}>
                 <LinkIcon className="h-5 w-5" />

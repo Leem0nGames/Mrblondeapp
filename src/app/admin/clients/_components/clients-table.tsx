@@ -2,7 +2,9 @@
 
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTransition, useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, MoreHorizontal, Archive, FilePen, Link as LinkIcon, Copy } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -102,7 +104,6 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
     <>
       <div className="grid gap-4 sm:hidden">
         {clients.map((client) => {
-          const onboardingLink = isClient ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
           return (
           <Card key={client.id}>
              <Link href={`/admin/clients/${client.id}`}>
@@ -126,15 +127,6 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
                        {client.agreement_id ? "Cambiar Convenio" : "Asignar Convenio"}
                     </Button>
                 </AssignAgreementDialog>
-                <Button 
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!')}
-                    disabled={client.status !== 'pending_onboarding' || !isClient}
-                >
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copiar Link de Alta
-                </Button>
                  <AlertDialog>
                     <AlertDialogTrigger asChild>
                        <Button variant="destructive" size="sm">
@@ -182,7 +174,6 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
               </TableHeader>
               <TableBody>
                 {clients.map((client) => {
-                  const onboardingLink = isClient ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
                   const orderLink = isClient && client.agreement_id && client.status === 'active' ? `${window.location.origin}/pedido/${client.agreement_id}` : null;
                   return (
                   <TableRow key={client.id}>
@@ -223,13 +214,6 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
                           >
                               <LinkIcon className="mr-2 h-4 w-4" />
                               Copiar Link Pedido
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                              onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!')}
-                              disabled={client.status !== 'pending_onboarding' || !isClient}
-                          >
-                              <Copy className="mr-2 h-4 w-4" />
-                              Copiar Link de Alta
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <AlertDialog>
