@@ -284,6 +284,7 @@ export default function ProductsTable({ products, emptyState, page = 1, totalCou
             </CardFooter>
           )}
         </Card>
-      </>
+      </div>
+    </>
   );
 }
