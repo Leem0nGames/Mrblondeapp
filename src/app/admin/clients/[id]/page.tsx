@@ -11,7 +11,6 @@ const ClientDetailsClient = dynamic(
   () => import('./_components/client-details-client'),
   {
     loading: () => <ClientDetailsSkeleton />,
-    ssr: false // Disable SSR for this component as it uses client-side hooks extensively
   }
 );
 
