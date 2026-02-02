@@ -9,7 +9,7 @@ import type { Client } from "@/types";
 import { AssignAgreementDialog } from "../../_components/assign-agreement-dialog";
 import Link from "next/link";
 import { Edit, Copy, Check } from "lucide-react";
-import { OnboardingFormDialog } from "./onboarding-form-dialog";
+import { UpsertClientDialog } from "../../_components/upsert-client-dialog";
 
 const statusMap: Record<Client['status'], { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
     pending_onboarding: { label: "Pendiente de Alta", variant: "secondary" },
@@ -50,12 +50,12 @@ export function ClientInfo({ client, onCopy }: { client: Client, onCopy: (text: 
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Datos del Cliente</CardTitle>
-        <OnboardingFormDialog client={client}>
+        <UpsertClientDialog client={client}>
             <Button variant="outline" size="icon" className="h-8 w-8">
                 <Edit className="h-4 w-4" />
                 <span className="sr-only">Editar datos del cliente</span>
             </Button>
-        </OnboardingFormDialog>
+        </UpsertClientDialog>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-1 text-sm">

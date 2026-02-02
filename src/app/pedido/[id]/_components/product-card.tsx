@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo } from "react";
@@ -17,8 +16,7 @@ import { Button } from "@/components/ui/button";
 
 const PromoButton = ({ promo, onClick }: { promo: Promotion, onClick: (quantity: number) => void }) => {
     const buyQuantity = promo.rules.buy;
-    const getQuantity = promo.rules.get;
-    if (!buyQuantity || !getQuantity) return null;
+    if (!buyQuantity) return null;
 
     return (
         <Button
@@ -27,7 +25,7 @@ const PromoButton = ({ promo, onClick }: { promo: Promotion, onClick: (quantity:
             className="h-auto px-2 py-1 text-xs"
             onClick={() => onClick(buyQuantity)}
         >
-            Promo {buyQuantity}x{getQuantity}
+            Llevar {buyQuantity}
         </Button>
     )
 }
@@ -39,11 +37,13 @@ export function ProductCard({ product, promotions }: { product: ProductWithPrice
     return promotions.filter(promo => {
         if (promo.rules?.type !== 'buy_x_get_y_free') return false;
 
-        const hasNoScope = !promo.rules.product_ids && !promo.rules.category_names;
+        const rules = promo.rules as any; // Cast to any to access dynamic properties
+
+        const hasNoScope = !rules.product_ids && !rules.category_names;
         if (hasNoScope) return true;
 
-        const appliesToProduct = promo.rules.product_ids?.includes(product.id);
-        const appliesToCategory = product.category && promo.rules.category_names?.includes(product.category);
+        const appliesToProduct = rules.product_ids?.includes(product.id);
+        const appliesToCategory = product.category && rules.category_names?.includes(product.category);
 
         return !!(appliesToProduct || appliesToCategory);
     });

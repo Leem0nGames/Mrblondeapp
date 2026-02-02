@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AssignAgreementDialog } from '../../_components/assign-agreement-dialog';
 import { ActionButton } from './client-action-buttons';
 import { deleteClient } from '@/app/admin/actions/clients.actions';
-import { OnboardingFormDialog } from './onboarding-form-dialog';
+import { UpsertClientDialog } from '../../_components/upsert-client-dialog';
 
 
 const formatRule = (rules: any): string => {
@@ -119,12 +119,12 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
   };
 
   const editDialog = (
-    <OnboardingFormDialog client={client}>
+    <UpsertClientDialog client={client}>
       <ActionButton>
         <Edit className="h-6 w-6" />
         <span>Editar Datos</span>
       </ActionButton>
-    </OnboardingFormDialog>
+    </UpsertClientDialog>
   );
 
   const agreementDialog = (

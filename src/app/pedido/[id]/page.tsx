@@ -51,8 +51,8 @@ const categoryTranslations: Record<string, string> = {
   "Wax": "Ceras",
   "Powder": "Polvos",
   "Shaving": "Afeitado",
-  "Hairstyle": "Cabello",
-  "Facial & Beard": "Barba",
+  "Hairstyle": "Peinado",
+  "Facial & Beard": "Rostro y Barba",
   "Shampoo & Conditioners": "Shampoo y Acondicionadores",
 };
 
@@ -93,21 +93,11 @@ export default async function OrderPage({
 
   const formatCategoryTitle = (category: string) => {
     const translation = categoryTranslations[category];
-    if (!translation) {
-      return category;
+    if (translation && translation !== category) {
+      return `${category} / ${translation}`;
     }
-    
-    // Explicitly handle the special formats
-    if (category === 'Hairstyle') {
-      return `Hairstyle / ${translation}`;
-    }
-    if (category === 'Facial & Beard') {
-      return `Facial & Beard / ${translation}`;
-    }
-    
-    // Fallback for other translations
-    return translation;
-  }
+    return category;
+  };
 
   return (
     <div className="min-h-screen bg-muted/20">

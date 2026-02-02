@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useTransition, useCallback } from "react";
@@ -16,9 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { createClientForInvitation, createFullClient } from "@/app/admin/actions/clients.actions";
-import { UserPlus, Link as LinkIcon, Check, Copy } from "lucide-react";
-import { OnboardingFormDialog } from "../[id]/_components/onboarding-form-dialog";
+import { createClientForInvitation } from "@/app/admin/actions/clients.actions";
+import { UserPlus, Link as LinkIcon, Check, Copy, ArrowLeft } from "lucide-react";
+import { UpsertClientForm } from "./upsert-client-form";
+import { cn } from "@/lib/utils";
 
 type View = "choice" | "invite" | "manual";
 
@@ -31,7 +31,6 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
   const [email, setEmail] = useState("");
   const [generatedLink, setGeneratedLink] = useState("");
   const [hasCopied, setHasCopied] = useState(false);
-
 
   const handleGenerateLink = () => {
     if (!email) {
@@ -71,10 +70,17 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
     }
   };
 
+  const handleSuccess = () => {
+    setIsOpen(false);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={cn(
+          "sm:max-w-md",
+          view === 'manual' && "sm:max-w-3xl grid-rows-[auto_1fr_auto] p-0 max-h-[90vh]"
+      )}>
         {view === "choice" && (
           <>
             <DialogHeader>
@@ -131,7 +137,10 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
               )}
             </div>
             <DialogFooter>
-              <Button variant="ghost" onClick={resetState}>Volver</Button>
+              <Button variant="ghost" onClick={resetState}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Volver
+              </Button>
               {!generatedLink ? (
                 <Button onClick={handleGenerateLink} disabled={isPending || !email}>
                     {isPending ? "Generando..." : "Generar Enlace"}
@@ -142,27 +151,19 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
             </DialogFooter>
           </>
         )}
-
+        
         {view === "manual" && (
            <>
-            <DialogHeader>
-                <DialogTitle>Crear Cliente Manualmente</DialogTitle>
+             <DialogHeader className="p-6 pb-2">
+                <DialogTitle>Crear Nuevo Cliente</DialogTitle>
                 <DialogDescription>
-                  Completa todos los datos del cliente. Esto lo marcará como activo o pendiente de convenio.
+                  Completa el formulario para registrar un nuevo cliente en el sistema.
                 </DialogDescription>
             </DialogHeader>
-            <div className="py-4 text-center">
-              <p className="text-sm text-muted-foreground mb-4">La creación manual se realiza en el formulario de edición.</p>
-              {/* This reuses the edit dialog for manual creation */}
-              <OnboardingFormDialog client={{}}>
-                  <Button>Abrir Formulario de Creación</Button>
-              </OnboardingFormDialog>
-            </div>
-            <DialogFooter>
-              <Button variant="ghost" onClick={resetState}>Volver</Button>
-            </DialogFooter>
+            <UpsertClientForm onSuccess={handleSuccess} onCancel={() => setView('choice')} />
            </>
         )}
+
       </DialogContent>
     </Dialog>
   );

@@ -264,7 +264,7 @@ export function OnboardingForm({ client }: { client: Client }) {
             <FormItem>
               <FormLabel>Días de Entrega</FormLabel>
               <FormControl>
-                <div className="flex items-center gap-2 pt-2">
+                <div className="flex items-center gap-2 pt-2 flex-wrap">
                   {deliveryDays.map((day) => {
                     const isSelected = field.value?.includes(day.id);
                     return (
