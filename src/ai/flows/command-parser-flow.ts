@@ -84,6 +84,10 @@ export type CommandParserOutput = z.infer<typeof CommandParserOutputSchema>;
 
 // --- Main Exported Function ---
 export async function commandParser(input: CommandParserInput): Promise<CommandParserOutput> {
+  if (!process.env.GEMINI_API_KEY) {
+      console.error("GEMINI_API_KEY is not set for command parser.");
+      throw new Error("La clave API de IA no está configurada en el servidor.");
+  }
   // Obtiene datos dinámicos para darle contexto a la IA
   const { data: priceLists } = await getPriceLists();
 

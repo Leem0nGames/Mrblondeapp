@@ -2,7 +2,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getSupabaseClientWithAuth } from './_helpers';
+import { getSupabaseClientWithAuth, upsertEntity } from './_helpers';
 import type {
   Client,
   ClientStats,
@@ -73,9 +73,9 @@ export async function getClientById(
 
 export async function createClientForInvitation(email: string) {
   if (!email) {
-    return { data: null, error: { message: "El email es requerido." } };
+    return { data: null, error: { message: 'El email es requerido.' } };
   }
-  
+
   const supabase = await getSupabaseClientWithAuth();
 
   // Check if client with this email already exists
@@ -86,14 +86,20 @@ export async function createClientForInvitation(email: string) {
     .maybeSingle();
 
   if (existingError) {
-    return { data: null, error: { message: getSupabaseErrorMessage(existingError) } };
+    return {
+      data: null,
+      error: { message: getSupabaseErrorMessage(existingError) },
+    };
   }
   if (existingClient) {
-    return { data: null, error: { message: "Un cliente con este email ya existe." } };
+    return {
+      data: null,
+      error: { message: 'Un cliente con este email ya existe.' },
+    };
   }
-  
+
   const onboarding_token = crypto.randomUUID();
-  
+
   const { data, error } = await supabase
     .from('clients')
     .insert({
@@ -106,50 +112,53 @@ export async function createClientForInvitation(email: string) {
     .single();
 
   if (error) {
-    console.error("createClientForInvitation error:", error.message);
+    console.error('createClientForInvitation error:', error.message);
     return { data: null, error: { message: getSupabaseErrorMessage(error) } };
   }
 
   revalidatePath('/admin/clients');
-  
+
   return { data, error: null };
 }
 
+export async function upsertClient(payload: Partial<Client> & { id?: string }) {
+  const { id, ...clientData } = payload;
+  let status = clientData.status;
 
-export async function createFullClient(payload: Partial<Client>) {
+  // Determine status based on agreement_id if not explicitly provided
+  if (!status) {
+      status = payload.agreement_id ? 'active' : 'pending_agreement';
+  }
+
+  const finalPayload = { ...clientData, status, id };
+  
+  const result = await upsertEntity('clients', finalPayload, [
+    '/admin/clients',
+    '/admin',
+    id ? `/admin/clients/${id}` : ''
+  ].filter(Boolean));
+  
+  if (result.error) {
+    return { data: null, error: { message: getSupabaseErrorMessage(result.error) } };
+  }
+
+  return { data: result.data, error: null };
+}
+
+export async function deleteClient(id: string) {
   const supabase = await getSupabaseClientWithAuth();
+  const { error } = await supabase
+    .from('clients')
+    .update({ status: 'archived' })
+    .eq('id', id);
 
-  const finalPayload: Partial<Client> = {
-    ...payload,
-    status: payload.agreement_id ? 'active' : 'pending_agreement',
-  };
-
-  const { data, error } = await supabase.from('clients').insert(finalPayload).select().single();
-  
   if (error) {
-    return { data: null, error: { message: getSupabaseErrorMessage(error) } };
+    console.error('deleteClient (archive) error:', error.message);
+    return { error };
   }
-
   revalidatePath('/admin/clients');
-  revalidatePath('/admin');
-  return { data, error: null };
+  return { error: null };
 }
-
-export async function updateClient(id: string, payload: Partial<Client>) {
-  const supabase = await getSupabaseClientWithAuth();
-  
-  const { data, error } = await supabase.from('clients').update(payload).eq('id', id).select().single();
-  
-  if (error) {
-    return { data: null, error: { message: getSupabaseErrorMessage(error) } };
-  }
-
-  revalidatePath('/admin/clients');
-  revalidatePath(`/admin/clients/${id}`);
-  
-  return { data, error: null };
-}
-
 
 export async function assignAgreementToClient(payload: {
   clientId: string;
@@ -178,7 +187,6 @@ export async function assignAgreementToClient(payload: {
     }
   }
 
-
   const { error } = await supabase
     .from('clients')
     .update({
@@ -195,21 +203,6 @@ export async function assignAgreementToClient(payload: {
   revalidatePath('/admin/clients');
   revalidatePath(`/admin/clients/${payload.clientId}`);
   revalidatePath('/admin');
-  return { error: null };
-}
-
-export async function deleteClient(id: string) {
-  const supabase = await getSupabaseClientWithAuth();
-  const { error } = await supabase
-    .from('clients')
-    .update({ status: 'archived' })
-    .eq('id', id);
-
-  if (error) {
-    console.error('deleteClient (archive) error:', error.message);
-    return { error };
-  }
-  revalidatePath('/admin/clients');
   return { error: null };
 }
 
@@ -259,6 +252,11 @@ export async function getClientStats(
 export async function analyzeClient(
   clientId: string
 ): Promise<{ data: AnalyzeClientOutput | null; error: any }> {
+  if (!process.env.GEMINI_API_KEY) {
+      console.error("GEMINI_API_KEY is not set.");
+      return { data: null, error: { message: "La clave API de IA no está configurada en el servidor." } };
+  }
+
   const [clientResult, ordersResult] = await Promise.all([
     getClientById(clientId),
     getClientOrdersWithDetails(clientId),
