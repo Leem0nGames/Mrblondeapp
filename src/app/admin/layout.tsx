@@ -132,7 +132,7 @@ export default async function AdminLayout({
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
             <div className="sm:hidden">
               <Link href="/admin" className="flex items-center gap-2 text-lg font-semibold">
-                <Logo logoUrl={logo_url} showText={true} />
+                <Logo showText={true} logoUrl={logo_url} />
               </Link>
             </div>
              <div className="ml-auto flex items-center gap-4">
