@@ -27,7 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { updateClient, createFullClient } from "@/app/admin/actions/clients.actions";
+import { upsertClient } from "@/app/admin/actions/clients.actions";
 import type { Client } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -168,15 +168,14 @@ export function OnboardingFormDialog({
       const address = `${values.street_address} ${values.street_number}, ${values.locality}, ${values.province}`;
       const delivery_window = `${values.delivery_days?.join(', ')} de ${values.delivery_time_from} a ${values.delivery_time_to}hs`;
 
-      const payload = {
+      const finalPayload = {
         ...values,
         address: (values.street_address && values.street_number && values.locality && values.province) ? address : client?.address,
         delivery_window: (values.delivery_days && values.delivery_time_from && values.delivery_time_to) ? delivery_window : client?.delivery_window,
+        id: isEditMode ? client.id : undefined,
       };
 
-      const result = isEditMode
-        ? await updateClient(client.id!, payload)
-        : await createFullClient(payload);
+      const result = await upsertClient(finalPayload);
 
       if (result.error) {
         toast({ title: "Error al guardar", description: result.error.message, variant: "destructive" });
