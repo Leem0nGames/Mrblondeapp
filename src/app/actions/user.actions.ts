@@ -4,10 +4,9 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient } from '@/lib/supabase/client';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getSupabaseErrorMessage } from '@/lib/supabase-error-messages';
-import type { Client, CartItem, AuthState, AppSettingsRow, AgreementPriceListItems, SubmitOnboardingPayload } from '@/types';
+import type { SubmitOnboardingPayload } from '@/types';
 
 export async function hasUsers(): Promise<boolean> {
   // During Vercel's build process, env vars might not be available.
@@ -43,9 +42,9 @@ export async function hasUsers(): Promise<boolean> {
 }
 
 export async function signupSuperAdmin(
-  prevState: AuthState,
+  prevState: any,
   formData: FormData
-): Promise<AuthState> {
+): Promise<any> {
   const usersExist = await hasUsers();
   if (usersExist) {
     return { error: { message: 'El registro ya no está disponible. Ya existe un administrador.' } };
@@ -82,9 +81,9 @@ export async function signupSuperAdmin(
 }
 
 export async function login(
-  prevState: AuthState,
+  prevState: any,
   formData: FormData
-): Promise<AuthState> {
+): Promise<any> {
   const supabase = await createServerClient();
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
@@ -134,20 +133,30 @@ export async function getOnboardingClient(token: string) {
 
 export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
   const supabase = await createServerClient();
-  const { onboarding_token, ...clientData } = payload;
+  const { 
+    onboarding_token, 
+    street_address,
+    street_number,
+    locality,
+    province,
+    delivery_days,
+    delivery_time_from,
+    delivery_time_to,
+    ...clientData // This now contains only the fields that are actual columns in the DB
+  } = payload;
   
   if (!onboarding_token) {
     return { error: { message: "Token de alta inválido o faltante." } };
   }
 
   // Construct address and delivery_window from parts
-  const address = `${clientData.street_address} ${clientData.street_number}, ${clientData.locality}, ${clientData.province}`;
-  const delivery_window = `${clientData.delivery_days?.join(', ')} de ${clientData.delivery_time_from} a ${clientData.delivery_time_to}hs`;
+  const address = `${street_address} ${street_number}, ${locality}, ${province}`;
+  const delivery_window = `${delivery_days?.join(', ')} de ${delivery_time_from} a ${delivery_time_to}hs`;
 
   const { error } = await supabase
     .from('clients')
     .update({
-      ...clientData,
+      ...clientData, // Now this only has valid columns like contact_name, email, etc.
       address,
       delivery_window,
       status: 'pending_agreement',
@@ -228,7 +237,7 @@ export async function getOrderPageData(agreementId: string) {
         console.error("getOrderPageData (settings) error:", settingsError.message);
     }
 
-    const settings = (settingsData || []).reduce((acc: Record<string, any>, setting: AppSettingsRow) => {
+    const settings = (settingsData || []).reduce((acc: Record<string, any>, setting: any) => {
         acc[setting.key] = setting.key === 'vat_percentage' ? Number(setting.value) : setting.value;
         return acc;
     }, {} as Record<string, any>);
@@ -277,7 +286,7 @@ export async function getOrderPageData(agreementId: string) {
 
 // --- Order Submission ---
 export async function submitOrder(payload: {
-    cart: CartItem[];
+    cart: any[];
     total: number;
     agreementId: string;
     clientId: string;
