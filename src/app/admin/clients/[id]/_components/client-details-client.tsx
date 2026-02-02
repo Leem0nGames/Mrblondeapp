@@ -4,7 +4,7 @@
 
 import Link from 'next/link';
 import { useTransition, useCallback, useEffect, useState } from "react";
-import { Info, Landmark, ArrowLeft, Edit, FilePen, Sparkles } from "lucide-react";
+import { Info, Landmark, ArrowLeft, Edit, FilePen } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ClientHeader } from "./client-header";
@@ -17,9 +17,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { getAgreementSalesConditions } from "@/app/admin/actions/agreements.actions";
 import { useToast } from "@/hooks/use-toast";
 import { AssignAgreementDialog } from '../../_components/assign-agreement-dialog';
-import { ActionButton, ActionButtonWrapper } from './client-action-buttons';
-import { UpsertClientDialog } from '../../_components/upsert-client-dialog';
+import { ActionButtonWrapper } from './client-action-buttons';
 import { deleteClient } from '@/app/admin/actions/clients.actions';
+import { OnboardingFormDialog } from './onboarding-form-dialog';
 
 
 const formatRule = (rules: any): string => {
@@ -57,17 +57,25 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
   const [isLoadingConditions, setIsLoadingConditions] = useState(true);
 
   const [orderLink, setOrderLink] = useState<string | null>(null);
+  const [onboardingLink, setOnboardingLink] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && client.agreement_id && client.status === 'active') {
-      setOrderLink(`${window.location.origin}/pedido/${client.agreement_id}`);
-    } else {
-      setOrderLink(null);
+    if (typeof window !== 'undefined') {
+      if (client.agreement_id && client.status === 'active') {
+        setOrderLink(`${window.location.origin}/pedido/${client.agreement_id}`);
+      } else {
+        setOrderLink(null);
+      }
+      if (client.onboarding_token && client.status === 'pending_onboarding') {
+        setOnboardingLink(`${window.location.origin}/onboarding/${client.onboarding_token}`);
+      } else {
+        setOnboardingLink(null);
+      }
     }
-  }, [client.agreement_id, client.status]);
+  }, [client.agreement_id, client.status, client.onboarding_token]);
   
   useEffect(() => {
-    // Cuando el cliente inicial cambia (por una actualización de la página), actualizamos el estado.
+    // When the initial client changes (due to a page refresh/revalidation), update the state.
     setClient(initialClient);
   }, [initialClient]);
 
@@ -111,12 +119,12 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
   };
 
   const editDialog = (
-    <UpsertClientDialog client={client}>
+    <OnboardingFormDialog client={client}>
       <ActionButtonWrapper>
         <Edit className="h-6 w-6" />
         <span>Editar Datos</span>
       </ActionButtonWrapper>
-    </UpsertClientDialog>
+    </OnboardingFormDialog>
   );
 
   const agreementDialog = (
@@ -148,6 +156,7 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
         isArchiving={isPending}
         onCopyLink={copyToClipboard}
         orderLink={orderLink}
+        onboardingLink={onboardingLink}
         editDialog={editDialog}
         agreementDialog={agreementDialog}
       />

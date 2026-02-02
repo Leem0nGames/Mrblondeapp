@@ -1,8 +1,8 @@
 
-"use server";
+'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getSupabaseClientWithAuth, upsertEntity } from './_helpers';
+import { getSupabaseClientWithAuth } from './_helpers';
 import type {
   Client,
   ClientStats,
@@ -10,8 +10,8 @@ import type {
   AnalyzeClientOutput,
 } from '@/types';
 import { analyzeClientFlow } from '@/ai/flows/analyze-client-flow';
-import { z } from 'zod';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { getSupabaseErrorMessage } from '@/lib/supabase-error-messages';
 
 // --- Client Actions ---
 export async function getClients(
@@ -71,87 +71,85 @@ export async function getClientById(
   return { data: client, error: null };
 }
 
-const CuitSchema = z.string().optional().or(z.literal(''));
-
-export async function upsertClient(
-  payload: Partial<Client> & {
-    id?: string;
-    street_address?: string;
-    street_number?: string;
-    locality?: string;
-    province?: string;
-    delivery_days?: string[];
-    delivery_time_from?: string;
-    delivery_time_to?: string;
+export async function createClientForInvitation(email: string) {
+  if (!email) {
+    return { data: null, error: { message: "El email es requerido." } };
   }
-) {
-  const {
-    id,
-    street_address,
-    street_number,
-    locality,
-    province,
-    delivery_days,
-    delivery_time_from,
-    delivery_time_to,
-    ...clientData
-  } = payload;
+  
+  const supabase = await getSupabaseClientWithAuth();
 
-  let address: string | undefined = undefined;
-  if (street_address && street_number && locality && province) {
-    address = `${street_address} ${street_number}, ${locality}, ${province}`;
+  // Check if client with this email already exists
+  const { data: existingClient, error: existingError } = await supabase
+    .from('clients')
+    .select('id')
+    .eq('email', email)
+    .maybeSingle();
+
+  if (existingError) {
+    return { data: null, error: { message: getSupabaseErrorMessage(existingError) } };
+  }
+  if (existingClient) {
+    return { data: null, error: { message: "Un cliente con este email ya existe." } };
+  }
+  
+  const onboarding_token = crypto.randomUUID();
+  
+  const { data, error } = await supabase
+    .from('clients')
+    .insert({
+      email,
+      status: 'pending_onboarding',
+      onboarding_token,
+      contact_name: `Cliente Pendiente ${onboarding_token.slice(0, 4)}`,
+    })
+    .select('onboarding_token')
+    .single();
+
+  if (error) {
+    console.error("createClientForInvitation error:", error.message);
+    return { data: null, error: { message: getSupabaseErrorMessage(error) } };
   }
 
-  let delivery_window: string | undefined = undefined;
-  if (delivery_days && delivery_time_from && delivery_time_to) {
-    delivery_window = `${delivery_days.join(
-      ', '
-    )} de ${delivery_time_from} a ${delivery_time_to}hs`;
-  }
+  revalidatePath('/admin/clients');
+  
+  return { data, error: null };
+}
 
-  const finalPayload: Partial<Client> & { id?: string } = {
-    ...clientData,
-    id: id,
+
+export async function createFullClient(payload: Partial<Client>) {
+  const supabase = await getSupabaseClientWithAuth();
+
+  const finalPayload: Partial<Client> = {
+    ...payload,
+    status: payload.agreement_id ? 'active' : 'pending_agreement',
   };
 
-  if (address) finalPayload.address = address;
-  if (delivery_window) finalPayload.delivery_window = delivery_window;
-
-  if (!id) {
-    finalPayload.status = clientData.agreement_id
-      ? 'active'
-      : 'pending_agreement';
-    finalPayload.onboarding_token = crypto.randomUUID();
-  } else {
-    delete (finalPayload as any).onboarding_token;
+  const { data, error } = await supabase.from('clients').insert(finalPayload).select().single();
+  
+  if (error) {
+    return { data: null, error: { message: getSupabaseErrorMessage(error) } };
   }
 
-  const result = await upsertEntity('clients', finalPayload , [
-    '/admin/clients',
-    `/admin/clients/${id}`,
-  ]);
-
-  if (result.error && result.error.code === '23505') {
-    if (result.error.message.includes('cuit')) {
-      return {
-        data: null,
-        error: {
-          message: 'El CUIT ingresado ya está registrado en nuestro sistema.',
-        },
-      };
-    }
-    if (result.error.message.includes('email')) {
-      return {
-        data: null,
-        error: {
-          message: 'El email ingresado ya está registrado en nuestro sistema.',
-        },
-      };
-    }
-  }
-
-  return result;
+  revalidatePath('/admin/clients');
+  revalidatePath('/admin');
+  return { data, error: null };
 }
+
+export async function updateClient(id: string, payload: Partial<Client>) {
+  const supabase = await getSupabaseClientWithAuth();
+  
+  const { data, error } = await supabase.from('clients').update(payload).eq('id', id).select().single();
+  
+  if (error) {
+    return { data: null, error: { message: getSupabaseErrorMessage(error) } };
+  }
+
+  revalidatePath('/admin/clients');
+  revalidatePath(`/admin/clients/${id}`);
+  
+  return { data, error: null };
+}
+
 
 export async function assignAgreementToClient(payload: {
   clientId: string;

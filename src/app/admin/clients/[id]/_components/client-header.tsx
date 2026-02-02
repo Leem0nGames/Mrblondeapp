@@ -6,7 +6,7 @@ import { useCallback, useState } from "react";
 import type { Client } from "@/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, UserPlus } from "lucide-react";
 import { ClientActionButtons } from "./client-action-buttons";
 
 
@@ -41,6 +41,7 @@ export function ClientHeader({
     isArchiving, 
     onCopyLink, 
     orderLink,
+    onboardingLink,
     editDialog,
     agreementDialog,
 }: { 
@@ -49,6 +50,7 @@ export function ClientHeader({
     isArchiving: boolean;
     onCopyLink: (link: string | null, message: string, errorMessage?: string) => void;
     orderLink: string | null;
+    onboardingLink: string | null;
     editDialog: React.ReactNode;
     agreementDialog: React.ReactNode;
  }) {
@@ -73,6 +75,7 @@ export function ClientHeader({
                 isArchiving={isArchiving}
                 onCopyLink={onCopyLink}
                 orderLink={orderLink}
+                onboardingLink={onboardingLink}
                 editDialog={editDialog}
                 agreementDialog={agreementDialog}
                 clientStatus={client.status}

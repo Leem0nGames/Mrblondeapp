@@ -2,16 +2,16 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { FileWarning, ChevronRight, Home } from "lucide-react";
-import { getClientById, getClientStats } from "@/app/admin/actions/clients.actions";
-import { getClientOrders } from "@/app/admin/actions/dashboard.actions";
+import { getClientById, getClientStats, getClientOrdersWithDetails } from "@/app/admin/actions/clients.actions";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import dynamic from "next/dynamic";
 
-const ClientDetailsLoader = dynamic(
+const ClientDetailsClient = dynamic(
   () => import('./_components/client-details-client'),
   {
     loading: () => <ClientDetailsSkeleton />,
+    ssr: false // Disable SSR for this component as it uses client-side hooks extensively
   }
 );
 
@@ -44,7 +44,7 @@ export default async function ClientDetailPage({
   const [clientResult, statsResult, ordersResult] = await Promise.all([
     getClientById(params.id),
     getClientStats(params.id),
-    getClientOrders(params.id)
+    getClientOrdersWithDetails(params.id)
   ]);
 
   if (clientResult.error || !clientResult.data) {
@@ -68,7 +68,7 @@ export default async function ClientDetailPage({
   
   const client = clientResult.data;
   const stats = statsResult.data;
-  const orders = ordersResult;
+  const orders = ordersResult.data ?? [];
 
   return (
     <div className="grid flex-1 items-start gap-4 md:gap-8">
@@ -87,7 +87,7 @@ export default async function ClientDetailPage({
         </span>
       </nav>
       <Suspense fallback={<ClientDetailsSkeleton />}>
-        <ClientDetailsLoader 
+        <ClientDetailsClient 
           client={client}
           stats={stats}
           orders={orders}

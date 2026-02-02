@@ -82,7 +82,7 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
 
   const copyToClipboard = useCallback((textToCopy: string | null, toastMessage: string, errorMessage?: string) => {
     if (!textToCopy) {
-      toast({ title: "No hay enlace para copiar", description: errorMessage || "El recurso no está disponible.", variant: "destructive"});
+      toast({ title: "No hay nada para copiar", description: errorMessage || "El recurso no está disponible.", variant: "destructive"});
       return;
     }
     navigator.clipboard.writeText(textToCopy);
@@ -104,6 +104,7 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
     <>
       <div className="grid gap-4 sm:hidden">
         {clients.map((client) => {
+          const onboardingLink = isClient && client.onboarding_token ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
           return (
           <Card key={client.id}>
              <Link href={`/admin/clients/${client.id}`}>
@@ -121,6 +122,11 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
                 </CardContent>
             </Link>
             <CardFooter className="flex flex-col gap-2 items-stretch">
+                 {client.status === 'pending_onboarding' && (
+                    <Button variant="secondary" size="sm" onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!')} disabled={!onboardingLink}>
+                        <Copy className="mr-2 h-4 w-4" /> Copiar Link de Alta
+                    </Button>
+                 )}
                  <AssignAgreementDialog client={client}>
                     <Button variant="outline" size="sm" className="w-full">
                       <FilePen className="mr-2 h-4 w-4" />
@@ -175,6 +181,7 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
               <TableBody>
                 {clients.map((client) => {
                   const orderLink = isClient && client.agreement_id && client.status === 'active' ? `${window.location.origin}/pedido/${client.agreement_id}` : null;
+                  const onboardingLink = isClient && client.onboarding_token ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
                   return (
                   <TableRow key={client.id}>
                     <TableCell className="font-medium">
@@ -214,6 +221,13 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
                           >
                               <LinkIcon className="mr-2 h-4 w-4" />
                               Copiar Link Pedido
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                              onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!', 'Este cliente ya completó el alta.')}
+                              disabled={!onboardingLink}
+                          >
+                              <Copy className="mr-2 h-4 w-4" />
+                              Copiar Link Alta
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <AlertDialog>

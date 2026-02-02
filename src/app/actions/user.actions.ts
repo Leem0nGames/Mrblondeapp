@@ -4,9 +4,10 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient as createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/client';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getSupabaseErrorMessage } from '@/lib/supabase-error-messages';
-import type { Client, CartItem, AuthState, AppSettingsRow, AgreementPriceListItems } from '@/types';
+import type { Client, CartItem, AuthState, AppSettingsRow, AgreementPriceListItems, SubmitOnboardingPayload } from '@/types';
 
 export async function hasUsers(): Promise<boolean> {
   // During Vercel's build process, env vars might not be available.
@@ -45,7 +46,8 @@ export async function signupSuperAdmin(
   prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
-  if (await hasUsers()) {
+  const usersExist = await hasUsers();
+  if (usersExist) {
     return { error: { message: 'El registro ya no está disponible. Ya existe un administrador.' } };
   }
 
@@ -111,6 +113,59 @@ export async function logout() {
   await supabase.auth.signOut();
   redirect('/login');
 }
+
+export async function getOnboardingClient(token: string) {
+  const supabase = createClient();
+  if (!token) return { data: null, error: { message: "Token inválido." } };
+
+  const { data, error } = await supabase
+    .from('clients')
+    .select('*')
+    .eq('onboarding_token', token)
+    .maybeSingle();
+    
+  if (error) {
+    console.error('getOnboardingClient error:', error.message);
+    return { data: null, error: { message: 'No se pudo verificar el enlace de invitación.' } };
+  }
+
+  return { data, error: null };
+}
+
+export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
+  const supabase = createClient();
+  const { onboarding_token, ...clientData } = payload;
+  
+  if (!onboarding_token) {
+    return { error: { message: "Token de alta inválido o faltante." } };
+  }
+
+  // Construct address and delivery_window from parts
+  const address = `${clientData.street_address} ${clientData.street_number}, ${clientData.locality}, ${clientData.province}`;
+  const delivery_window = `${clientData.delivery_days?.join(', ')} de ${clientData.delivery_time_from} a ${clientData.delivery_time_to}hs`;
+
+  const { error } = await supabase
+    .from('clients')
+    .update({
+      ...clientData,
+      address,
+      delivery_window,
+      status: 'pending_agreement',
+      onboarding_token: null, // Consume the token after successful submission
+    })
+    .eq('onboarding_token', onboarding_token);
+
+  if (error) {
+    console.error("submitOnboardingForm error:", error.message);
+    return { error: { message: getSupabaseErrorMessage(error) } };
+  }
+
+  revalidatePath('/admin/clients');
+  revalidatePath('/admin');
+  
+  return { data: { success: true }, error: null };
+}
+
 
 export async function getOrderPageData(agreementId: string) {
     const supabase = await createServerClient(); // Use server client for anon access
