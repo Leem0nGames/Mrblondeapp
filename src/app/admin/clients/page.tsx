@@ -37,7 +37,7 @@ export default async function ClientsPage({
         title="Clientes"
         description="Gestiona tus clientes, asígnales convenios y genera enlaces de alta."
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" suppressHydrationWarning>
             <SearchClients />
             <CreateClientButton />
         </div>
