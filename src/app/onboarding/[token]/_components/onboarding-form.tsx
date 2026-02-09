@@ -131,7 +131,7 @@ export function OnboardingForm({ client }: { client: Client }) {
       delivery_days: ["lunes", "miercoles", "viernes"],
       delivery_time_from: "09:00",
       delivery_time_to: "18:00",
-      email: client.email ?? "",
+      email: client.email?.includes('@blonde.orders') ? '' : client.email ?? '',
       instagram: client.instagram ?? "",
     },
   });
@@ -149,7 +149,7 @@ export function OnboardingForm({ client }: { client: Client }) {
     startTransition(async () => {
       const result = await submitOnboardingForm({
         ...values,
-        onboarding_token: client.onboarding_token,
+        onboarding_token: client.onboarding_token!,
       });
 
       if (result.error) {

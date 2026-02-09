@@ -109,8 +109,8 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
   const form = useForm<UpsertClientFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      contact_name: client?.contact_name ?? "",
-      email: client?.email ?? "",
+      contact_name: client?.contact_name?.startsWith('Cliente Pendiente') ? '' : client?.contact_name ?? "",
+      email: client?.email?.includes('@blonde.orders') ? '' : client?.email ?? "",
       cuit: client?.cuit ?? "",
       contact_dni: client?.contact_dni ?? "",
       fiscal_status: client?.fiscal_status ?? "",
@@ -185,8 +185,7 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
 
   return (
     <>
-      <ScrollArea className="h-full w-full">
-        <div className="px-6 pb-6">
+      <div className="px-6 pb-6">
           <Form {...form}>
             <form id="upsert-client-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -330,8 +329,7 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
             </form>
           </Form>
         </div>
-      </ScrollArea>
-       <DialogFooter className="p-6 pt-2 border-t mt-auto">
+       <DialogFooter className="p-6 pt-2 border-t">
             <Button variant="outline" type="button" onClick={onCancel}>
                 Cancelar
             </Button>

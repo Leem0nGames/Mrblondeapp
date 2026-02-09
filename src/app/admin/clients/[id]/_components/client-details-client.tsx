@@ -1,10 +1,9 @@
 
-
 "use client";
 
 import Link from 'next/link';
 import { useTransition, useCallback, useEffect, useState } from "react";
-import { Info, Landmark, ArrowLeft, Edit, FilePen } from "lucide-react";
+import { Info, Landmark, ArrowLeft, Edit, FilePen, Link as LinkIcon } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ClientHeader } from "./client-header";
@@ -57,6 +56,7 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
   const [isLoadingConditions, setIsLoadingConditions] = useState(true);
 
   const [orderLink, setOrderLink] = useState<string | null>(null);
+  const [onboardingLink, setOnboardingLink] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -65,8 +65,13 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
       } else {
         setOrderLink(null);
       }
+      if (client.onboarding_token) {
+        setOnboardingLink(`${window.location.origin}/onboarding/${client.onboarding_token}`);
+      } else {
+        setOnboardingLink(null);
+      }
     }
-  }, [client.agreement_id, client.status]);
+  }, [client.agreement_id, client.status, client.onboarding_token]);
   
   useEffect(() => {
     // When the initial client changes (due to a page refresh/revalidation), update the state.
@@ -150,6 +155,7 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
         isArchiving={isPending}
         onCopyLink={copyToClipboard}
         orderLink={orderLink}
+        onboardingLink={onboardingLink}
         editDialog={editDialog}
         agreementDialog={agreementDialog}
       />

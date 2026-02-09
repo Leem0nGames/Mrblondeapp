@@ -4,6 +4,7 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient as createServerClient } from '@/lib/supabase/server';
+import { createClient as createAnonymousClient } from '@/lib/supabase/client';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getSupabaseErrorMessage } from '@/lib/supabase-error-messages';
 import type { SubmitOnboardingPayload } from '@/types';
@@ -279,4 +280,60 @@ export async function submitOrder(payload: {
     revalidatePath('/admin');
 
     return { data: { orderId: order.id }, error: null };
+}
+
+// --- Onboarding Actions ---
+export async function getOnboardingClient(token: string) {
+  // Use a server client for this server-side action.
+  const supabase = await createServerClient();
+  const { data, error } = await supabase
+    .from('clients')
+    .select('*')
+    .eq('onboarding_token', token)
+    .single();
+
+  if (error || !data) {
+    return { data: null, error: { message: 'Token de alta inválido o expirado.' } };
+  }
+
+  return { data, error: null };
+}
+
+export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
+  // Use anonymous client as this action is public.
+  const supabase = createAnonymousClient();
+  const {
+    onboarding_token,
+    province,
+    locality,
+    street_address,
+    street_number,
+    delivery_days,
+    delivery_time_from,
+    delivery_time_to,
+    ...clientData
+  } = payload;
+
+  const address = `${street_address} ${street_number}, ${locality}, ${province}`;
+  const delivery_window = delivery_days && delivery_days.length > 0
+    ? `${delivery_days.join(', ')} de ${delivery_time_from} a ${delivery_time_to}hs`
+    : undefined;
+
+  const { error } = await supabase
+    .from('clients')
+    .update({
+      ...clientData,
+      address,
+      delivery_window,
+      status: 'pending_agreement',
+    })
+    .eq('onboarding_token', onboarding_token);
+
+  if (error) {
+    return { error: { message: getSupabaseErrorMessage(error) } };
+  }
+
+  revalidatePath('/admin/clients');
+  revalidatePath('/admin');
+  return { error: null };
 }

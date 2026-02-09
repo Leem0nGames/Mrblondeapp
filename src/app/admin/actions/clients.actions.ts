@@ -27,7 +27,7 @@ export async function getClients(
             agreements ( agreement_name )
         `
     )
-    .in('status', ['active', 'pending_agreement']) // Removed 'pending_onboarding'
+    .in('status', ['active', 'pending_agreement', 'pending_onboarding']) 
     .order('created_at', { ascending: false });
 
   if (query) {
@@ -70,6 +70,31 @@ export async function getClientById(
 
   return { data: client, error: null };
 }
+
+export async function createClientForInvitation() {
+  const supabase = await getSupabaseClientWithAuth();
+  const onboarding_token = crypto.randomUUID();
+
+  const { data, error } = await supabase
+    .from('clients')
+    .insert({
+      status: 'pending_onboarding',
+      onboarding_token,
+      contact_name: `Cliente Pendiente ${onboarding_token.slice(0, 4)}`,
+      email: `${onboarding_token}@blonde.orders` // Temporary unique email
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('createClientForInvitation error:', error.message);
+    return { data: null, error: { message: getSupabaseErrorMessage(error) } };
+  }
+
+  revalidatePath('/admin/clients');
+  return { data, error: null };
+}
+
 
 export async function upsertClient(payload: Partial<Client> & { id?: string }) {
   const { id, ...clientData } = payload;

@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import { useCallback, useState } from "react";
@@ -8,7 +7,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Copy, Check } from "lucide-react";
 import { ClientActionButtons } from "./client-action-buttons";
-
 
 const CopyableField = ({ label, value, onCopy }: { label: string; value: string | null; onCopy: (text: string, message: string) => void; }) => {
     const [hasCopied, setHasCopied] = useState(false);
@@ -23,7 +21,7 @@ const CopyableField = ({ label, value, onCopy }: { label: string; value: string 
 
     return (
         <div className="group relative flex items-center justify-center gap-2">
-            <span className="text-muted-foreground text-sm">{value || 'No disponible'}</span>
+            <span className="text-muted-foreground text-sm">{value || 'No especificado'}</span>
              {value && (
                 <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={handleCopy}>
                     {hasCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
@@ -34,13 +32,13 @@ const CopyableField = ({ label, value, onCopy }: { label: string; value: string 
     );
 };
 
-
 export function ClientHeader({ 
     client, 
     onArchive, 
     isArchiving, 
     onCopyLink, 
     orderLink,
+    onboardingLink,
     editDialog,
     agreementDialog,
 }: { 
@@ -49,6 +47,7 @@ export function ClientHeader({
     isArchiving: boolean;
     onCopyLink: (link: string | null, message: string, errorMessage?: string) => void;
     orderLink: string | null;
+    onboardingLink: string | null;
     editDialog: React.ReactNode;
     agreementDialog: React.ReactNode;
  }) {
@@ -63,8 +62,8 @@ export function ClientHeader({
           </AvatarFallback>
         </Avatar>
         <div className="text-center">
-            <h2 className="text-2xl font-bold">{client.contact_name}</h2>
-            <CopyableField label="Email" value={client.email} onCopy={onCopyLink} />
+            <h2 className="text-2xl font-bold">{client.contact_name?.startsWith('Cliente Pendiente') ? 'Cliente Nuevo' : client.contact_name}</h2>
+            <CopyableField label="Email" value={client.email?.includes('@blonde.orders') ? 'Pendiente de Alta' : client.email} onCopy={onCopyLink} />
             <CopyableField label="CUIT" value={client.cuit} onCopy={onCopyLink} />
         </div>
         <div className="w-full pt-6">
@@ -73,6 +72,7 @@ export function ClientHeader({
                 isArchiving={isArchiving}
                 onCopyLink={onCopyLink}
                 orderLink={orderLink}
+                onboardingLink={onboardingLink}
                 editDialog={editDialog}
                 agreementDialog={agreementDialog}
                 clientStatus={client.status}

@@ -3,7 +3,7 @@
 
 import { useTransition, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, MoreHorizontal, Archive, FilePen, Link as LinkIcon } from "lucide-react";
+import { MoreHorizontal, Archive, FilePen, Link as LinkIcon } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,10 +39,8 @@ import { deleteClient } from "@/app/admin/actions/clients.actions";
 import type { Client } from "@/types";
 import { AssignAgreementDialog } from "./assign-agreement-dialog";
 
-const ITEMS_PER_PAGE = 10;
-
 const statusMap: Record<Client['status'], { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-    pending_onboarding: { label: "Pendiente", variant: "secondary" },
+    pending_onboarding: { label: "Pendiente de Alta", variant: "secondary" },
     pending_agreement: { label: "Pendiente de Convenio", variant: "destructive" },
     active: { label: "Activo", variant: "default" },
     archived: { label: "Archivado", variant: "outline" },
@@ -51,18 +49,12 @@ const statusMap: Record<Client['status'], { label: string; variant: "default" | 
 interface ClientsTableProps {
     clients: Client[];
     emptyState: React.ReactNode;
-    page?: number;
-    totalCount?: number;
-    onPageChange?: (page: number) => void;
 }
 
-export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPageChange }: ClientsTableProps) {
+export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
-
-  const totalPages = totalCount ? Math.ceil(totalCount / ITEMS_PER_PAGE) : 1;
-  const hasPagination = totalCount !== undefined;
 
   useEffect(() => {
     setIsClient(true);
@@ -87,13 +79,6 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
     navigator.clipboard.writeText(textToCopy);
     toast({ title: toastMessage });
   }, [toast]);
-
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages && onPageChange) {
-      onPageChange(newPage);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
   
   if (clients.length === 0) {
     return <>{emptyState}</>;
@@ -173,6 +158,7 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
               <TableBody>
                 {clients.map((client) => {
                   const orderLink = isClient && client.agreement_id && client.status === 'active' ? `${window.location.origin}/pedido/${client.agreement_id}` : null;
+                  const onboardingLink = isClient && client.onboarding_token ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
                   return (
                   <TableRow key={client.id}>
                     <TableCell className="font-medium">
@@ -180,7 +166,7 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
                         {client.contact_name || "Cliente pendiente..."}
                       </Link>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{client.email}</TableCell>
+                    <TableCell className="text-muted-foreground">{client.email?.includes('@blonde.orders') ? 'N/A' : client.email}</TableCell>
                     <TableCell className="text-muted-foreground">
                         {client.agreements?.agreement_name || "Sin asignar"}
                     </TableCell>
@@ -206,13 +192,23 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Asignar Convenio</DropdownMenuItem>
                           </AssignAgreementDialog>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                              onClick={() => copyToClipboard(orderLink, 'Enlace de pedido copiado!', 'El cliente debe estar activo para tener un enlace de pedido.')}
-                              disabled={!orderLink}
-                          >
-                              <LinkIcon className="mr-2 h-4 w-4" />
-                              Copiar Link Pedido
-                          </DropdownMenuItem>
+                          {client.status === 'pending_onboarding' ? (
+                            <DropdownMenuItem 
+                                onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!')}
+                                disabled={!onboardingLink}
+                            >
+                                <LinkIcon className="mr-2 h-4 w-4" />
+                                Copiar Link de Alta
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem 
+                                onClick={() => copyToClipboard(orderLink, 'Enlace de pedido copiado!', 'El cliente debe estar activo para tener un enlace de pedido.')}
+                                disabled={!orderLink}
+                            >
+                                <LinkIcon className="mr-2 h-4 w-4" />
+                                Copiar Link Pedido
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           <AlertDialog>
                               <AlertDialogTrigger asChild>
@@ -252,40 +248,11 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
             </Table>
           </div>
         </CardContent>
-        {hasPagination && (
-          <CardFooter className="flex items-center justify-between border-t p-4">
-            <div className="text-sm text-muted-foreground">
-              Página <strong>{page}</strong> de <strong>{totalPages}</strong> ({totalCount} clientes)
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(page - 1)}
-                disabled={page <= 1 || isPending}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Anterior
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(page + 1)}
-                disabled={page >= totalPages || isPending}
-              >
-                Siguiente
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardFooter>
-        )}
-        {!hasPagination && (
           <CardFooter>
             <div className="text-xs text-muted-foreground">
                 Mostrando <strong>{clients.length}</strong> clientes.
               </div>
           </CardFooter>
-        )}
       </Card>
     </>
   );

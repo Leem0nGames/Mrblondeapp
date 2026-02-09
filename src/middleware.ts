@@ -1,5 +1,4 @@
 
-
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/middleware';
 import { hasUsers } from '@/app/actions/user.actions';
@@ -16,6 +15,12 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getSession();
 
   const { pathname } = request.nextUrl;
+
+  // Rutas de Onboarding de Cliente
+  const isOnboardingRoute = pathname.startsWith('/onboarding');
+  if (isOnboardingRoute) {
+    return response;
+  }
 
   // 1. Lógica de Primer Arranque (Setup)
   const usersExist = await hasUsers();
