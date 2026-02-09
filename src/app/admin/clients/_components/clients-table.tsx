@@ -3,7 +3,7 @@
 
 import { useTransition, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, MoreHorizontal, Archive, FilePen, Link as LinkIcon, Copy } from "lucide-react";
+import { ChevronLeft, ChevronRight, MoreHorizontal, Archive, FilePen, Link as LinkIcon } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,7 +42,7 @@ import { AssignAgreementDialog } from "./assign-agreement-dialog";
 const ITEMS_PER_PAGE = 10;
 
 const statusMap: Record<Client['status'], { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-    pending_onboarding: { label: "Pendiente de Alta", variant: "secondary" },
+    pending_onboarding: { label: "Pendiente", variant: "secondary" },
     pending_agreement: { label: "Pendiente de Convenio", variant: "destructive" },
     active: { label: "Activo", variant: "default" },
     archived: { label: "Archivado", variant: "outline" },
@@ -102,9 +102,7 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
   return (
     <>
       <div className="grid gap-4 sm:hidden">
-        {clients.map((client) => {
-          const onboardingLink = isClient && client.onboarding_token ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
-          return (
+        {clients.map((client) => (
           <Card key={client.id}>
              <Link href={`/admin/clients/${client.id}`}>
                 <CardContent className="pt-6">
@@ -113,19 +111,14 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
                           <CardTitle className="text-lg">{client.contact_name || "Cliente pendiente"}</CardTitle>
                           {client.email && <p className="text-sm text-muted-foreground">{client.email}</p>}
                         </div>
-                        <Badge variant={statusMap[client.status].variant}>
-                            {statusMap[client.status].label}
+                        <Badge variant={statusMap[client.status]?.variant || 'outline'}>
+                            {statusMap[client.status]?.label || client.status}
                         </Badge>
                     </div>
                     <p className="text-sm font-medium">Convenio: <span className="text-muted-foreground">{client.agreements?.agreement_name || "Sin asignar"}</span></p>
                 </CardContent>
             </Link>
             <CardFooter className="flex flex-col gap-2 items-stretch">
-                 {client.status === 'pending_onboarding' && (
-                    <Button variant="secondary" size="sm" onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!')} disabled={!onboardingLink}>
-                        <Copy className="mr-2 h-4 w-4" /> Copiar Link de Alta
-                    </Button>
-                 )}
                  <AssignAgreementDialog client={client}>
                     <Button variant="outline" size="sm" className="w-full">
                       <FilePen className="mr-2 h-4 w-4" />
@@ -159,7 +152,7 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
                 </AlertDialog>
             </CardFooter>
           </Card>
-        )})}
+        ))}
       </div>
 
       <Card className="hidden sm:block">
@@ -180,7 +173,6 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
               <TableBody>
                 {clients.map((client) => {
                   const orderLink = isClient && client.agreement_id && client.status === 'active' ? `${window.location.origin}/pedido/${client.agreement_id}` : null;
-                  const onboardingLink = isClient && client.onboarding_token ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
                   return (
                   <TableRow key={client.id}>
                     <TableCell className="font-medium">
@@ -193,8 +185,8 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
                         {client.agreements?.agreement_name || "Sin asignar"}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={statusMap[client.status].variant} className="capitalize">
-                      {statusMap[client.status].label}
+                      <Badge variant={statusMap[client.status]?.variant || 'outline'} className="capitalize">
+                      {statusMap[client.status]?.label || client.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -220,13 +212,6 @@ export function ClientsTable({ clients, emptyState, page = 1, totalCount, onPage
                           >
                               <LinkIcon className="mr-2 h-4 w-4" />
                               Copiar Link Pedido
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                              onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!', 'Este cliente ya completó el alta.')}
-                              disabled={!onboardingLink}
-                          >
-                              <Copy className="mr-2 h-4 w-4" />
-                              Copiar Link Alta
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <AlertDialog>

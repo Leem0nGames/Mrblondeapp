@@ -1,9 +1,8 @@
-'use server';
+
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/middleware';
-
-export const runtime = 'nodejs';
+import { hasUsers } from '@/app/actions/user.actions';
 
 // Define las rutas públicas que no requieren autenticación
 const publicRoutes = ['/login', '/signup'];
@@ -18,15 +17,32 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Rutas públicas dinámicas (onboarding y pedidos)
-  const isOnboardingRoute = pathname.startsWith('/onboarding');
-  const isOrderRoute = pathname.startsWith('/pedido');
+  // 1. Lógica de Primer Arranque (Setup)
+  const usersExist = await hasUsers();
 
-  if (isOnboardingRoute || isOrderRoute) {
+  if (!usersExist) {
+    // Si no hay usuarios, la única página permitida es la de registro.
+    if (pathname !== '/signup') {
+      return NextResponse.redirect(new URL('/signup', request.url));
+    }
+    // Permite el acceso a la página de registro.
     return response;
   }
 
+  // 2. Lógica de Aplicación Normal (Después del Setup)
+  
+  // Si ya existen usuarios, la página de registro ya no es accesible.
+  if (pathname === '/signup') {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
   const isPublicRoute = publicRoutes.includes(pathname);
+  const isOrderRoute = pathname.startsWith('/pedido');
+
+  // Las páginas de pedido son siempre públicas
+  if (isOrderRoute) {
+    return response;
+  }
 
   // Si el usuario no está autenticado y la ruta no es pública, redirigir a login
   if (!session && !isPublicRoute) {

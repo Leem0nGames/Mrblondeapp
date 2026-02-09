@@ -113,69 +113,6 @@ export async function logout() {
   redirect('/login');
 }
 
-export async function getOnboardingClient(token: string) {
-  const supabase = await createServerClient();
-  if (!token) return { data: null, error: { message: "Token inválido." } };
-
-  const { data, error } = await supabase
-    .from('clients')
-    .select('*')
-    .eq('onboarding_token', token)
-    .maybeSingle();
-    
-  if (error) {
-    console.error('getOnboardingClient error:', error.message);
-    return { data: null, error: { message: 'No se pudo verificar el enlace de invitación.' } };
-  }
-
-  return { data, error: null };
-}
-
-export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
-  const supabase = await createServerClient();
-  const { 
-    onboarding_token, 
-    street_address,
-    street_number,
-    locality,
-    province,
-    delivery_days,
-    delivery_time_from,
-    delivery_time_to,
-    ...clientData // This now contains only the fields that are actual columns in the DB
-  } = payload;
-  
-  if (!onboarding_token) {
-    return { error: { message: "Token de alta inválido o faltante." } };
-  }
-
-  // Construct address and delivery_window from parts
-  const address = `${street_address} ${street_number}, ${locality}, ${province}`;
-  const delivery_window = `${delivery_days?.join(', ')} de ${delivery_time_from} a ${delivery_time_to}hs`;
-
-  const { error } = await supabase
-    .from('clients')
-    .update({
-      ...clientData, // Now this only has valid columns like contact_name, email, etc.
-      address,
-      delivery_window,
-      status: 'pending_agreement',
-      onboarding_token: null, // Consume the token after successful submission
-    })
-    .eq('onboarding_token', onboarding_token);
-
-  if (error) {
-    console.error("submitOnboardingForm error:", error.message);
-    return { error: { message: getSupabaseErrorMessage(error) } };
-  }
-
-  revalidatePath('/admin/clients');
-  revalidatePath('/admin');
-  
-  return { data: { success: true }, error: null };
-}
-
-
 export async function getOrderPageData(agreementId: string) {
     const supabase = await createServerClient(); // Use server client for anon access
 

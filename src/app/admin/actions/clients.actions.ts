@@ -27,7 +27,7 @@ export async function getClients(
             agreements ( agreement_name )
         `
     )
-    .in('status', ['active', 'pending_agreement', 'pending_onboarding'])
+    .in('status', ['active', 'pending_agreement']) // Removed 'pending_onboarding'
     .order('created_at', { ascending: false });
 
   if (query) {
@@ -71,62 +71,12 @@ export async function getClientById(
   return { data: client, error: null };
 }
 
-export async function createClientForInvitation(email: string) {
-  if (!email) {
-    return { data: null, error: { message: 'El email es requerido.' } };
-  }
-
-  const supabase = await getSupabaseClientWithAuth();
-
-  // Check if client with this email already exists
-  const { data: existingClient, error: existingError } = await supabase
-    .from('clients')
-    .select('id')
-    .eq('email', email)
-    .maybeSingle();
-
-  if (existingError) {
-    return {
-      data: null,
-      error: { message: getSupabaseErrorMessage(existingError) },
-    };
-  }
-  if (existingClient) {
-    return {
-      data: null,
-      error: { message: 'Un cliente con este email ya existe.' },
-    };
-  }
-
-  const onboarding_token = crypto.randomUUID();
-
-  const { data, error } = await supabase
-    .from('clients')
-    .insert({
-      email,
-      status: 'pending_onboarding',
-      onboarding_token,
-      contact_name: `Cliente Pendiente ${onboarding_token.slice(0, 4)}`,
-    })
-    .select('onboarding_token')
-    .single();
-
-  if (error) {
-    console.error('createClientForInvitation error:', error.message);
-    return { data: null, error: { message: getSupabaseErrorMessage(error) } };
-  }
-
-  revalidatePath('/admin/clients');
-
-  return { data, error: null };
-}
-
 export async function upsertClient(payload: Partial<Client> & { id?: string }) {
   const { id, ...clientData } = payload;
   let status = clientData.status;
 
   // Determine status based on agreement_id if not explicitly provided
-  if (!status) {
+  if (!status || status === 'pending_onboarding') {
       status = payload.agreement_id ? 'active' : 'pending_agreement';
   }
 
@@ -157,6 +107,7 @@ export async function deleteClient(id: string) {
     return { error };
   }
   revalidatePath('/admin/clients');
+  revalidatePath('/admin');
   return { error: null };
 }
 
@@ -166,32 +117,11 @@ export async function assignAgreementToClient(payload: {
 }): Promise<{ error: any }> {
   const supabase = await getSupabaseClientWithAuth();
 
-  const { data: client, error: clientError } = await supabase
-    .from('clients')
-    .select('status')
-    .eq('id', payload.clientId)
-    .single();
-
-  if (clientError || !client) {
-    return { error: { message: 'Client not found.' } };
-  }
-
-  let newStatus = client.status as Client['status'];
-
-  if (client.status !== 'pending_onboarding') {
-    newStatus = payload.agreementId ? 'active' : 'pending_agreement';
-  } else {
-    // If the client was pending onboarding, and we assign an agreement, they become active.
-    if (payload.agreementId) {
-      newStatus = 'active';
-    }
-  }
-
   const { error } = await supabase
     .from('clients')
     .update({
       agreement_id: payload.agreementId,
-      status: newStatus,
+      status: payload.agreementId ? 'active' : 'pending_agreement',
     })
     .eq('id', payload.clientId);
 
