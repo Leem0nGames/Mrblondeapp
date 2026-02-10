@@ -4,7 +4,6 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient as createServerClient } from '@/lib/supabase/server';
-import { createClient as createAnonymousClient } from '@/lib/supabase/client';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getSupabaseErrorMessage } from '@/lib/supabase-error-messages';
 import type { SubmitOnboardingPayload } from '@/types';
@@ -115,7 +114,11 @@ export async function logout() {
 }
 
 export async function getOrderPageData(agreementId: string) {
-    const supabase = await createServerClient(); // Use server client for anon access
+    if (!supabaseAdmin) {
+        console.error("getOrderPageData error: supabaseAdmin is not configured.");
+        return { data: null, error: { message: "Error de configuración del servidor." } };
+    }
+    const supabase = supabaseAdmin;
 
     const [agreementResult, settingsResult] = await Promise.all([
         supabase
@@ -231,7 +234,11 @@ export async function submitOrder(payload: {
     clientName: string;
     notes?: string;
 }) {
-    const supabase = await createServerClient();
+    if (!supabaseAdmin) {
+        console.error("submitOrder error: supabaseAdmin is not configured.");
+        return { error: { message: "Error de configuración del servidor." } };
+    }
+    const supabase = supabaseAdmin;
 
     // 1. Create the order
     const { data: order, error: orderError } = await supabase
@@ -284,9 +291,12 @@ export async function submitOrder(payload: {
 
 // --- Onboarding Actions ---
 export async function getOnboardingClient(token: string) {
-  // Use a server client for this server-side action.
-  const supabase = await createServerClient();
-  const { data, error } = await supabase
+  if (!supabaseAdmin) {
+    console.error("Admin client not configured for getOnboardingClient");
+    return { data: null, error: { message: 'Error de configuración del servidor.' } };
+  }
+
+  const { data, error } = await supabaseAdmin
     .from('clients')
     .select('*')
     .eq('onboarding_token', token)
@@ -300,8 +310,11 @@ export async function getOnboardingClient(token: string) {
 }
 
 export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
-  // Use anonymous client as this action is public.
-  const supabase = createAnonymousClient();
+  if (!supabaseAdmin) {
+    console.error("Admin client not configured for submitOnboardingForm");
+    return { error: { message: 'Error de configuración del servidor.' } };
+  }
+  
   const {
     onboarding_token,
     province,
@@ -319,7 +332,7 @@ export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
     ? `${delivery_days.join(', ')} de ${delivery_time_from} a ${delivery_time_to}hs`
     : undefined;
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('clients')
     .update({
       ...clientData,
