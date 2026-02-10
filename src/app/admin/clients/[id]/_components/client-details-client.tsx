@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { useTransition, useCallback, useEffect, useState } from "react";
-import { Info, Landmark, ArrowLeft, Edit, FilePen, Link as LinkIcon } from "lucide-react";
+import { Info, Landmark, ArrowLeft, Edit, FilePen, Link as LinkIcon, MapPin } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ClientHeader } from "./client-header";
@@ -11,9 +11,11 @@ import { ClientInfo } from "./client-info";
 import { ClientStats } from "./client-stats";
 import { ClientOrders } from "./client-orders";
 import { ClientAnalysis } from './client-analysis';
+import { ClientMap } from '../../../_components/client-map';
 import type { Client, ClientStats as StatsType, Order, AgreementSalesCondition } from "@/types";
 import { Skeleton } from '@/components/ui/skeleton';
 import { getAgreementSalesConditions } from "@/app/admin/actions/agreements.actions";
+import { geocodeAddressAndSave } from "@/app/admin/actions/clients.actions";
 import { useToast } from "@/hooks/use-toast";
 import { AssignAgreementDialog } from '../../_components/assign-agreement-dialog';
 import { ActionButton } from './client-action-buttons';
@@ -51,6 +53,7 @@ type ClientDetailsClientProps = {
 export default function ClientDetailsClient({ client: initialClient, stats, orders }: ClientDetailsClientProps) {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const [isGeocoding, startGeocoding] = useTransition();
   const [client, setClient] = useState(initialClient);
   const [salesConditions, setSalesConditions] = useState<AgreementSalesCondition[]>([]);
   const [isLoadingConditions, setIsLoadingConditions] = useState(true);
@@ -74,9 +77,18 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
   }, [client.agreement_id, client.status, client.onboarding_token]);
   
   useEffect(() => {
-    // When the initial client changes (due to a page refresh/revalidation), update the state.
     setClient(initialClient);
   }, [initialClient]);
+
+  useEffect(() => {
+    if (client.address && !client.latitude) {
+        startGeocoding(async () => {
+            await geocodeAddressAndSave(client.id, client.address!);
+            // The page will be revalidated, so we don't need to update state manually.
+            toast({ title: 'Geocodificación', description: 'Dirección del cliente convertida a coordenadas.'})
+        })
+    }
+  }, [client.id, client.address, client.latitude, toast]);
 
   useEffect(() => {
     if (client.agreement_id) {
@@ -169,6 +181,33 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
           </div>
           <div className="md:col-span-1 grid gap-4 auto-rows-min">
               <ClientInfo client={client} onCopy={copyToClipboard} />
+              
+               <Card>
+                  <CardHeader>
+                      <CardTitle className="flex items-center gap-2"><MapPin className="h-5 w-5"/> Ubicación</CardTitle>
+                      <CardDescription>Mapa interactivo de la ubicación del cliente.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                      {client.address && client.latitude && client.longitude ? (
+                        <ClientMap
+                          clients={[client]}
+                          zoom={14}
+                          center={{ lat: client.latitude, lng: client.longitude }}
+                          mapId={`client-map-${client.id}`}
+                          height="250px"
+                        />
+                      ) : (
+                        <div className="h-[250px] flex items-center justify-center text-center p-4">
+                            {isGeocoding ? (
+                                <p className="text-sm text-muted-foreground animate-pulse">Geocodificando dirección...</p>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">No hay una dirección válida o geocodificada para mostrar en el mapa.</p>
+                            )}
+                        </div>
+                      )}
+                  </CardContent>
+              </Card>
+
                <Card className="bg-secondary/50">
                   <CardHeader>
                       <CardTitle className="flex items-center gap-2">

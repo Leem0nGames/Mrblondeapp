@@ -47,7 +47,7 @@ export type UpsertSalesConditionPayload = Omit<SalesCondition, 'id' | 'created_a
   rules: any;
 };
 
-export type SubmitOnboardingPayload = Omit<Client, 'status' | 'agreements' | 'id' | 'agreement_id' | 'created_at'> & {
+export type SubmitOnboardingPayload = Omit<Client, 'status' | 'agreements' | 'id' | 'agreement_id' | 'created_at' | 'latitude' | 'longitude'> & {
   onboarding_token: string | null;
   address?: string;
   delivery_window?: string;
@@ -130,6 +130,8 @@ export type Client = {
     contact_name: string | null;
     contact_dni: string | null;
     address: string | null;
+    latitude: number | null;
+    longitude: number | null;
     delivery_window: string | null;
     email: string | null;
     instagram: string | null;

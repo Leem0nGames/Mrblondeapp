@@ -245,13 +245,13 @@ export async function analyzeClient(
 }
 
 export async function geocodeAddressAndSave(clientId: string, address: string) {
-  if (!process.env.GOOGLE_MAPS_API_KEY) {
+  if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
     console.warn('Google Maps API key is not configured. Skipping geocoding.');
     return { data: null, error: { message: 'API key not configured.' } };
   }
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
     address
-  )}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+  )}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`;
 
   try {
     const response = await fetch(url);
@@ -269,7 +269,7 @@ export async function geocodeAddressAndSave(clientId: string, address: string) {
 
     const { error: updateError } = await supabaseAdmin
       .from('clients')
-      .update({ latitude: lat as number, longitude: lng as number })
+      .update({ latitude: lat, longitude: lng })
       .eq('id', clientId);
 
     if (updateError) {

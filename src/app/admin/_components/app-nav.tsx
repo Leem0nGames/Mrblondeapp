@@ -32,6 +32,9 @@ const navItems: NavItem[] = [
   { href: "/admin/products", icon: Package, label: "Productos", isComplete: () => true, incompleteTooltip: "" },
   { href: "/admin/clients", icon: Users, label: "Clientes", isComplete: (stats) => stats.total_clients > 0, incompleteTooltip: "Crea tu primer cliente" },
   { href: "/admin/agreements", icon: FileText, label: "Convenios", isComplete: () => true, incompleteTooltip: "" },
+  { href: "/admin/pricelists", icon: Package, label: "Listas de Precios", isComplete: () => true, incompleteTooltip: "" },
+  { href: "/admin/promotions", icon: Briefcase, label: "Promociones", isComplete: () => true, incompleteTooltip: "" },
+  { href: "/admin/sales-conditions", icon: FileText, label: "Condiciones", isComplete: () => true, incompleteTooltip: "" },
   { href: "/admin/commercial-settings", icon: Briefcase, label: "Comercial", isComplete: (stats) => stats.total_pricelists > 0 && stats.total_promotions > 0 && stats.total_sales_conditions > 0, incompleteTooltip: "Define una lista, promoción y condición" },
 ];
 

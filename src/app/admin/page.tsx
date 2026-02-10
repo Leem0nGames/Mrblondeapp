@@ -1,6 +1,7 @@
 
 
 import { getDashboardData } from "@/app/admin/actions/dashboard.actions";
+import { getClients } from "@/app/admin/actions/clients.actions";
 import { PageHeader } from "@/components/shared/page-header";
 import { 
     Card,
@@ -12,10 +13,14 @@ import {
 import { DashboardStats } from "./_components/dashboard-stats";
 import { RecentOrders } from "./_components/recent-orders";
 import { PendingClients } from "./_components/pending-clients";
+import { ClientMap } from "./_components/client-map";
 import type { DashboardStats as Stats } from "@/types";
 
 export default async function AdminDashboardPage() {
     const { stats, pendingOrders, pendingClients } = await getDashboardData();
+    const { data: allClients } = await getClients();
+
+    const clientsForMap = (allClients || []).filter(c => c.status === 'active' && c.latitude && c.longitude);
 
     return (
         <div className="grid flex-1 items-start gap-4 md:gap-8">
@@ -25,6 +30,18 @@ export default async function AdminDashboardPage() {
             />
             
             <DashboardStats stats={stats as Stats} />
+            
+            <Card>
+                <CardHeader>
+                    <CardTitle>Ubicación de Clientes Activos</CardTitle>
+                    <CardDescription>
+                        Vista geográfica de los clientes con dirección geocodificada.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ClientMap clients={clientsForMap} />
+                </CardContent>
+            </Card>
 
             <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
                 <div className="xl:col-span-2 space-y-4">
