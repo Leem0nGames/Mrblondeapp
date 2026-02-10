@@ -91,7 +91,7 @@ const getSalesConditionDefaultValues = (entity?: any) => {
   };
 };
 
-const processPayload = (values: z.infer<typeof salesConditionSchema>) => {
+const processPayload = (values: z.infer<typeof salesConditionSchema> & { id?: string }) => {
   let ruleDetails: any = {};
   
   if (values.type === "net_days" && values.rules.net_days) {
@@ -105,6 +105,7 @@ const processPayload = (values: z.infer<typeof salesConditionSchema>) => {
   }
 
   return {
+    id: values.id, // Pass through the ID for updates
     name: values.name,
     description: values.description,
     rules: {

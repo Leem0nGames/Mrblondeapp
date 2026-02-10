@@ -107,7 +107,7 @@ const getPromotionDefaultValues = (promotion?: any) => {
   };
 };
 
-const processPromotionPayload = (values: z.infer<typeof promotionSchema>) => {
+const processPromotionPayload = (values: z.infer<typeof promotionSchema> & { id?: string }) => {
   let ruleDetails: any = {};
   if (values.type === "buy_x_get_y_free" && values.rules.buy_x_get_y_free) {
     ruleDetails = values.rules.buy_x_get_y_free;
@@ -121,6 +121,7 @@ const processPromotionPayload = (values: z.infer<typeof promotionSchema>) => {
   }
 
   return {
+    id: values.id, // Pass through the ID for updates
     name: values.name,
     description: values.description,
     rules: {
