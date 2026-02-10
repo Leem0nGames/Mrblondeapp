@@ -113,23 +113,36 @@ export async function logout() {
   redirect('/login');
 }
 
+const logAdminClientError = (functionName: string) => {
+    console.error(`
+      *************************************************************************
+      * ERROR CRÍTICO EN: ${functionName}
+      *
+      * El cliente de Supabase Admin no está configurado.
+      * Esto casi siempre significa que la variable de entorno
+      * 'SUPABASE_SERVICE_ROLE_KEY' no está definida correctamente en Vercel.
+      *
+      * QUÉ HACER:
+      * 1. Ve a tu proyecto en Vercel -> Settings -> Environment Variables.
+      * 2. Confirma que 'SUPABASE_SERVICE_ROLE_KEY' existe.
+      * 3. Confirma que el valor es el correcto (la llave 'service_role').
+      * 4. Asegúrate de que no haya espacios extra o errores de tipeo.
+      * 5. Vuelve a desplegar la aplicación para que tome los cambios.
+      *************************************************************************
+    `);
+}
+
 export async function getOrderPageData(agreementId: string) {
     if (!supabaseAdmin) {
-        console.error("getOrderPageData error: supabaseAdmin is not configured.");
-        return { data: null, error: { message: "Error de configuración del servidor." } };
+        logAdminClientError("getOrderPageData");
+        return { data: null, error: { message: "Error de configuración del servidor. Contacta al administrador." } };
     }
     const supabase = supabaseAdmin;
 
     const [agreementResult, settingsResult] = await Promise.all([
         supabase
             .from('agreements')
-            .select(`
-                *,
-                agreement_promotions(
-                    promotions(*)
-                ),
-                price_lists(id, name, prices_include_vat)
-            `)
+            .select('*, agreement_promotions(promotions(*)), price_lists(id, name, prices_include_vat)')
             .eq('id', agreementId)
             .maybeSingle(),
         supabase.from('app_settings').select('key, value')
@@ -148,11 +161,7 @@ export async function getOrderPageData(agreementId: string) {
 
     const { data: priceListItems, error: itemsError } = await supabase
         .from('price_list_items')
-        .select(`
-            price,
-            volume_price,
-            products(*)
-        `)
+        .select('price, volume_price, products(*)')
         .eq('price_list_id', agreement.price_lists.id)
         .not('products', 'is', null);
 
@@ -235,7 +244,7 @@ export async function submitOrder(payload: {
     notes?: string;
 }) {
     if (!supabaseAdmin) {
-        console.error("submitOrder error: supabaseAdmin is not configured.");
+        logAdminClientError("submitOrder");
         return { error: { message: "Error de configuración del servidor." } };
     }
     const supabase = supabaseAdmin;
@@ -292,7 +301,7 @@ export async function submitOrder(payload: {
 // --- Onboarding Actions ---
 export async function getOnboardingClient(token: string) {
   if (!supabaseAdmin) {
-    console.error("Admin client not configured for getOnboardingClient");
+    logAdminClientError("getOnboardingClient");
     return { data: null, error: { message: 'Error de configuración del servidor.' } };
   }
 
@@ -311,7 +320,7 @@ export async function getOnboardingClient(token: string) {
 
 export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
   if (!supabaseAdmin) {
-    console.error("Admin client not configured for submitOnboardingForm");
+    logAdminClientError("submitOnboardingForm");
     return { error: { message: 'Error de configuración del servidor.' } };
   }
   
