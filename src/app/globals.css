@@ -5,13 +5,13 @@
 
 @layer base {
   :root {
-    --background: 0 0% 0%; /* Negro carbón */
+    --background: 0 0% 8%; /* Negro grafito */
     --foreground: 0 0% 100%; /* Blanco puro */
 
-    --card: 0 0% 11%; /* Gris humo */
+    --card: 0 0% 12%; /* Gris humo */
     --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 11%;
+    --popover: 0 0% 12%;
     --popover-foreground: 0 0% 100%;
 
     --primary: 41 47% 57%; /* Dorado cálido */
@@ -20,17 +20,17 @@
     --secondary: 40 18% 57%; /* Beige tostado */
     --secondary-foreground: 0 0% 0%;
 
-    --muted: 0 0% 11%;
+    --muted: 0 0% 12%;
     --muted-foreground: 0 0% 60%;
 
-    --accent: 0 0% 11%;
+    --accent: 0 0% 12%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
     --ring: 41 47% 57%; /* Dorado cálido */
     
     --radius: 0.5rem;
@@ -44,13 +44,13 @@
   }
 
   .dark {
-    --background: 0 0% 0%; /* Negro carbón */
+    --background: 0 0% 8%; /* Negro grafito */
     --foreground: 0 0% 100%; /* Blanco puro */
 
-    --card: 0 0% 11%; /* Gris humo */
+    --card: 0 0% 12%; /* Gris humo */
     --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 11%;
+    --popover: 0 0% 12%;
     --popover-foreground: 0 0% 100%;
 
     --primary: 41 47% 57%; /* Dorado cálido */
@@ -59,17 +59,17 @@
     --secondary: 40 18% 57%; /* Beige tostado */
     --secondary-foreground: 0 0% 0%;
 
-    --muted: 0 0% 11%;
+    --muted: 0 0% 12%;
     --muted-foreground: 0 0% 60%;
 
-    --accent: 0 0% 11%;
+    --accent: 0 0% 12%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
     --ring: 41 47% 57%; /* Dorado cálido */
 
      /* Gráficos */
