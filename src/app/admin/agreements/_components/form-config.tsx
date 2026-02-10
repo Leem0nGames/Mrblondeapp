@@ -10,7 +10,9 @@ import type { PriceList } from "@/types";
 import { Button } from "@/components/ui/button";
 import { EntityDialog } from "../../_components/entity-dialog";
 import { priceListFormConfig } from "../../pricelists/_components/form-config";
-import { AgreementFormFieldsWrapper } from "./form-config-wrapper";
+import { useState, useEffect, useCallback } from "react";
+import { getPriceLists } from "@/app/admin/actions/pricelists.actions";
+import { useFormContext } from "react-hook-form";
 
 const agreementSchema = z.object({
   agreement_name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
@@ -18,22 +20,37 @@ const agreementSchema = z.object({
   price_list_id: z.string().nullable(),
 });
 
-// We need a new component to handle its own state and props
-const AgreementFormFields = ({ form, priceLists = [], onPriceListCreated = () => {} }: { form: any, priceLists: PriceList[], onPriceListCreated: (newPriceList: PriceList) => void }) => {
+const AgreementFormFields = ({ form }: { form: any }) => {
+    const [priceLists, setPriceLists] = useState<PriceList[]>([]);
+    const { setValue } = useFormContext();
 
-  const upsertPriceListActionWithCallback = async (payload: any) => {
-    const result = await priceListFormConfig.upsertAction(payload);
-    if (!result.error && result.data) {
-        onPriceListCreated(result.data);
-    }
-    return result;
-  };
+    const fetchPriceLists = useCallback(async () => {
+        const { data } = await getPriceLists();
+        setPriceLists(data ?? []);
+    }, []);
+
+    useEffect(() => {
+        fetchPriceLists();
+    }, [fetchPriceLists]);
+
+    const handlePriceListCreated = useCallback((newPriceList: PriceList) => {
+        setPriceLists(current => [...current, newPriceList]);
+        setValue('price_list_id', newPriceList.id, { shouldValidate: true });
+    }, [setValue]);
+
+
+    const upsertPriceListActionWithCallback = async (payload: any) => {
+        const result = await priceListFormConfig.upsertAction(payload);
+        if (!result.error && result.data) {
+            handlePriceListCreated(result.data);
+        }
+        return result;
+    };
   
-  const newPriceListDialogConfig: FormConfig<any> = {
-      ...priceListFormConfig,
-      upsertAction: upsertPriceListActionWithCallback,
-  };
-
+    const newPriceListDialogConfig: FormConfig<any> = {
+        ...priceListFormConfig,
+        upsertAction: upsertPriceListActionWithCallback,
+    };
 
   return (
     <>
@@ -126,6 +143,5 @@ export const agreementFormConfig: FormConfig<typeof agreementSchema> = {
   schema: agreementSchema,
   upsertAction: (values) => upsertAgreement(values),
   getDefaultValues: getAgreementDefaultValues,
-  renderFields: (form: any, props: any) => <AgreementFormFields form={form} {...props} />,
-  wrapper: AgreementFormFieldsWrapper,
+  renderFields: (form: any) => <AgreementFormFields form={form} />,
 };
