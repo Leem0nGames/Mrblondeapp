@@ -31,10 +31,11 @@ Follow these instructions to get the project running locally and deployed.
 
 ### 1. Prerequisites
 
-- Node.js (v18 or later)
+- Node.js (v20 or later)
 - npm or yarn
 - A Supabase account and project.
 - Vercel account for deployment.
+- Google Maps API Key & Gemini API Key.
 
 ### 2. Local Setup
 
@@ -53,7 +54,9 @@ npm install
 
 **C. Set Up Supabase & Environment**
 
-1.  **Crucial Step**: Follow the complete database and environment setup guide in the `INSTRUCCIONES.md` file located in the root of this project. It contains the necessary SQL script and instructions for environment variables (`.env.local`).
+1.  **Database Schema**: Go to your Supabase project's SQL Editor and run the entire script from `src/lib/supabase/schema.sql`.
+2.  **Environment File**: Create a file named `.env.local` in the root of the project.
+3.  **Fill Variables**: Copy the content from `VERCEL_ENV_VARS.txt` into your new `.env.local` file and replace the placeholder values with your actual keys from Supabase, Google, etc.
 
 ### 3. Running the Development Server
 
@@ -66,20 +69,17 @@ npm run dev
 - The application will be available at `http://localhost:3000`.
 - The first time you run the app, you will be redirected to `/signup` to create the main administrator account.
 
-## Deployment
+## Deployment on Vercel
 
-This project is optimized for deployment on [Vercel](https://vercel.com/).
+This project is optimized for deployment on Vercel.
 
 1.  **Push to GitHub/GitLab/Bitbucket**: Ensure your code is on a Git provider.
 2.  **Import Project on Vercel**: From your Vercel dashboard, import the repository.
 3.  **Configure Environment Variables (CRITICAL STEP)**:
     - In your Vercel project's settings, navigate to the **Environment Variables** section.
-    - You **MUST** add the same three environment variables from your local `.env.local` file:
-      - `NEXT_PUBLIC_SUPABASE_URL`
-      - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-      - `SUPABASE_SERVICE_ROLE_KEY`
-    - Copy the values from your local file (or directly from your Supabase project settings) into Vercel. Ensure there are no extra spaces or characters.
-    - **This step is mandatory. Without these variables, the deployed application will show an "Internal Server Error".**
-4.  **Deploy**: Trigger a new deployment in Vercel. With the environment variables now correctly configured, the build and deployment will succeed and the application will be accessible.
+    - You **MUST** add all the variables listed in the `VERCEL_ENV_VARS.txt` file.
+    - Copy the variable names and your **production keys** into Vercel.
+    - **This step is mandatory. Without these variables, the deployed application will fail with errors like "Invalid link" or "Internal Server Error". Vercel does not read your `.env.local` file.**
+4.  **Deploy**: Trigger a new deployment in Vercel (this usually happens automatically after adding variables). With the environment variables now correctly configured, the build and deployment will succeed and the application will be accessible.
 
 Once deployed, your application will be live!

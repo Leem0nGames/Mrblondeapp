@@ -1,10 +1,26 @@
 # Variables de entorno para Vercel (Producción)
 
-NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key
-SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
-NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=tu-maps-api-key
-NEXT_PUBLIC_WHATSAPP_NUMBER=5491144276120
-GEMINI_API_KEY=tu-gemini-api-key
+# Estas son las variables que DEBES configurar en el panel de Vercel
+# para que la aplicación desplegada pueda conectarse a Supabase y otros servicios.
+# Ve a tu proyecto en Vercel -> Settings -> Environment Variables.
 
-# Para desarrollo local usa .env con tus keys de desarrollo
+# --- Supabase ---
+# Desde tu proyecto en Supabase -> Settings -> API
+NEXT_PUBLIC_SUPABASE_URL=https://tu-id-de-proyecto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-llave-anon-publica
+
+# Esta es la llave secreta, trátala con cuidado.
+# Desde tu proyecto en Supabase -> Settings -> API -> Project API keys -> service_role secret
+SUPABASE_SERVICE_ROLE_KEY=tu-llave-secreta-service-role
+
+# --- Google AI (Gemini) ---
+# Desde Google AI Studio o Google Cloud Console
+GEMINI_API_KEY=tu-llave-de-api-de-gemini
+
+# --- Google Maps (Opcional, para los mapas) ---
+# Desde Google Cloud Console
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=tu-llave-de-api-de-google-maps
+
+# --- WhatsApp (Opcional) ---
+# Tu número de contacto de WhatsApp
+NEXT_PUBLIC_WHATSAPP_NUMBER=5491112345678
