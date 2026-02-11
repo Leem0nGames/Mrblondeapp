@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useTransition, useEffect, useState } from "react";
@@ -27,6 +26,7 @@ import { DialogFooter } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { HelpCircle, Search, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getCuitData } from "../../actions/cuit.actions";
 
 // --- Validation Schemas ---
 const cuitSchema = z.string().optional().or(z.literal(''));
@@ -143,38 +143,33 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
 
   const handleCuitLookup = () => {
     const cuit = form.getValues("cuit");
-    if (!cuit || cuit.length !== 11) {
+    if (!cuit || !/^\d{11}$/.test(cuit)) {
         toast({ title: "CUIT Inválido", description: "Por favor, ingresa un CUIT de 11 dígitos sin guiones.", variant: "destructive" });
         return;
     }
     
     startCuitSearch(async () => {
-        // TODO: Replace this simulation with a real API call to your chosen provider.
-        // The call should be wrapped in a Server Action to protect your API key.
-        // For example: `const { data, error } = await getCuitDataAction(cuit);`
+        const { data, error } = await getCuitData(cuit);
         
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulating network delay
+        if (error) {
+            toast({ title: "Error de Búsqueda", description: error, variant: "destructive" });
+            return;
+        }
 
-        // --- Simulated API Response ---
-        const MOCK_DATA = {
-            razonSocial: "RAZON SOCIAL DE EJEMPLO S.A.",
-            condicionFiscal: "Responsable Inscripto",
-            provincia: "Ciudad Autónoma de Buenos Aires",
-            localidad: "Palermo",
-            calle: "Av. Santa Fe",
-            numero: "3456"
-        };
-        // -----------------------------
-
-        toast({ title: "Datos Encontrados", description: `Se autocompletaron los datos para ${MOCK_DATA.razonSocial}` });
-        
-        // Autocomplete form fields
-        form.setValue("contact_name", MOCK_DATA.razonSocial, { shouldValidate: true });
-        form.setValue("fiscal_status", MOCK_DATA.condicionFiscal, { shouldValidate: true });
-        form.setValue("province", MOCK_DATA.provincia, { shouldValidate: true });
-        form.setValue("locality", MOCK_DATA.localidad, { shouldValidate: true });
-        form.setValue("street_address", MOCK_DATA.calle, { shouldValidate: true });
-        form.setValue("street_number", MOCK_DATA.numero, { shouldValidate: true });
+        if (data) {
+            toast({ title: "Datos Encontrados", description: `Se autocompletaron los datos para ${data.razonSocial}` });
+            
+            // Autocomplete form fields
+            form.setValue("contact_name", data.razonSocial, { shouldValidate: true });
+            form.setValue("fiscal_status", data.condicionFiscal, { shouldValidate: true });
+            form.setValue("province", data.provincia, { shouldValidate: true });
+            // Small delay to allow localities to populate before setting the value
+            setTimeout(() => {
+                form.setValue("locality", data.localidad, { shouldValidate: true });
+            }, 100);
+            form.setValue("street_address", data.calle, { shouldValidate: true });
+            form.setValue("street_number", data.numero, { shouldValidate: true });
+        }
     });
   };
 
