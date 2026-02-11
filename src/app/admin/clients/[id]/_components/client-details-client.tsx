@@ -59,7 +59,6 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
   const [isLoadingConditions, setIsLoadingConditions] = useState(true);
 
   const [orderLink, setOrderLink] = useState<string | null>(null);
-  const [onboardingLink, setOnboardingLink] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -68,13 +67,8 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
       } else {
         setOrderLink(null);
       }
-      if (client.onboarding_token) {
-        setOnboardingLink(`${window.location.origin}/onboarding/${client.onboarding_token}`);
-      } else {
-        setOnboardingLink(null);
-      }
     }
-  }, [client.agreement_id, client.status, client.onboarding_token]);
+  }, [client.agreement_id, client.status]);
   
   useEffect(() => {
     setClient(initialClient);
@@ -167,7 +161,6 @@ export default function ClientDetailsClient({ client: initialClient, stats, orde
         isArchiving={isPending}
         onCopyLink={copyToClipboard}
         orderLink={orderLink}
-        onboardingLink={onboardingLink}
         editDialog={editDialog}
         agreementDialog={agreementDialog}
       />
