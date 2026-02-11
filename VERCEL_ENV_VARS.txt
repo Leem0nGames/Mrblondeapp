@@ -21,10 +21,6 @@ GEMINI_API_KEY=tu-llave-de-api-de-gemini
 # Desde Google Cloud Console
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=tu-llave-de-api-de-google-maps
 
-# --- CUIT Lookup API (Opcional) ---
-# Obtén tu token gratuito desde https://sistemaintegrado.com/api/
-CUIT_API_TOKEN=tu-token-de-api-de-cuit
-
 # --- WhatsApp (Opcional) ---
 # Tu número de contacto de WhatsApp
 NEXT_PUBLIC_WHATSAPP_NUMBER=5491112345678

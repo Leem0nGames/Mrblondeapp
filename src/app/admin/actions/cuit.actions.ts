@@ -1,93 +1,84 @@
+
 'use server';
 
 import { z } from 'zod';
+import { provinces } from '@/lib/geo-data';
 
-const CuitApiResponseSchema = z.object({
-    nombre: z.string(),
-    tipoClave: z.string(),
-    estadoClave: z.string(),
-    tipoPersona: z.string(),
+// Esquema de validación para la respuesta de la API de afip.dev
+const AfipDevResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.object({
+    name: z.string(),
+    taxpayerType: z.string().optional(),
     domicilio: z.array(z.object({
-        direccion: z.string(),
-        localidad: z.string(),
-        codPostal: z.string(),
-        id_provincia: z.number(),
-        tipoDomicilio: z.string(),
+      address: z.string(),
+      city: z.string(),
+      province: z.string(),
+      postalCode: z.string(),
+      type: z.string(),
     })).optional(),
+  }).optional(),
+  error: z.object({
+    message: z.string(),
+  }).optional(),
 });
 
-// We'll map the province ID from the API to our province names
-const provinceMapping: { [key: number]: string } = {
-    0: "Ciudad Autónoma de Buenos Aires",
-    1: "Buenos Aires",
-    2: "Catamarca",
-    3: "Chaco",
-    4: "Chubut",
-    5: "Córdoba",
-    6: "Corrientes",
-    7: "Entre Ríos",
-    8: "Formosa",
-    9: "Jujuy",
-    10: "La Pampa",
-    11: "La Rioja",
-    12: "Mendoza",
-    13: "Misiones",
-    14: "Neuquén",
-    15: "Río Negro",
-    16: "Salta",
-    17: "San Juan",
-    18: "San Luis",
-    19: "Santa Cruz",
-    20: "Santa Fe",
-    21: "Santiago del Estero",
-    22: "Tierra del Fuego",
-    23: "Tucumán",
+
+const normalizeProvinceName = (apiProvince: string): string => {
+    if (!apiProvince) return '';
+    return apiProvince
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
 };
 
+const mapTaxpayerType = (apiType?: string): string => {
+    if (!apiType) return '';
+    if (apiType.toLowerCase().includes('responsable inscripto')) return 'Responsable Inscripto';
+    if (apiType.toLowerCase().includes('monotributista')) return 'Monotributista';
+    if (apiType.toLowerCase().includes('consumidor final')) return 'Consumidor Final';
+    if (apiType.toLowerCase().includes('exento')) return 'Exento';
+    return apiType;
+}
 
 export async function getCuitData(cuit: string): Promise<{ data?: any; error?: string }> {
-  const apiKey = process.env.CUIT_API_TOKEN;
-
-  if (!apiKey) {
-    console.error("CUIT_API_TOKEN environment variable is not set.");
-    return { error: "El servicio de búsqueda de CUIT no está configurado en el servidor." };
-  }
-
   try {
-    const response = await fetch(`https://sistemaintegrado.com/api/v1/person/${cuit}`, {
+    const response = await fetch(`https://api.afip.dev/v1/taxpayer?cuit=${cuit}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      cache: 'no-store', // Don't cache CUIT lookups
+      cache: 'no-store',
     });
 
     if (!response.ok) {
         if (response.status === 404) {
             return { error: `No se encontró información para el CUIT ${cuit}.` };
         }
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `Error en la API: ${response.status}`);
     }
 
     const rawData = await response.json();
-    const parsedData = CuitApiResponseSchema.safeParse(rawData);
+    const parsedData = AfipDevResponseSchema.safeParse(rawData);
 
-    if (!parsedData.success) {
+    if (!parsedData.success || !parsedData.data.success || !parsedData.data.data) {
         console.error("Error parsing CUIT API response:", parsedData.error);
-        return { error: "La respuesta de la API de CUIT no tuvo el formato esperado." };
+        return { error: parsedData.data?.error?.message || "La respuesta de la API no tuvo el formato esperado." };
     }
 
-    const fiscalAddress = parsedData.data.domicilio?.find(d => d.tipoDomicilio === 'FISCAL');
-    
-    // Map the response to our form's structure
+    const fiscalAddress = parsedData.data.data.domicilio?.find(d => d.type === 'FISCAL');
+    const normalizedProvince = fiscalAddress ? normalizeProvinceName(fiscalAddress.province) : '';
+    const provincia = provinces.find(p => p === normalizedProvince) || normalizedProvince;
+
     const result = {
-        razonSocial: parsedData.data.nombre,
-        condicionFiscal: parsedData.data.tipoPersona === 'FISICA' ? 'Monotributista' : 'Responsable Inscripto', // This is an assumption, might need adjustment
-        provincia: fiscalAddress ? provinceMapping[fiscalAddress.id_provincia] : '',
-        localidad: fiscalAddress ? fiscalAddress.localidad : '',
-        calle: fiscalAddress ? fiscalAddress.direccion.replace(/\s\d+$/, '').trim() : '',
-        numero: fiscalAddress ? fiscalAddress.direccion.match(/\d+$/)?.[0] || '' : '',
+        razonSocial: parsedData.data.data.name,
+        condicionFiscal: mapTaxpayerType(parsedData.data.data.taxpayerType),
+        provincia: provincia,
+        localidad: fiscalAddress ? normalizeProvinceName(fiscalAddress.city) : '',
+        calle: fiscalAddress ? fiscalAddress.address.replace(/\s\d+$/, '').trim() : '',
+        numero: fiscalAddress ? fiscalAddress.address.match(/\d+$/)?.[0] || '' : '',
     };
 
     return { data: result };
