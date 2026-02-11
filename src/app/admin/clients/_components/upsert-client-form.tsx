@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useTransition, useEffect, useState } from "react";
@@ -220,170 +221,155 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
 
   return (
     <>
-      <div className="px-6 pb-6">
-          <Form {...form}>
-            <form id="upsert-client-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="contact_name" render={({ field }) => (
-                    <FormItem><FormLabel>Razón Social / Nombre y Apellido</FormLabel><FormControl><Input placeholder="Nombre de contacto" {...field} /></FormControl><FormMessage /></FormItem>
-                )}/>
-                <FormField control={form.control} name="email" render={({ field }) => (
-                    <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="cliente@email.com" {...field} /></FormControl><FormMessage /></FormItem>
-                )}/>
-              </div>
-              
-              <div className="space-y-4 rounded-lg border p-4">
-                <h4 className="font-medium text-base">Información Fiscal y de Contacto</h4>
+      <ScrollArea className="h-full w-full">
+        <div className="px-6 pb-6">
+            <Form {...form}>
+              <form id="upsert-client-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="cuit" render={({ field }) => (
-                      <FormItem>
-                          <FormLabel>CUIT</FormLabel>
-                          <div className="flex items-center gap-2">
-                            <FormControl>
-                                <Input placeholder="11 dígitos sin guiones" {...field} />
-                            </FormControl>
-                             <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button type="button" variant="outline" size="icon" onClick={handleCuitLookup} disabled={isSearchingCuit || !watchedCuit}>
-                                            {isSearchingCuit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Buscar datos fiscales con CUIT</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                          </div>
-                          <FormMessage />
-                      </FormItem>
+                  <FormField control={form.control} name="contact_name" render={({ field }) => (
+                      <FormItem><FormLabel>Razón Social / Nombre y Apellido</FormLabel><FormControl><Input placeholder="Nombre de contacto" {...field} /></FormControl><FormMessage /></FormItem>
                   )}/>
-                   <FormField control={form.control} name="fiscal_status" render={({ field }) => (
-                      <FormItem><FormLabel>Condición Fiscal</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione una condición..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Responsable Inscripto">Responsable Inscripto</SelectItem><SelectItem value="Monotributista">Monotributista</SelectItem><SelectItem value="Consumidor Final">Consumidor Final</SelectItem><SelectItem value="Exento">Exento</SelectItem></SelectContent></Select><FormMessage /></FormItem>
-                  )}/>
-                  <FormField control={form.control} name="contact_dni" render={({ field }) => (
-                      <FormItem><FormLabel>DNI (Contacto)</FormLabel><FormControl><Input placeholder="Sin puntos" {...field} /></FormControl><FormMessage /></FormItem>
-                  )}/>
-                  <FormField control={form.control} name="instagram" render={({ field }) => (
-                      <FormItem><FormLabel>Instagram (Opcional)</FormLabel><FormControl><Input placeholder="@usuario" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormField control={form.control} name="email" render={({ field }) => (
+                      <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="cliente@email.com" {...field} /></FormControl><FormMessage /></FormItem>
                   )}/>
                 </div>
-              </div>
+                
+                <div className="space-y-4 rounded-lg border p-4">
+                  <h4 className="font-medium text-base">Información Fiscal y de Contacto</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="cuit" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>CUIT</FormLabel>
+                            <div className="flex items-center gap-2">
+                              <FormControl>
+                                  <Input placeholder="11 dígitos sin guiones" {...field} />
+                              </FormControl>
+                              <TooltipProvider>
+                                  <Tooltip>
+                                      <TooltipTrigger asChild>
+                                          <Button type="button" variant="outline" size="icon" onClick={handleCuitLookup} disabled={isSearchingCuit || !watchedCuit}>
+                                              {isSearchingCuit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                                          </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                          <p>Buscar datos fiscales con CUIT</p>
+                                      </TooltipContent>
+                                  </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                            <FormMessage />
+                        </FormItem>
+                    )}/>
+                    <FormField control={form.control} name="fiscal_status" render={({ field }) => (
+                        <FormItem><FormLabel>Condición Fiscal</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione una condición..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Responsable Inscripto">Responsable Inscripto</SelectItem><SelectItem value="Monotributista">Monotributista</SelectItem><SelectItem value="Consumidor Final">Consumidor Final</SelectItem><SelectItem value="Exento">Exento</SelectItem></SelectContent></Select><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="contact_dni" render={({ field }) => (
+                        <FormItem><FormLabel>DNI (Contacto)</FormLabel><FormControl><Input placeholder="Sin puntos" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="instagram" render={({ field }) => (
+                        <FormItem><FormLabel>Instagram (Opcional)</FormLabel><FormControl><Input placeholder="@usuario" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                  </div>
+                </div>
 
-              <div className="space-y-4 rounded-lg border p-4">
-                <h4 className="font-medium text-base">Dirección de Entrega</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="province" render={({ field }) => (
-                    <FormItem><FormLabel>Provincia</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione una provincia..." /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{provinces.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
-                  )}/>
-                  <FormField control={form.control} name="locality" render={({ field }) => (
-                    <FormItem><FormLabel>Localidad</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={!watchedProvince}><FormControl><SelectTrigger><SelectValue placeholder={watchedProvince ? "Seleccione una localidad..." : "Elija provincia"} /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{availableLocalities.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
-                  )}/>
+                <div className="space-y-4 rounded-lg border p-4">
+                  <h4 className="font-medium text-base">Dirección de Entrega</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="province" render={({ field }) => (
+                      <FormItem><FormLabel>Provincia</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione una provincia..." /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{provinces.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name="locality" render={({ field }) => (
+                      <FormItem><FormLabel>Localidad</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={!watchedProvince}><FormControl><SelectTrigger><SelectValue placeholder={watchedProvince ? "Seleccione una localidad..." : "Elija provincia"} /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{availableLocalities.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
+                    )}/>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="md:col-span-2"><FormField control={form.control} name="street_address" render={({ field }) => (
+                          <FormItem><FormLabel>Calle</FormLabel><FormControl><Input placeholder="Ej: Av. Corrientes" {...field} /></FormControl><FormMessage /></FormItem>
+                      )}/></div>
+                      <div><FormField control={form.control} name="street_number" render={({ field }) => (
+                          <FormItem><FormLabel>Número</FormLabel><FormControl><Input placeholder="Ej: 1234" {...field} /></FormControl><FormMessage /></FormItem>
+                      )}/></div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2"><FormField control={form.control} name="street_address" render={({ field }) => (
-                        <FormItem><FormLabel>Calle</FormLabel><FormControl><Input placeholder="Ej: Av. Corrientes" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/></div>
-                    <div><FormField control={form.control} name="street_number" render={({ field }) => (
-                        <FormItem><FormLabel>Número</FormLabel><FormControl><Input placeholder="Ej: 1234" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/></div>
-                </div>
-              </div>
 
-              <div className="space-y-4 rounded-lg border p-4">
-                <h4 className="font-medium text-base">Ventana Horaria de Entrega</h4>
-                <FormField control={form.control} name="delivery_days" render={({ field }) => (
+                <div className="space-y-4 rounded-lg border p-4">
+                  <h4 className="font-medium text-base">Ventana Horaria de Entrega</h4>
+                  <FormField control={form.control} name="delivery_days" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Días de Entrega</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center gap-2 pt-2 flex-wrap">
+                          {deliveryDays.map((day) => {
+                            const isSelected = field.value?.includes(day.id);
+                            return (
+                              <Button
+                                key={day.id}
+                                type="button"
+                                variant={isSelected ? "default" : "outline"}
+                                size="sm"
+                                className={cn("h-8 w-8 p-0 rounded-full", isSelected && "shadow-md")}
+                                onClick={() => {
+                                  const newValue = isSelected
+                                    ? field.value?.filter((d) => d !== day.id)
+                                    : [...(field.value || []), day.id];
+                                  field.onChange(newValue);
+                                }}
+                              >
+                                {day.label}
+                              </Button>
+                            );
+                          })}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}/>
+                  <div className="grid grid-cols-2 gap-4">
+                      <FormField control={form.control} name="delivery_time_from" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Desde</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                              <SelectContent>{timeOptions.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                      )}/>
+                      <FormField control={form.control} name="delivery_time_to" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Hasta</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                              <SelectContent>{timeOptions.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                      )}/>
+                  </div>
+                </div>
+                
+                <FormField control={form.control} name="agreement_id" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Días de Entrega</FormLabel>
-                    <FormControl>
-                      <div className="flex items-center gap-2 pt-2 flex-wrap">
-                        {deliveryDays.map((day) => {
-                          const isSelected = field.value?.includes(day.id);
-                          return (
-                            <Button
-                              key={day.id}
-                              type="button"
-                              variant={isSelected ? "default" : "outline"}
-                              size="sm"
-                              className={cn("h-8 w-8 p-0 rounded-full", isSelected && "shadow-md")}
-                              onClick={() => {
-                                const newValue = isSelected
-                                  ? field.value?.filter((d) => d !== day.id)
-                                  : [...(field.value || []), day.id];
-                                field.onChange(newValue);
-                              }}
-                            >
-                              {day.label}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    </FormControl>
-                    <FormMessage />
+                      <FormLabel>Convenio Comercial (Opcional)</FormLabel>
+                      <Select onValueChange={(v) => field.onChange(v === 'null' ? null : v)} value={field.value || 'null'}>
+                      <FormControl>
+                          <SelectTrigger>
+                          <SelectValue placeholder="Seleccione un convenio..." />
+                          </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                          <SelectItem value="null">Ninguno</SelectItem>
+                          {agreements.map(a => <SelectItem key={a.id} value={a.id}>{a.agreement_name}</SelectItem>)}
+                      </SelectContent>
+                      </Select>
+                      <FormDescription>Asigna precios y promociones especiales.</FormDescription>
+                      <FormMessage />
                   </FormItem>
                 )}/>
-                <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="delivery_time_from" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Desde</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                            <SelectContent>{timeOptions.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                    )}/>
-                    <FormField control={form.control} name="delivery_time_to" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Hasta</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                            <SelectContent>{timeOptions.map(time => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                    )}/>
-                </div>
-              </div>
-              
-              {isEditMode && (
-                <FormField control={form.control} name="agreement_id" render={({ field }) => (
-                <FormItem>
-                    <div className="flex items-center gap-2">
-                    <FormLabel>Convenio Comercial</FormLabel>
-                    <TooltipProvider>
-                        <Tooltip>
-                        <TooltipTrigger asChild>
-                            <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                            <p className="font-medium mb-1">¿Qué es un convenio?</p>
-                            <p className="text-sm text-muted-foreground">
-                            Un convenio define los precios especiales, promociones y condiciones comerciales. Puedes cambiarlo desde la página del cliente.
-                            </p>
-                        </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                    </div>
-                    <Select onValueChange={(v) => field.onChange(v === 'null' ? null : v)} value={field.value || 'null'}>
-                    <FormControl>
-                        <SelectTrigger>
-                        <SelectValue placeholder="Seleccione un convenio..." />
-                        </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                        <SelectItem value="null">Ninguno</SelectItem>
-                        {agreements.map(a => <SelectItem key={a.id} value={a.id}>{a.agreement_name}</SelectItem>)}
-                    </SelectContent>
-                    </Select>
-                    <FormDescription>Opcional. Asigna precios y promociones especiales.</FormDescription>
-                    <FormMessage />
-                </FormItem>
-                )}/>
-              )}
-            </form>
-          </Form>
-        </div>
+              </form>
+            </Form>
+          </div>
+        </ScrollArea>
        <DialogFooter className="p-6 pt-2 border-t">
             <Button variant="outline" type="button" onClick={onCancel}>
                 Cancelar
@@ -399,3 +385,5 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
     </>
   );
 }
+
+    
