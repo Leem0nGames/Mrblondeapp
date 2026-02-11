@@ -16,13 +16,24 @@ function getSupabaseAdmin() {
     }
 
     if (!supabaseUrl || !serviceRoleKey) {
-        // En producción (Vercel), si las variables no están, la app no debe funcionar.
-        // En desarrollo, esto alerta al desarrollador de que falta configuración.
-        if (process.env.NODE_ENV === 'production') {
-             console.error('Supabase admin client not configured. Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.');
-             return null;
-        }
-        throw new Error('Supabase admin client not configured. Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in your .env.local file.');
+        // This unified error handling prevents the server from crashing on startup
+        // if environment variables are missing in any environment.
+        console.error(`
+        *************************************************************************
+        * ERROR CRÍTICO: Cliente Admin de Supabase no configurado.
+        *
+        * Faltan las variables de entorno 'NEXT_PUBLIC_SUPABASE_URL' o
+        * 'SUPABASE_SERVICE_ROLE_KEY'.
+        *
+        * Las funciones que dependen de este cliente (ej: páginas públicas) fallarán.
+        *
+        * QUÉ HACER:
+        * 1. Asegúrate de que tu archivo '.env.local' exista y esté correcto.
+        * 2. Si despliegas en Vercel, confirma que estas variables están
+        *    configuradas en el panel de tu proyecto.
+        *************************************************************************
+        `);
+        return null;
     }
 
     supabaseAdminSingleton = createClient(supabaseUrl, serviceRoleKey, {
