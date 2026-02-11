@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import type { Client } from "@/types";
-import { Archive, Edit, FilePen, Link as LinkIcon } from "lucide-react";
+import { Archive, Edit, FilePen, Link as LinkIcon, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ClientActionButtonsProps = {
@@ -22,6 +22,7 @@ type ClientActionButtonsProps = {
     isArchiving: boolean;
     onCopyLink: (link: string | null, message: string, errorMessage?: string) => void;
     orderLink: string | null;
+    onboardingLink: string | null;
     editDialog: React.ReactNode;
     agreementDialog: React.ReactNode;
     clientStatus: Client['status'];
@@ -45,6 +46,7 @@ export function ClientActionButtons({
     isArchiving, 
     onCopyLink, 
     orderLink,
+    onboardingLink,
     editDialog, 
     agreementDialog,
     clientStatus
@@ -56,10 +58,17 @@ export function ClientActionButtons({
             
             {agreementDialog}
 
-            <ActionButton disabled={!orderLink} onClick={() => onCopyLink(orderLink, 'Enlace de pedido copiado!', 'Asigna un convenio para generar el enlace de pedido.')}>
-                <LinkIcon className="h-5 w-5" />
-                <span>Link Pedido</span>
-            </ActionButton>
+            {clientStatus === 'pending_onboarding' ? (
+                <ActionButton disabled={!onboardingLink} onClick={() => onCopyLink(onboardingLink, 'Enlace de alta copiado!')}>
+                    <UserPlus className="h-5 w-5" />
+                    <span>Link Alta</span>
+                </ActionButton>
+            ) : (
+                <ActionButton disabled={!orderLink} onClick={() => onCopyLink(orderLink, 'Enlace de pedido copiado!', 'Asigna un convenio para generar el enlace de pedido.')}>
+                    <LinkIcon className="h-5 w-5" />
+                    <span>Link Pedido</span>
+                </ActionButton>
+            )}
 
             <AlertDialog>
                 <AlertDialogTrigger asChild>

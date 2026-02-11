@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import type { Client } from "@/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -50,6 +50,17 @@ export function ClientHeader({
     agreementDialog: React.ReactNode;
  }) {
 
+    const [onboardingLink, setOnboardingLink] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && client.status === 'pending_onboarding' && client.onboarding_token) {
+            setOnboardingLink(`${window.location.origin}/onboarding/${client.onboarding_token}`);
+        } else {
+            setOnboardingLink(null);
+        }
+    }, [client.status, client.onboarding_token]);
+
+
   return (
     <div className="w-full">
       <div className="relative flex flex-col items-center justify-center rounded-xl bg-card p-6 shadow-sm gap-2 border">
@@ -70,6 +81,7 @@ export function ClientHeader({
                 isArchiving={isArchiving}
                 onCopyLink={onCopyLink}
                 orderLink={orderLink}
+                onboardingLink={onboardingLink}
                 editDialog={editDialog}
                 agreementDialog={agreementDialog}
                 clientStatus={client.status}

@@ -132,6 +132,53 @@ const logAdminClientError = (functionName: string) => {
     `);
 }
 
+export async function getOnboardingClient(token: string) {
+    if (!supabaseAdmin) {
+        logAdminClientError("getOnboardingClient");
+        return { data: null, error: { message: "Error de configuración del servidor." } };
+    }
+    const { data, error } = await supabaseAdmin
+        .from('clients')
+        .select('id, contact_name, email, onboarding_token')
+        .eq('onboarding_token', token)
+        .eq('status', 'pending_onboarding')
+        .maybeSingle();
+
+    if (error || !data) {
+        return { data: null, error: { message: "El enlace de alta no es válido o ha expirado." } };
+    }
+    return { data, error: null };
+}
+
+export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
+    if (!supabaseAdmin) {
+        logAdminClientError("submitOnboardingForm");
+        return { data: null, error: { message: "Error de configuración del servidor." } };
+    }
+    const { onboarding_token, ...clientData } = payload;
+    if (!onboarding_token) {
+        return { data: null, error: { message: "Token de alta inválido." } };
+    }
+
+    const { error } = await supabaseAdmin
+        .from('clients')
+        .update({
+            ...clientData,
+            status: 'pending_agreement',
+            onboarding_token: null, // Invalidate token after use
+        })
+        .eq('onboarding_token', onboarding_token);
+
+    if (error) {
+        console.error("submitOnboardingForm error:", error.message);
+        return { data: null, error: { message: getSupabaseErrorMessage(error) } };
+    }
+
+    revalidatePath('/admin/clients');
+    revalidatePath('/admin'); // For notifications
+    return { data: { success: true }, error: null };
+}
+
 export async function getOrderPageData(agreementId: string) {
     if (!supabaseAdmin) {
         logAdminClientError("getOrderPageData");

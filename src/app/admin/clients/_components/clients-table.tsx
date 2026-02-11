@@ -3,7 +3,7 @@
 
 import { useTransition, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { MoreHorizontal, Archive, FilePen, Link as LinkIcon } from "lucide-react";
+import { MoreHorizontal, Archive, FilePen, Link as LinkIcon, UserPlus } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -158,6 +158,8 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
               <TableBody>
                 {clients.map((client) => {
                   const orderLink = isClient && client.agreement_id && client.status === 'active' ? `${window.location.origin}/pedido/${client.agreement_id}` : null;
+                  const onboardingLink = isClient && client.status === 'pending_onboarding' && client.onboarding_token ? `${window.location.origin}/onboarding/${client.onboarding_token}` : null;
+                  
                   return (
                   <TableRow key={client.id}>
                     <TableCell className="font-medium">
@@ -191,13 +193,23 @@ export function ClientsTable({ clients, emptyState }: ClientsTableProps) {
                               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Asignar Convenio</DropdownMenuItem>
                           </AssignAgreementDialog>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                              onClick={() => copyToClipboard(orderLink, 'Enlace de pedido copiado!', 'El cliente debe estar activo para tener un enlace de pedido.')}
-                              disabled={!orderLink}
-                          >
-                              <LinkIcon className="mr-2 h-4 w-4" />
-                              Copiar Link Pedido
-                          </DropdownMenuItem>
+                           {client.status === 'pending_onboarding' ? (
+                                <DropdownMenuItem 
+                                  onClick={() => copyToClipboard(onboardingLink, 'Enlace de alta copiado!')}
+                                  disabled={!onboardingLink}
+                                >
+                                    <UserPlus className="mr-2 h-4 w-4" />
+                                    Copiar Link Alta
+                                </DropdownMenuItem>
+                            ) : (
+                                <DropdownMenuItem 
+                                    onClick={() => copyToClipboard(orderLink, 'Enlace de pedido copiado!', 'El cliente debe estar activo para tener un enlace de pedido.')}
+                                    disabled={!orderLink}
+                                >
+                                    <LinkIcon className="mr-2 h-4 w-4" />
+                                    Copiar Link Pedido
+                                </DropdownMenuItem>
+                            )}
                           <DropdownMenuSeparator />
                           <AlertDialog>
                               <AlertDialogTrigger asChild>

@@ -71,6 +71,30 @@ export async function getClientById(
   return { data: client, error: null };
 }
 
+export async function createClientForInvitation(payload: { contact_name: string; email: string; }) {
+  const supabase = await getSupabaseClientWithAuth();
+  const onboarding_token = crypto.randomUUID();
+
+  const { data, error } = await supabase
+    .from('clients')
+    .insert({
+      ...payload,
+      onboarding_token,
+      status: 'pending_onboarding'
+    })
+    .select('onboarding_token')
+    .single();
+
+  if (error) {
+    console.error('createClientForInvitation error:', error.message);
+    return { data: null, error: { message: getSupabaseErrorMessage(error) } };
+  }
+
+  revalidatePath('/admin/clients');
+  revalidatePath('/admin'); // For notifications
+  return { data: { onboarding_token: data.onboarding_token }, error: null };
+}
+
 export async function upsertClient(payload: Partial<Client> & { id?: string }) {
   const { id, ...clientData } = payload;
   let status = clientData.status;
