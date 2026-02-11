@@ -25,7 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { provinces, getLocalitiesByProvince } from "@/lib/geo-data";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, Search, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // --- Validation Schemas ---
@@ -98,6 +98,7 @@ const getDeliveryParts = (deliveryWindow?: string | null) => {
 
 export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Partial<Client>, onSuccess: () => void, onCancel: () => void }) {
   const [isPending, startTransition] = useTransition();
+  const [isSearchingCuit, startCuitSearch] = useTransition();
   const [agreements, setAgreements] = useState<Agreement[]>([]);
   const { toast } = useToast();
   
@@ -127,6 +128,7 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
   });
 
   const watchedProvince = form.watch("province");
+  const watchedCuit = form.watch("cuit");
   const availableLocalities = watchedProvince ? getLocalitiesByProvince(watchedProvince) : [];
   
   useEffect(() => {
@@ -138,6 +140,44 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
       form.setValue('locality', '');
     }
   }, [watchedProvince, availableLocalities, form]);
+
+  const handleCuitLookup = () => {
+    const cuit = form.getValues("cuit");
+    if (!cuit || cuit.length !== 11) {
+        toast({ title: "CUIT Inválido", description: "Por favor, ingresa un CUIT de 11 dígitos sin guiones.", variant: "destructive" });
+        return;
+    }
+    
+    startCuitSearch(async () => {
+        // TODO: Replace this simulation with a real API call to your chosen provider.
+        // The call should be wrapped in a Server Action to protect your API key.
+        // For example: `const { data, error } = await getCuitDataAction(cuit);`
+        
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulating network delay
+
+        // --- Simulated API Response ---
+        const MOCK_DATA = {
+            razonSocial: "RAZON SOCIAL DE EJEMPLO S.A.",
+            condicionFiscal: "Responsable Inscripto",
+            provincia: "Ciudad Autónoma de Buenos Aires",
+            localidad: "Palermo",
+            calle: "Av. Santa Fe",
+            numero: "3456"
+        };
+        // -----------------------------
+
+        toast({ title: "Datos Encontrados", description: `Se autocompletaron los datos para ${MOCK_DATA.razonSocial}` });
+        
+        // Autocomplete form fields
+        form.setValue("contact_name", MOCK_DATA.razonSocial, { shouldValidate: true });
+        form.setValue("fiscal_status", MOCK_DATA.condicionFiscal, { shouldValidate: true });
+        form.setValue("province", MOCK_DATA.provincia, { shouldValidate: true });
+        form.setValue("locality", MOCK_DATA.localidad, { shouldValidate: true });
+        form.setValue("street_address", MOCK_DATA.calle, { shouldValidate: true });
+        form.setValue("street_number", MOCK_DATA.numero, { shouldValidate: true });
+    });
+  };
+
 
   const onSubmit = (values: UpsertClientFormValues) => {
     startTransition(async () => {
@@ -190,7 +230,7 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
             <form id="upsert-client-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="contact_name" render={({ field }) => (
-                    <FormItem><FormLabel>Nombre y Apellido</FormLabel><FormControl><Input placeholder="Nombre de contacto" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Razón Social / Nombre y Apellido</FormLabel><FormControl><Input placeholder="Nombre de contacto" {...field} /></FormControl><FormMessage /></FormItem>
                 )}/>
                 <FormField control={form.control} name="email" render={({ field }) => (
                     <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="cliente@email.com" {...field} /></FormControl><FormMessage /></FormItem>
@@ -200,14 +240,34 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
               <div className="space-y-4 rounded-lg border p-4">
                 <h4 className="font-medium text-base">Información Fiscal y de Contacto</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="fiscal_status" render={({ field }) => (
-                      <FormItem><FormLabel>Condición Fiscal</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione una condición..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Responsable Inscripto">Responsable Inscripto</SelectItem><SelectItem value="Monotributista">Monotributista</SelectItem><SelectItem value="Consumidor Final">Consumidor Final</SelectItem><SelectItem value="Exento">Exento</SelectItem></SelectContent></Select><FormMessage /></FormItem>
-                  )}/>
                   <FormField control={form.control} name="cuit" render={({ field }) => (
-                      <FormItem><FormLabel>CUIT</FormLabel><FormControl><Input placeholder="11 dígitos sin guiones" {...field} /></FormControl><FormMessage /></FormItem>
+                      <FormItem>
+                          <FormLabel>CUIT</FormLabel>
+                          <div className="flex items-center gap-2">
+                            <FormControl>
+                                <Input placeholder="11 dígitos sin guiones" {...field} />
+                            </FormControl>
+                             <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button type="button" variant="outline" size="icon" onClick={handleCuitLookup} disabled={isSearchingCuit || !watchedCuit}>
+                                            {isSearchingCuit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Buscar datos fiscales con CUIT</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                          <FormMessage />
+                      </FormItem>
+                  )}/>
+                   <FormField control={form.control} name="fiscal_status" render={({ field }) => (
+                      <FormItem><FormLabel>Condición Fiscal</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione una condición..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Responsable Inscripto">Responsable Inscripto</SelectItem><SelectItem value="Monotributista">Monotributista</SelectItem><SelectItem value="Consumidor Final">Consumidor Final</SelectItem><SelectItem value="Exento">Exento</SelectItem></SelectContent></Select><FormMessage /></FormItem>
                   )}/>
                   <FormField control={form.control} name="contact_dni" render={({ field }) => (
-                      <FormItem><FormLabel>DNI</FormLabel><FormControl><Input placeholder="Sin puntos" {...field} /></FormControl><FormMessage /></FormItem>
+                      <FormItem><FormLabel>DNI (Contacto)</FormLabel><FormControl><Input placeholder="Sin puntos" {...field} /></FormControl><FormMessage /></FormItem>
                   )}/>
                   <FormField control={form.control} name="instagram" render={({ field }) => (
                       <FormItem><FormLabel>Instagram (Opcional)</FormLabel><FormControl><Input placeholder="@usuario" {...field} /></FormControl><FormMessage /></FormItem>
@@ -219,7 +279,7 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
                 <h4 className="font-medium text-base">Dirección de Entrega</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField control={form.control} name="province" render={({ field }) => (
-                    <FormItem><FormLabel>Provincia</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione una provincia..." /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{provinces.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Provincia</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione una provincia..." /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{provinces.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
                   )}/>
                   <FormField control={form.control} name="locality" render={({ field }) => (
                     <FormItem><FormLabel>Localidad</FormLabel><Select onValueChange={field.onChange} value={field.value || ''} disabled={!watchedProvince}><FormControl><SelectTrigger><SelectValue placeholder={watchedProvince ? "Seleccione una localidad..." : "Elija provincia"} /></SelectTrigger></FormControl><SelectContent><ScrollArea className="h-72">{availableLocalities.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</ScrollArea></SelectContent></Select><FormMessage /></FormItem>
