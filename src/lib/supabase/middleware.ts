@@ -11,11 +11,18 @@ export async function createClient(request: NextRequest) {
       headers: request.headers,
     },
   })
+  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('FATAL: Missing Supabase environment variables in middleware. Check your project settings.');
+  }
 
   // Create a Supabase client with a custom cookie handler.
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         // A getter function to retrieve a cookie by name.
