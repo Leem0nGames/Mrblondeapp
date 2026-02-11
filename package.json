@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "20.x"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",
@@ -67,7 +67,7 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
-    "@types/node": "^20",
+    "@types/node": "^20.17.17",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@vitest/ui": "^3.2.4",
@@ -79,5 +79,8 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5",
     "vitest": "^3.2.4"
+  },
+  "optionalDependencies": {
+    "@next/swc-linux-x64-gnu": "15.5.11"
   }
 }
