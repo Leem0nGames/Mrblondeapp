@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
@@ -82,7 +81,7 @@ function GenerateOnboardingLinkForm({ onSuccess }: { onSuccess: () => void }) {
                     </Button>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                    Envía este enlace a tu cliente para que complete sus datos.
+                    Envía este enlace a tu cliente para que complete sus datos y sea redirigido a su portal de pedidos.
                 </p>
                 <Button onClick={onSuccess}>Finalizar</Button>
             </div>
@@ -93,7 +92,7 @@ function GenerateOnboardingLinkForm({ onSuccess }: { onSuccess: () => void }) {
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                   Define el nombre, email y convenio inicial para generar el enlace. El cliente completará el resto.
+                   Define el nombre, email y convenio inicial para generar el enlace. El cliente completará el resto y podrá realizar su primer pedido inmediatamente.
                 </p>
                 <FormField control={form.control} name="contact_name" render={({ field }) => (
                     <FormItem>
