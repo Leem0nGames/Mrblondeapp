@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useTransition, useEffect, useState } from "react";
@@ -67,7 +66,7 @@ const timeOptions = generateTimeOptions();
 
 type OnboardingFormProps = {
     client: Partial<Client>;
-    onSuccess: () => void;
+    onSuccess: (clientName: string) => void;
 }
 
 export function OnboardingForm({ client, onSuccess }: OnboardingFormProps) {
@@ -146,7 +145,7 @@ export function OnboardingForm({ client, onSuccess }: OnboardingFormProps) {
         toast({ title: "Error al guardar", description: result.error.message, variant: "destructive" });
       } else {
         toast({ title: "¡Gracias!", description: "Tus datos han sido enviados. Pronto nos pondremos en contacto." });
-        onSuccess();
+        onSuccess(values.contact_name);
       }
     });
   };
