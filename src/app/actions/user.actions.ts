@@ -57,8 +57,8 @@ export async function signupSuperAdmin(
   if (!email || !password) {
     return { error: { message: 'El email y la contraseña son requeridos.' } };
   }
-   if (password.length < 6) {
-    return { error: { message: 'La contraseña debe tener al menos 6 caracteres.' } };
+   if (password.length < 8 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/\d/.test(password) || !/[!@#$%^&*]/.test(password)) {
+    return { error: { message: 'La contraseña no cumple con los requisitos de seguridad.' } };
   }
 
 
@@ -139,7 +139,7 @@ export async function getOnboardingClient(token: string) {
     }
     const { data, error } = await supabaseAdmin
         .from('clients')
-        .select('id, contact_name, email, onboarding_token')
+        .select('id, contact_name, email, onboarding_token, agreement_id')
         .eq('onboarding_token', token)
         .eq('status', 'pending_onboarding')
         .maybeSingle();
@@ -164,7 +164,7 @@ export async function submitOnboardingForm(payload: SubmitOnboardingPayload) {
         .from('clients')
         .update({
             ...clientData,
-            status: 'pending_agreement',
+            status: 'active',
             onboarding_token: null, // Invalidate token after use
         })
         .eq('onboarding_token', onboarding_token);

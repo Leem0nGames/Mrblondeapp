@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,11 +21,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { createClientForInvitation } from "@/app/admin/actions/clients.actions";
 import { Check, Copy, Link, Loader2 } from "lucide-react";
+import { getAgreements } from "@/app/admin/actions/agreements.actions";
+import type { Agreement } from "@/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 const generateOnboardingLinkSchema = z.object({
   contact_name: z.string().min(3, "El nombre es requerido."),
   email: z.string().email("Debe ser un email válido."),
+  agreement_id: z.string({ required_error: "Debes seleccionar un convenio." }).min(1, "Debes seleccionar un convenio."),
 });
 
 
@@ -34,10 +38,17 @@ function GenerateOnboardingLinkForm({ onSuccess }: { onSuccess: () => void }) {
     const [generatedLink, setGeneratedLink] = useState<string | null>(null);
     const [hasCopied, setHasCopied] = useState(false);
     const { toast } = useToast();
+    const [agreements, setAgreements] = useState<Agreement[]>([]);
+
+    useEffect(() => {
+        getAgreements().then(({ data }) => {
+            if (data) setAgreements(data as Agreement[]);
+        });
+    }, []);
 
     const form = useForm({
         resolver: zodResolver(generateOnboardingLinkSchema),
-        defaultValues: { contact_name: "", email: "" },
+        defaultValues: { contact_name: "", email: "", agreement_id: "" },
     });
     
     const onSubmit = (values: z.infer<typeof generateOnboardingLinkSchema>) => {
@@ -82,7 +93,7 @@ function GenerateOnboardingLinkForm({ onSuccess }: { onSuccess: () => void }) {
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                   Ingresa el nombre y email del cliente para generar un enlace personalizado. El cliente completará el resto de sus datos.
+                   Define el nombre, email y convenio inicial para generar el enlace. El cliente completará el resto.
                 </p>
                 <FormField control={form.control} name="contact_name" render={({ field }) => (
                     <FormItem>
@@ -98,7 +109,28 @@ function GenerateOnboardingLinkForm({ onSuccess }: { onSuccess: () => void }) {
                         <FormMessage />
                     </FormItem>
                 )}/>
-                 <Button type="submit" disabled={isPending} className="w-full">
+                 <FormField control={form.control} name="agreement_id" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Convenio Inicial</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecciona un convenio..." />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {agreements.length === 0 && <p className="p-4 text-sm text-muted-foreground">No hay convenios. Crea uno primero.</p>}
+                                {agreements.map(agreement => (
+                                    <SelectItem key={agreement.id} value={agreement.id}>
+                                        {agreement.agreement_name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                )}/>
+                 <Button type="submit" disabled={isPending || agreements.length === 0} className="w-full">
                     {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Generando...</> : <><Link className="mr-2 h-4 w-4"/> Generar Enlace de Alta</>}
                 </Button>
             </form>
@@ -146,4 +178,3 @@ export function CreateClientDialog({ children }: { children: React.ReactNode }) 
     </Dialog>
   );
 }
-

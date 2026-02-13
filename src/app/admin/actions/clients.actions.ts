@@ -71,14 +71,16 @@ export async function getClientById(
   return { data: client, error: null };
 }
 
-export async function createClientForInvitation(payload: { contact_name: string; email: string; }) {
+export async function createClientForInvitation(payload: { contact_name: string; email: string; agreement_id: string; }) {
   const supabase = await getSupabaseClientWithAuth();
   const onboarding_token = crypto.randomUUID();
 
   const { data, error } = await supabase
     .from('clients')
     .insert({
-      ...payload,
+      contact_name: payload.contact_name,
+      email: payload.email,
+      agreement_id: payload.agreement_id,
       onboarding_token,
       status: 'pending_onboarding'
     })
