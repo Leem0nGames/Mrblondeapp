@@ -3,6 +3,10 @@
   "framework": "nextjs",
   "routes": [
     {
+      "src": "/",
+      "continue": true
+    },
+    {
       "src": "/onboarding/(.*)",
       "continue": true
     },
@@ -10,12 +14,16 @@
       "src": "/pedido/(.*)",
       "continue": true
     },
-     {
+    {
       "src": "/login",
       "continue": true
     },
     {
       "src": "/signup",
+      "continue": true
+    },
+    {
+      "src": "/favicon.ico",
       "continue": true
     }
   ]
