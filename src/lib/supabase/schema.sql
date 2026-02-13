@@ -1,3 +1,4 @@
+
 -- Script de Base de Datos para Blonde Orders
 -- Versión: 1.0
 -- Este script es idempotente y puede ser ejecutado de forma segura.
@@ -229,7 +230,7 @@ CREATE POLICY "Allow full access for service_role" ON public.order_items FOR ALL
 
 -- app_settings puede ser leído por cualquiera, pero solo modificado por service_role.
 CREATE POLICY "Allow read access for all" ON public.app_settings FOR SELECT USING (true);
-CREATE POLICY "Allow write access for service_role" ON public.app_settings FOR INSERT, UPDATE, DELETE USING (auth.role() = 'service_role');
+CREATE POLICY "Allow write access for service_role" ON public.app_settings FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
 -- 8. Creación de Buckets y Políticas de Storage
 -- Crear buckets si no existen.
@@ -249,7 +250,8 @@ USING ( bucket_id = 'product_images' );
 
 DROP POLICY IF EXISTS "Allow admin write on product images" ON storage.objects;
 CREATE POLICY "Allow admin write on product images"
-ON storage.objects FOR INSERT, UPDATE, DELETE
+ON storage.objects FOR ALL
+USING (bucket_id = 'product_images' AND auth.role() = 'service_role')
 WITH CHECK ( bucket_id = 'product_images' AND auth.role() = 'service_role' );
 
 -- Políticas para app_assets
@@ -260,7 +262,8 @@ USING ( bucket_id = 'app_assets' );
 
 DROP POLICY IF EXISTS "Allow admin write on app assets" ON storage.objects;
 CREATE POLICY "Allow admin write on app assets"
-ON storage.objects FOR INSERT, UPDATE, DELETE
+ON storage.objects FOR ALL
+USING ( bucket_id = 'app_assets' AND auth.role() = 'service_role' )
 WITH CHECK ( bucket_id = 'app_assets' AND auth.role() = 'service_role' );
 
 -- 9. Inserción de Datos Iniciales (Seeding)
