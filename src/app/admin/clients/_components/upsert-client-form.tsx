@@ -25,7 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { provinces, getLocalitiesByProvince } from "@/lib/geo-data";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { HelpCircle, Search, Loader2 } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCuitData } from "../../actions/cuit.actions";
 
@@ -184,26 +184,17 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
         ? `${values.delivery_days.join(', ')} de ${values.delivery_time_from} a ${values.delivery_time_to}hs`
         : undefined;
 
-      // 2. Extraer solo los campos que la base de datos acepta
-      const {
-        contact_name,
-        email,
-        cuit,
-        contact_dni,
-        fiscal_status,
-        instagram,
-        agreement_id
-      } = values;
-
+      // 2. Extraer SOLO los campos que la tabla 'clients' acepta. 
+      // Limpiamos los campos auxiliares (province, street_address, etc) para evitar errores de DB.
       const finalPayload: Partial<Client> & { id?: string } = {
         id: client?.id,
-        contact_name,
-        email,
-        cuit: cuit || null,
-        contact_dni: contact_dni || null,
-        fiscal_status: fiscal_status || null,
-        instagram: instagram || null,
-        agreement_id: agreement_id || null,
+        contact_name: values.contact_name,
+        email: values.email,
+        cuit: values.cuit || null,
+        contact_dni: values.contact_dni || null,
+        fiscal_status: values.fiscal_status || null,
+        instagram: values.instagram || null,
+        agreement_id: values.agreement_id || null,
         address: fullAddress,
         delivery_window: fullDeliveryWindow,
       };

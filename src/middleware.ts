@@ -4,19 +4,20 @@ import { createClient } from '@/lib/supabase/middleware';
 import { hasUsers } from '@/app/actions/user.actions';
 
 export async function middleware(request: NextRequest) {
-  const { supabase, response } = await createClient(request);
   const { pathname } = request.nextUrl;
 
   // 1. PRIORIDAD ABSOLUTA: RUTAS PÚBLICAS DE CLIENTES
-  // Estas rutas deben ser accesibles sin ninguna verificación de autenticación.
-  const isOrderRoute = pathname.startsWith('/pedido');
-  const isOnboardingRoute = pathname.startsWith('/onboarding');
-
-  if (isOrderRoute || isOnboardingRoute) {
-    return response;
+  // Verificamos esto ANTES de inicializar Supabase para evitar redirecciones o delays
+  const isPublicClientRoute = pathname.startsWith('/onboarding') || pathname.startsWith('/pedido');
+  
+  if (isPublicClientRoute) {
+    return NextResponse.next();
   }
 
-  // 2. LÓGICA DE ADMINISTRACIÓN Y AUTENTICACIÓN
+  // 2. INICIALIZACIÓN DE SUPABASE PARA RUTAS DE ADMIN/AUTH
+  const { supabase, response } = await createClient(request);
+
+  // 3. LÓGICA DE ADMINISTRACIÓN Y AUTENTICACIÓN
   const publicAuthRoutes = ['/login', '/signup'];
   const isAuthPageRoute = publicAuthRoutes.includes(pathname);
 
