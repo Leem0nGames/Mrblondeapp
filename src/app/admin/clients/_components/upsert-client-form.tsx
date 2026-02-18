@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useTransition, useEffect, useState } from "react";
@@ -182,7 +181,7 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
         ? `${values.delivery_days.join(', ')} de ${values.delivery_time_from} a ${values.delivery_time_to}hs`
         : undefined;
 
-      // Destructure to remove form-only fields
+      // Limpieza del Payload: Extraemos solo lo que la base de datos acepta
       const {
         province,
         locality,
@@ -191,15 +190,15 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
         delivery_days,
         delivery_time_from,
         delivery_time_to,
-        ...clientData // This now contains only the properties that are valid DB columns
+        ...clientDataToSave 
       } = values;
 
       const finalPayload: Partial<Client> & { id?: string } = {
         id: client?.id,
-        ...clientData,
+        ...clientDataToSave,
       };
 
-      // Only add address and delivery_window if they were actually constructed
+      // Añadimos solo si se construyeron correctamente
       if (values.street_address && values.street_number && values.locality && values.province) {
         finalPayload.address = address;
       }
@@ -385,5 +384,3 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
     </>
   );
 }
-
-    
