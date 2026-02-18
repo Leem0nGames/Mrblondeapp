@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useTransition, useEffect, useState } from "react";
@@ -113,7 +114,6 @@ export function OnboardingForm({ client, onSuccess }: OnboardingFormProps) {
         if (data) {
             toast({ title: "Datos Encontrados", description: `Se autocompletaron los datos para ${data.razonSocial}` });
             
-            // Autocomplete form fields
             form.setValue("contact_name", data.razonSocial, { shouldValidate: true });
             form.setValue("fiscal_status", data.condicionFiscal, { shouldValidate: true });
             form.setValue("province", data.provincia, { shouldValidate: true });
@@ -129,27 +129,35 @@ export function OnboardingForm({ client, onSuccess }: OnboardingFormProps) {
 
   const onSubmit = (values: OnboardingFormValues) => {
     startTransition(async () => {
-      const address = `${values.street_address} ${values.street_number}, ${values.locality}, ${values.province}`;
-      const delivery_window = (values.delivery_days && values.delivery_days.length > 0)
+      // 1. Construir campos compuestos
+      const fullAddress = (values.street_address && values.locality && values.province)
+        ? `${values.street_address} ${values.street_number || ''}, ${values.locality}, ${values.province}`
+        : undefined;
+
+      const fullDeliveryWindow = (values.delivery_days && values.delivery_days.length > 0)
         ? `${values.delivery_days.join(', ')} de ${values.delivery_time_from} a ${values.delivery_time_to}hs`
         : undefined;
 
+      // 2. Extraer solo los campos que la base de datos acepta
       const {
-        province,
-        locality,
-        street_address,
-        street_number,
-        delivery_days,
-        delivery_time_from,
-        delivery_time_to,
-        ...clientData
+        contact_name,
+        email,
+        cuit,
+        contact_dni,
+        fiscal_status,
+        instagram
       } = values;
 
       const result = await submitOnboardingForm({
         onboarding_token: client.onboarding_token!,
-        ...clientData,
-        address: (values.street_address && values.locality && values.province) ? address : undefined,
-        delivery_window: delivery_window,
+        contact_name,
+        email,
+        cuit: cuit || null,
+        contact_dni: contact_dni || null,
+        fiscal_status: fiscal_status || null,
+        instagram: instagram || null,
+        address: fullAddress,
+        delivery_window: fullDeliveryWindow,
       });
 
       if (result.error) {

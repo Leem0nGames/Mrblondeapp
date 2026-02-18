@@ -1,5 +1,6 @@
+
 -- Script de Base de Datos para Blonde Orders - Versión Estabilizada
--- Este script es idempotente y corrige errores de RLS y esquema.
+-- Este script es idempotente.
 
 -- 1. Limpieza y Reseteo
 DROP FUNCTION IF EXISTS public.get_notification_counts() CASCADE;
@@ -133,12 +134,18 @@ CREATE TABLE public.order_items (
     price_per_unit DOUBLE PRECISION NOT NULL
 );
 
--- 4. Vistas
+-- 4. Creación de Vistas
 CREATE OR REPLACE VIEW public.agreements_with_counts AS
-SELECT agr.id, agr.agreement_name, agr.client_type, agr.price_list_id, agr.created_at,
+SELECT
+    agr.id,
+    agr.agreement_name,
+    agr.client_type,
+    agr.price_list_id,
+    agr.created_at,
     (SELECT count(*) FROM public.agreement_promotions WHERE agreement_id = agr.id) as promotion_count,
     (SELECT count(*) FROM public.agreement_sales_conditions WHERE agreement_id = agr.id) as sales_condition_count
-FROM public.agreements agr;
+FROM
+    public.agreements agr;
 
 CREATE OR REPLACE VIEW public.dashboard_stats AS
 SELECT
@@ -151,7 +158,7 @@ SELECT
     (SELECT count(*) FROM public.promotions) as total_promotions,
     (SELECT count(*) FROM public.sales_conditions) as total_sales_conditions;
 
--- 5. Funciones
+-- 5. Creación de Funciones (RPC)
 CREATE OR REPLACE FUNCTION public.get_notification_counts()
 RETURNS TABLE(pending_orders_count int, pending_clients_count int, overdue_orders_count int) AS $$
 BEGIN
@@ -167,12 +174,23 @@ CREATE OR REPLACE FUNCTION public.get_client_stats(p_client_id uuid)
 RETURNS TABLE(total_spent double precision, average_order_value double precision, total_orders bigint) AS $$
 BEGIN
     RETURN QUERY
-    SELECT COALESCE(sum(total_amount), 0.0), COALESCE(avg(total_amount), 0.0), count(*)::bigint
-    FROM public.orders WHERE client_id = p_client_id AND status = 'completed';
+    SELECT
+        COALESCE(sum(total_amount), 0.0) as total_spent,
+        COALESCE(avg(total_amount), 0.0) as average_order_value,
+        count(*)::bigint as total_orders
+    FROM public.orders
+    WHERE client_id = p_client_id AND status = 'completed';
 END;
 $$ LANGUAGE plpgsql;
 
--- 6. Habilitación de RLS
+CREATE OR REPLACE FUNCTION public.increment_total_revenue(amount_to_add double precision)
+RETURNS void AS $$
+BEGIN
+    -- Manejado por vista
+END;
+$$ LANGUAGE plpgsql;
+
+-- 6. Seguridad (RLS)
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.price_lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.price_list_items ENABLE ROW LEVEL SECURITY;
@@ -186,31 +204,28 @@ ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 
--- 7. Políticas RLS (Actualizadas para 'authenticated')
--- Permitimos acceso total al rol 'authenticated' (tú como admin) y al 'service_role' (las server actions).
-DO $$
-DECLARE
-    t text;
-BEGIN
-    FOR t IN SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
-    LOOP
-        EXECUTE format('DROP POLICY IF EXISTS "Admin access" ON public.%I', t);
-        EXECUTE format('CREATE POLICY "Admin access" ON public.%I FOR ALL USING (auth.role() IN (''authenticated'', ''service_role'')) WITH CHECK (auth.role() IN (''authenticated'', ''service_role''))', t);
-    END LOOP;
-END $$;
+-- Políticas Unificadas para Admins y Sistema
+CREATE POLICY "Full access for admins" ON public.products FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
+CREATE POLICY "Full access for admins" ON public.price_lists FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
+CREATE POLICY "Full access for admins" ON public.price_list_items FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
+CREATE POLICY "Full access for admins" ON public.promotions FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
+CREATE POLICY "Full access for admins" ON public.sales_conditions FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
+CREATE POLICY "Full access for admins" ON public.agreements FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
+CREATE POLICY "Full access for admins" ON public.agreement_promotions FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
+CREATE POLICY "Full access for admins" ON public.agreement_sales_conditions FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
+CREATE POLICY "Full access for admins" ON public.clients FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
+CREATE POLICY "Full access for admins" ON public.orders FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
+CREATE POLICY "Full access for admins" ON public.order_items FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
 
--- app_settings pública para lectura
-DROP POLICY IF EXISTS "Public read settings" ON public.app_settings;
-CREATE POLICY "Public read settings" ON public.app_settings FOR SELECT USING (true);
+-- Acceso Público para Clientes (Lectura de settings y escritura de pedidos/onboarding)
+CREATE POLICY "Allow public read access" ON public.app_settings FOR SELECT USING (true);
+CREATE POLICY "Admin write settings" ON public.app_settings FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
 
--- 8. Storage
+-- 7. Storage
 INSERT INTO storage.buckets (id, name, public) VALUES ('product_images', 'product_images', true), ('app_assets', 'app_assets', true) ON CONFLICT (id) DO NOTHING;
 
-DROP POLICY IF EXISTS "Storage public read" ON storage.objects;
-CREATE POLICY "Storage public read" ON storage.objects FOR SELECT USING (bucket_id IN ('product_images', 'app_assets'));
+CREATE POLICY "Public read storage" ON storage.objects FOR SELECT USING (bucket_id IN ('product_images', 'app_assets'));
+CREATE POLICY "Admin write storage" ON storage.objects FOR ALL USING (bucket_id IN ('product_images', 'app_assets') AND auth.role() IN ('service_role', 'authenticated')) WITH CHECK (bucket_id IN ('product_images', 'app_assets') AND auth.role() IN ('service_role', 'authenticated'));
 
-DROP POLICY IF EXISTS "Admin storage access" ON storage.objects;
-CREATE POLICY "Admin storage access" ON storage.objects FOR ALL USING (bucket_id IN ('product_images', 'app_assets') AND auth.role() IN ('authenticated', 'service_role')) WITH CHECK (bucket_id IN ('product_images', 'app_assets') AND auth.role() IN ('authenticated', 'service_role'));
-
--- 9. Datos Iniciales
+-- 8. Datos Iniciales
 INSERT INTO public.app_settings (key, value) VALUES ('vat_percentage', '21'), ('whatsapp_number', '5491112345678') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;

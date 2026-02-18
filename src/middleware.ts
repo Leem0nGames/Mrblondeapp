@@ -3,17 +3,12 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/middleware';
 import { hasUsers } from '@/app/actions/user.actions';
 
-// Define las rutas públicas fijas
-const publicRoutes = ['/login', '/signup'];
-
 export async function middleware(request: NextRequest) {
   const { supabase, response } = await createClient(request);
   const { pathname } = request.nextUrl;
 
-  // -------------------------------------------------------------------------
-  // 1. RUTAS PÚBLICAS CRÍTICAS (CLIENTES)
-  // Estas rutas NUNCA deben requerir autenticación ni chequeos de setup.
-  // -------------------------------------------------------------------------
+  // 1. PRIORIDAD ABSOLUTA: RUTAS PÚBLICAS DE CLIENTES
+  // Estas rutas deben ser accesibles sin ninguna verificación de autenticación.
   const isOrderRoute = pathname.startsWith('/pedido');
   const isOnboardingRoute = pathname.startsWith('/onboarding');
 
@@ -21,41 +16,36 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // -------------------------------------------------------------------------
-  // 2. LÓGICA DE ADMINISTRACIÓN (SETUP Y AUTH)
-  // -------------------------------------------------------------------------
-  
-  // Refrescamos la sesión para rutas que no son de clientes
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  // 2. LÓGICA DE ADMINISTRACIÓN Y AUTENTICACIÓN
+  const publicAuthRoutes = ['/login', '/signup'];
+  const isAuthPageRoute = publicAuthRoutes.includes(pathname);
 
-  const isAuthPageRoute = publicRoutes.includes(pathname);
-
-  // A. Verificación de Primer Arranque (¿Hay algún admin creado?)
+  // A. Verificación de existencia de administradores (Setup inicial)
   const usersExist = await hasUsers();
 
   if (!usersExist) {
-    // Si no hay usuarios, forzamos el registro del primer admin.
     if (pathname !== '/signup') {
       return NextResponse.redirect(new URL('/signup', request.url));
     }
     return response;
   }
 
-  // B. Protección de Acceso
-  
+  // B. Control de acceso para administradores
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
   // Si ya existen usuarios, la página de registro ya no es accesible.
   if (pathname === '/signup') {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Redirección por falta de sesión: Si no está logueado y no es una página de auth (login)
+  // Si el usuario NO está autenticado y NO es una página de login, ir a login
   if (!session && !isAuthPageRoute) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
   
-  // Redirección por sesión activa: Si ya está logueado e intenta ir a login o a la raíz
+  // Si el usuario SÍ está autenticado e intenta ir a login o a la raíz, ir al admin
   if (session && (isAuthPageRoute || pathname === '/')) {
     return NextResponse.redirect(new URL('/admin', request.url));
   }

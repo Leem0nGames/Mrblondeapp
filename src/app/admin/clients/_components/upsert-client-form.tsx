@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useTransition, useEffect, useState } from "react";
@@ -159,11 +160,9 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
         if (data) {
             toast({ title: "Datos Encontrados", description: `Se autocompletaron los datos para ${data.razonSocial}` });
             
-            // Autocomplete form fields
             form.setValue("contact_name", data.razonSocial, { shouldValidate: true });
             form.setValue("fiscal_status", data.condicionFiscal, { shouldValidate: true });
             form.setValue("province", data.provincia, { shouldValidate: true });
-            // Small delay to allow localities to populate before setting the value
             setTimeout(() => {
                 form.setValue("locality", data.localidad, { shouldValidate: true });
             }, 100);
@@ -176,36 +175,38 @@ export function UpsertClientForm({ client, onSuccess, onCancel }: { client?: Par
 
   const onSubmit = (values: UpsertClientFormValues) => {
     startTransition(async () => {
-      const address = `${values.street_address} ${values.street_number}, ${values.locality}, ${values.province}`;
-      const delivery_window = (values.delivery_days && values.delivery_days.length > 0)
+      // 1. Construir campos compuestos
+      const fullAddress = (values.street_address && values.street_number && values.locality && values.province)
+        ? `${values.street_address} ${values.street_number}, ${values.locality}, ${values.province}`
+        : undefined;
+
+      const fullDeliveryWindow = (values.delivery_days && values.delivery_days.length > 0)
         ? `${values.delivery_days.join(', ')} de ${values.delivery_time_from} a ${values.delivery_time_to}hs`
         : undefined;
 
-      // Limpieza del Payload: Extraemos solo lo que la base de datos acepta
+      // 2. Extraer solo los campos que la base de datos acepta
       const {
-        province,
-        locality,
-        street_address,
-        street_number,
-        delivery_days,
-        delivery_time_from,
-        delivery_time_to,
-        ...clientDataToSave 
+        contact_name,
+        email,
+        cuit,
+        contact_dni,
+        fiscal_status,
+        instagram,
+        agreement_id
       } = values;
 
       const finalPayload: Partial<Client> & { id?: string } = {
         id: client?.id,
-        ...clientDataToSave,
+        contact_name,
+        email,
+        cuit: cuit || null,
+        contact_dni: contact_dni || null,
+        fiscal_status: fiscal_status || null,
+        instagram: instagram || null,
+        agreement_id: agreement_id || null,
+        address: fullAddress,
+        delivery_window: fullDeliveryWindow,
       };
-
-      // Añadimos solo si se construyeron correctamente
-      if (values.street_address && values.street_number && values.locality && values.province) {
-        finalPayload.address = address;
-      }
-
-      if (delivery_window) {
-        finalPayload.delivery_window = delivery_window;
-      }
 
       const result = await upsertClient(finalPayload);
 
