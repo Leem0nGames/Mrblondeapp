@@ -1,6 +1,7 @@
 
 -- Script de Base de Datos para Blonde Orders
--- Versión: 1.1 (Corrección de Políticas RLS para Admins)
+-- Versión: 1.2
+-- Este script es idempotente y puede ser ejecutado de forma segura.
 
 -- 1. Limpieza y Reseteo (en orden inverso de creación)
 DROP FUNCTION IF EXISTS public.get_notification_counts() CASCADE;
@@ -122,7 +123,7 @@ CREATE TABLE public.clients (
 
 CREATE TABLE public.orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    client_id UUID NOT NULL REFERENCES public.clients(id),
+    client_id UUID REFERENCES public.clients(id), -- Client ID is now optional for public links
     agreement_id UUID NOT NULL REFERENCES public.agreements(id),
     total_amount DOUBLE PRECISION NOT NULL,
     status public.order_status_enum NOT NULL DEFAULT 'pending',
@@ -191,7 +192,8 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION public.increment_total_revenue(amount_to_add double precision)
 RETURNS void AS $$
 BEGIN
-    -- Agregaciones automáticas vía vistas.
+    -- Esta función se deja vacía intencionalmente.
+    -- Las agregaciones se manejan mediante la vista dashboard_stats para mayor consistencia.
 END;
 $$ LANGUAGE plpgsql;
 
@@ -211,44 +213,80 @@ ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 
 
--- 7. Creación de Políticas RLS Universales
--- Permitimos acceso total tanto a 'service_role' como a usuarios 'authenticated' (Admin).
-CREATE POLICY "Allow all access for admins" ON public.products FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
-CREATE POLICY "Allow all access for admins" ON public.price_lists FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
-CREATE POLICY "Allow all access for admins" ON public.price_list_items FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
-CREATE POLICY "Allow all access for admins" ON public.promotions FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
-CREATE POLICY "Allow all access for admins" ON public.sales_conditions FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
-CREATE POLICY "Allow all access for admins" ON public.agreements FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
-CREATE POLICY "Allow all access for admins" ON public.agreement_promotions FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
-CREATE POLICY "Allow all access for admins" ON public.agreement_sales_conditions FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
-CREATE POLICY "Allow all access for admins" ON public.clients FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
-CREATE POLICY "Allow all access for admins" ON public.orders FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
-CREATE POLICY "Allow all access for admins" ON public.order_items FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
+-- 7. Creación de Políticas RLS
+-- Permitimos acceso total tanto a service_role como a usuarios autenticados (Admin)
+CREATE POLICY "Allow full access for service_role" ON public.products FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow full access for admin" ON public.products FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
--- app_settings puede ser leído por cualquiera, pero solo modificado por Admin o Sistema.
+CREATE POLICY "Allow full access for service_role" ON public.price_lists FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow full access for admin" ON public.price_lists FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow full access for service_role" ON public.price_list_items FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow full access for admin" ON public.price_list_items FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow full access for service_role" ON public.promotions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow full access for admin" ON public.promotions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow full access for service_role" ON public.sales_conditions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow full access for admin" ON public.sales_conditions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow full access for service_role" ON public.agreements FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow full access for admin" ON public.agreements FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow full access for service_role" ON public.agreement_promotions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow full access for admin" ON public.agreement_promotions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow full access for service_role" ON public.agreement_sales_conditions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow full access for admin" ON public.agreement_sales_conditions FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+-- Clients: permitimos inserción anónima para el onboarding público, pero lectura solo para admin
+CREATE POLICY "Allow public insert for onboarding" ON public.clients FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow full access for service_role" ON public.clients FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow full access for admin" ON public.clients FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+-- Orders: permitimos inserción pública para pedidos desde el link, pero lectura solo para admin
+CREATE POLICY "Allow public insert for orders" ON public.orders FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow full access for service_role" ON public.orders FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow full access for admin" ON public.orders FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow public insert for order_items" ON public.order_items FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow full access for service_role" ON public.order_items FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow full access for admin" ON public.order_items FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+
+-- app_settings puede ser leído por cualquiera, pero solo modificado por admin o service_role.
 CREATE POLICY "Allow read access for all" ON public.app_settings FOR SELECT USING (true);
-CREATE POLICY "Allow write access for admins" ON public.app_settings FOR ALL USING (auth.role() IN ('service_role', 'authenticated')) WITH CHECK (auth.role() IN ('service_role', 'authenticated'));
+CREATE POLICY "Allow write access for service_role" ON public.app_settings FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+CREATE POLICY "Allow write access for admin" ON public.app_settings FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 -- 8. Creación de Buckets y Políticas de Storage
-INSERT INTO storage.buckets (id, name, public) VALUES ('product_images', 'product_images', true) ON CONFLICT (id) DO NOTHING;
-INSERT INTO storage.buckets (id, name, public) VALUES ('app_assets', 'app_assets', true) ON CONFLICT (id) DO NOTHING;
+-- Crear buckets si no existen.
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('product_images', 'product_images', true)
+ON CONFLICT (id) DO NOTHING;
 
--- Políticas para storage simplificadas (FOR ALL)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('app_assets', 'app_assets', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Políticas para product_images
 DROP POLICY IF EXISTS "Allow public read on product images" ON storage.objects;
 CREATE POLICY "Allow public read on product images" ON storage.objects FOR SELECT USING ( bucket_id = 'product_images' );
 
-DROP POLICY IF EXISTS "Allow admin write on product images" ON storage.objects;
-CREATE POLICY "Allow admin write on product images" ON storage.objects FOR ALL 
-USING ( bucket_id = 'product_images' AND auth.role() IN ('service_role', 'authenticated') )
-WITH CHECK ( bucket_id = 'product_images' AND auth.role() IN ('service_role', 'authenticated') );
+DROP POLICY IF EXISTS "Allow write access for service_role" ON storage.objects;
+CREATE POLICY "Allow write access for service_role" ON storage.objects FOR ALL USING ( bucket_id = 'product_images' AND auth.role() = 'service_role' ) WITH CHECK ( bucket_id = 'product_images' AND auth.role() = 'service_role' );
 
+DROP POLICY IF EXISTS "Allow write access for admin" ON storage.objects;
+CREATE POLICY "Allow write access for admin" ON storage.objects FOR ALL USING ( bucket_id = 'product_images' AND auth.role() = 'authenticated' ) WITH CHECK ( bucket_id = 'product_images' AND auth.role() = 'authenticated' );
+
+-- Políticas para app_assets
 DROP POLICY IF EXISTS "Allow public read on app assets" ON storage.objects;
 CREATE POLICY "Allow public read on app assets" ON storage.objects FOR SELECT USING ( bucket_id = 'app_assets' );
 
-DROP POLICY IF EXISTS "Allow admin write on app assets" ON storage.objects;
-CREATE POLICY "Allow admin write on app assets" ON storage.objects FOR ALL
-USING ( bucket_id = 'app_assets' AND auth.role() IN ('service_role', 'authenticated') )
-WITH CHECK ( bucket_id = 'app_assets' AND auth.role() IN ('service_role', 'authenticated') );
+DROP POLICY IF EXISTS "Allow write access for service_role assets" ON storage.objects;
+CREATE POLICY "Allow write access for service_role assets" ON storage.objects FOR ALL USING ( bucket_id = 'app_assets' AND auth.role() = 'service_role' ) WITH CHECK ( bucket_id = 'app_assets' AND auth.role() = 'service_role' );
+
+DROP POLICY IF EXISTS "Allow write access for admin assets" ON storage.objects;
+CREATE POLICY "Allow write access for admin assets" ON storage.objects FOR ALL USING ( bucket_id = 'app_assets' AND auth.role() = 'authenticated' ) WITH CHECK ( bucket_id = 'app_assets' AND auth.role() = 'authenticated' );
 
 -- 9. Inserción de Datos Iniciales (Seeding)
 INSERT INTO public.app_settings (key, value) VALUES

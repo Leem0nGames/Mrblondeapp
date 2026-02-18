@@ -1,3 +1,4 @@
+
 // These types are manually created to match the Supabase schema.
 // For a more robust solution, you can use `supabase gen types typescript`.
 import type { analyzeClientFlow } from "@/ai/flows/analyze-client-flow";
@@ -145,7 +146,7 @@ export type Client = {
 
 export type Order = {
     id: string;
-    client_id: string;
+    client_id: string | null; // Made nullable
     agreement_id: string;
     created_at: string;
     total_amount: number;

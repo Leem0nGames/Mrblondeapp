@@ -227,7 +227,9 @@ export async function getOrderPageData(agreementId: string) {
     if (clientError) {
          console.error("getOrderPageData (client) error:", clientError.message);
     }
-    const defaultClient = { id: 'generic', contact_name: 'Cliente' };
+    
+    // We use null ID for default client to avoid PostgreSQL UUID errors
+    const defaultClient = { id: null, contact_name: `Cliente (${agreement.agreement_name})` };
 
     const { data: settingsData, error: settingsError } = settingsResult;
     if (settingsError) {
@@ -286,7 +288,7 @@ export async function submitOrder(payload: {
     cart: any[];
     total: number;
     agreementId: string;
-    clientId: string;
+    clientId: string | null;
     clientName: string;
     notes?: string;
 }) {
@@ -296,11 +298,14 @@ export async function submitOrder(payload: {
     }
     const supabase = supabaseAdmin;
 
+    // Fix: If clientId is "generic" or null, we pass null to avoid UUID syntax error
+    const finalClientId = payload.clientId === 'generic' || !payload.clientId ? null : payload.clientId;
+
     // 1. Create the order
     const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
-            client_id: payload.clientId,
+            client_id: finalClientId,
             agreement_id: payload.agreementId,
             total_amount: payload.total,
             status: 'pending',
