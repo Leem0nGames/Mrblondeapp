@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
+import { ShippingLabelButton } from "@/app/admin/_components/shipping-label-button";
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
@@ -48,6 +49,7 @@ export function ClientOrders({ orders }: { orders: Order[] }) {
               <TableHead>Fecha</TableHead>
               <TableHead>Monto</TableHead>
               <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Rótulo</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -64,11 +66,16 @@ export function ClientOrders({ orders }: { orders: Order[] }) {
                         </Badge>
                     </div>
                   </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end">
+                      <ShippingLabelButton order={order} size="icon" variant="ghost" />
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
+                <TableCell colSpan={5} className="h-24 text-center">
                   Este cliente aún no ha realizado pedidos.
                 </TableCell>
               </TableRow>

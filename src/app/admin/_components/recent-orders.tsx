@@ -10,6 +10,7 @@ import { completeOrder } from "@/app/admin/actions/dashboard.actions";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { OrderNoteWidget } from "./order-note-widget";
+import { ShippingLabelButton } from "./shipping-label-button";
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(value);
@@ -100,11 +101,14 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
                                <p>{formatCurrency(order.total_amount)}</p>
                                <Badge variant="outline" className="mt-1">Pendiente</Badge>
                            </div>
-                           {order.notes && (
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => showNote(order.notes!, order.client_name_cache)}>
-                                    <StickyNote className="h-5 w-5" />
-                                </Button>
-                            )}
+                           <div className="flex items-center gap-1">
+                               <ShippingLabelButton order={order} size="icon" variant="ghost" />
+                               {order.notes && (
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => showNote(order.notes!, order.client_name_cache)}>
+                                        <StickyNote className="h-5 w-5" />
+                                    </Button>
+                                )}
+                           </div>
                         </div>
                         <Button 
                             variant="outline" 
@@ -145,5 +149,3 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
         </div>
     );
 }
-
-    
