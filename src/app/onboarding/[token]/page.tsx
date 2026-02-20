@@ -1,3 +1,4 @@
+
 import { getOnboardingClient } from "@/app/actions/user.actions";
 import { OnboardingForm } from "./_components/onboarding-form";
 import { Logo } from "@/app/logo";

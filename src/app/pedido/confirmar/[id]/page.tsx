@@ -1,3 +1,4 @@
+
 import { getPublicOrderDetails, publicConfirmOrder } from "@/app/admin/actions/orders.actions";
 import { Logo } from "@/app/logo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -16,7 +17,7 @@ export default async function OrderConfirmationPortal({ params, searchParams }: 
             <CardTitle>Pedido no encontrado</CardTitle>
             <CardDescription>El enlace podría ser inválido o el pedido ya no existe.</CardDescription>
           </CardHeader>
-        </Card>
+        </div>
       </div>
     );
   }
