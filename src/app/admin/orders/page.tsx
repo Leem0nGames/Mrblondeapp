@@ -6,8 +6,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatDate } from "@/lib/utils";
 import { ShippingLabelButton } from "../_components/shipping-label-button";
 import { OrderStatusBadge } from "../_components/order-status-badge";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
 
 export default async function OrdersHistoryPage({
   searchParams,

@@ -53,7 +53,7 @@ export default async function OnboardingPage({ params }: { params: Promise<{ tok
               </Button>
             )}
           </CardContent>
-        </div>
+        </Card>
       </div>
     )
   }

@@ -116,7 +116,7 @@ export function RecentOrders({ orders: initialOrders }: { orders: Order[] }) {
                         <div className="font-medium text-right flex items-center gap-4">
                             <div className="hidden sm:block">
                                <p className="text-sm">{formatCurrency(order.total_amount)}</p>
-                               <Badge variant="outline" className="text-[10px] py-0">{order.status}</Badge>
+                               <Badge variant="outline" className="text-[10px] py-0">Armado</Badge>
                            </div>
                            {order.notes && (
                                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setActiveNote({ note: order.notes!, clientName: order.client_name_cache })}>

@@ -140,30 +140,3 @@ export async function submitOrder(payload: {
     revalidatePath('/admin');
     return { data: { orderId: order.id }, error: null };
 }
-
-export async function getOnboardingClient(token: string) {
-  const supabase = await createServerClient();
-  return supabase.from('clients').select('*').eq('onboarding_token', token).maybeSingle();
-}
-
-export async function submitOnboardingForm(payload: any) {
-  const supabase = await createServerClient();
-  const { onboarding_token, ...data } = payload;
-  
-  const address = `${data.street_address} ${data.street_number}, ${data.locality}, ${data.province}`;
-  const delivery_window = `${data.delivery_days.join(', ')} de ${data.delivery_time_from} a ${data.delivery_time_to}hs`;
-
-  const { error } = await supabase
-    .from('clients')
-    .update({
-      ...data,
-      address,
-      delivery_window,
-      status: 'pending_agreement'
-    })
-    .eq('onboarding_token', onboarding_token);
-
-  if (error) return { error };
-  revalidatePath('/admin');
-  return { error: null };
-}
