@@ -1,3 +1,4 @@
+
 import { getOnboardingClient } from "@/app/actions/user.actions";
 import { OnboardingForm } from "./_components/onboarding-form";
 import { Logo } from "@/app/logo";
@@ -7,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getPublicLogoUrl } from "@/app/admin/actions/settings.actions";
 
-export default async function OnboardingPage({ params }: { params: { token: string } }) {
-  const { data: client, error } = await getOnboardingClient(params.token);
+export default async function OnboardingPage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
+  const { data: client, error } = await getOnboardingClient(token);
   const logo_url = await getPublicLogoUrl();
 
   if (error || !client) {
@@ -51,7 +53,7 @@ export default async function OnboardingPage({ params }: { params: { token: stri
               </Button>
             )}
           </CardContent>
-        </Card>
+        </div>
       </div>
     )
   }

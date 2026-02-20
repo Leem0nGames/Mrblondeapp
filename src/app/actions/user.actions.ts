@@ -1,3 +1,4 @@
+
 'use server';
 
 import { redirect } from 'next/navigation';
@@ -108,7 +109,6 @@ export async function submitOrder(payload: {
     notes?: string;
 }) {
     const supabase = await createServerClient();
-    // Ensure clientId is null for generic clients to avoid foreign key issues
     const finalClientId = payload.clientId === 'generic' || !payload.clientId ? null : payload.clientId;
 
     const { data: order, error: orderError } = await supabase

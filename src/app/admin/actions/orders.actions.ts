@@ -21,12 +21,21 @@ export async function getOrders(filters?: { status?: string; query?: string }): 
 }
 
 export async function getOrderWithDetails(orderId: string): Promise<{ data: OrderWithItems | null; error: any }> {
-    const supabase = await getSupabaseClientWithAuth();
+    // This helper can be called without admin auth for the public confirmation portal
+    // But internally we try to use auth if available
+    let supabase;
+    try {
+        supabase = await getSupabaseClientWithAuth();
+    } catch {
+        const { createClient } = await import('@/lib/supabase/server');
+        supabase = await createClient();
+    }
+
     const { data, error } = await supabase
         .from('orders')
         .select('*, order_items(quantity, price_per_unit, products(*)), clients(*)')
         .eq('id', orderId)
-        .single();
+        .maybeSingle();
     
     return { data, error };
 }
@@ -34,7 +43,10 @@ export async function getOrderWithDetails(orderId: string): Promise<{ data: Orde
 export async function updateOrderStatus(orderId: string, status: 'armado' | 'transito' | 'entregado') {
     const supabase = await getSupabaseClientWithAuth();
     const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
-    if (!error) revalidatePath('/admin');
+    if (!error) {
+        revalidatePath('/admin');
+        revalidatePath('/admin/orders');
+    }
     return { error };
 }
 
@@ -45,7 +57,7 @@ export async function getPublicOrderDetails(orderId: string) {
         .from('orders')
         .select('*, order_items(quantity, products(name))')
         .eq('id', orderId)
-        .single();
+        .maybeSingle();
     return { data, error };
 }
 
@@ -53,5 +65,9 @@ export async function publicConfirmOrder(orderId: string) {
     const { createClient } = await import('@/lib/supabase/server');
     const supabase = await createClient();
     const { error } = await supabase.from('orders').update({ status: 'entregado' }).eq('id', orderId);
+    if (!error) {
+        revalidatePath('/admin');
+        revalidatePath('/admin/orders');
+    }
     return { error };
 }

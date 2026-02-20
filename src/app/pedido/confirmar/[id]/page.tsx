@@ -3,17 +3,29 @@ import { getPublicOrderDetails, publicConfirmOrder } from "@/app/admin/actions/o
 import { Logo } from "@/app/logo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, PackageCheck } from "lucide-react";
+import { CheckCircle2, PackageCheck, AlertTriangle } from "lucide-react";
 import { redirect } from "next/navigation";
 
-export default async function OrderConfirmationPortal({ params, searchParams }: { params: { id: string }, searchParams: { success?: string } }) {
-  const { data: order, error } = await getPublicOrderDetails(params.id);
+export default async function OrderConfirmationPortal({ 
+    params, 
+    searchParams 
+}: { 
+    params: Promise<{ id: string }>, 
+    searchParams: Promise<{ success?: string }> 
+}) {
+  const { id } = await params;
+  const { success } = await searchParams;
+  
+  const { data: order, error } = await getPublicOrderDetails(id);
 
   if (error || !order) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-muted/20">
         <Card className="w-full max-w-md text-center">
           <CardHeader>
+            <div className="flex justify-center mb-4 text-destructive">
+                <AlertTriangle className="h-12 w-12" />
+            </div>
             <CardTitle>Pedido no encontrado</CardTitle>
             <CardDescription>El enlace podría ser inválido o el pedido ya no existe.</CardDescription>
           </CardHeader>
@@ -24,11 +36,11 @@ export default async function OrderConfirmationPortal({ params, searchParams }: 
 
   const handleConfirm = async () => {
     'use server';
-    await publicConfirmOrder(params.id);
-    redirect(`/pedido/confirmar/${params.id}?success=true`);
+    await publicConfirmOrder(id);
+    redirect(`/pedido/confirmar/${id}?success=true`);
   };
 
-  if (searchParams.success === 'true' || order.status === 'entregado') {
+  if (success === 'true' || order.status === 'entregado') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-muted/20">
         <Logo showText={true} className="mb-8" />
@@ -62,7 +74,7 @@ export default async function OrderConfirmationPortal({ params, searchParams }: 
             <ul className="text-sm space-y-1">
               {order.order_items?.map((item: any, i: number) => (
                 <li key={i} className="flex justify-between">
-                  <span>{item.products?.name}</span>
+                  <span>{item.products?.name || 'Producto'}</span>
                   <span className="font-bold">x{item.quantity}</span>
                 </li>
               ))}

@@ -1,20 +1,23 @@
 
 import { getOrders } from "@/app/admin/actions/orders.actions";
 import { PageHeader } from "@/components/shared/page-header";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
 import { ShippingLabelButton } from "../_components/shipping-label-button";
 import { OrderStatusBadge } from "../_components/order-status-badge";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 export default async function OrdersHistoryPage({
   searchParams,
 }: {
-  searchParams?: { status?: string; query?: string };
+  searchParams?: Promise<{ status?: string; query?: string }>;
 }) {
+  const filters = await searchParams;
   const { data: orders } = await getOrders({ 
-    status: searchParams?.status, 
-    query: searchParams?.query 
+    status: filters?.status, 
+    query: filters?.query 
   });
 
   return (
@@ -23,7 +26,12 @@ export default async function OrdersHistoryPage({
         title="Historial de Pedidos" 
         description="Revisa y gestiona todos los pedidos realizados en el sistema." 
       />
+      
       <Card>
+        <CardHeader>
+            <CardTitle>Todos los Pedidos</CardTitle>
+            <CardDescription>Busca por cliente o filtra por estado.</CardDescription>
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -36,14 +44,14 @@ export default async function OrdersHistoryPage({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orders?.length === 0 ? (
+              {!orders || orders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
                     No se encontraron pedidos.
                   </TableCell>
                 </TableRow>
               ) : (
-                orders?.map((order) => (
+                orders.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell>{formatDate(order.created_at)}</TableCell>
                     <TableCell className="font-medium">{order.client_name_cache}</TableCell>
