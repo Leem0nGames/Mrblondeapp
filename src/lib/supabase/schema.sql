@@ -1,27 +1,34 @@
 
--- --- LIMPIEZA TOTAL ---
+-- LIMPIEZA Y REINICIO DE ESQUEMA (Idempotente)
+-- Borrar vistas primero por dependencias
 DROP VIEW IF EXISTS public.dashboard_stats CASCADE;
 DROP VIEW IF EXISTS public.agreements_with_counts CASCADE;
+
+-- Borrar tablas
 DROP TABLE IF EXISTS public.order_items CASCADE;
 DROP TABLE IF EXISTS public.orders CASCADE;
-DROP TABLE IF EXISTS public.agreement_sales_conditions CASCADE;
-DROP TABLE IF EXISTS public.agreement_promotions CASCADE;
 DROP TABLE IF EXISTS public.price_list_items CASCADE;
+DROP TABLE IF EXISTS public.price_lists CASCADE;
+DROP TABLE IF EXISTS public.agreement_promotions CASCADE;
+DROP TABLE IF EXISTS public.agreement_sales_conditions CASCADE;
 DROP TABLE IF EXISTS public.agreements CASCADE;
 DROP TABLE IF EXISTS public.clients CASCADE;
-DROP TABLE IF EXISTS public.products CASCADE;
-DROP TABLE IF EXISTS public.price_lists CASCADE;
 DROP TABLE IF EXISTS public.promotions CASCADE;
 DROP TABLE IF EXISTS public.sales_conditions CASCADE;
+DROP TABLE IF EXISTS public.products CASCADE;
 DROP TABLE IF EXISTS public.app_settings CASCADE;
+
+-- Borrar tipos personalizados
 DROP TYPE IF EXISTS public.order_status_enum CASCADE;
 DROP TYPE IF EXISTS public.client_status_enum CASCADE;
+DROP TYPE IF EXISTS public.client_type_enum CASCADE;
 
--- --- TIPOS ENUM ---
+-- 1. CREACIÓN DE TIPOS (ENUMS)
 CREATE TYPE public.order_status_enum AS ENUM ('armado', 'transito', 'entregado');
 CREATE TYPE public.client_status_enum AS ENUM ('pending_onboarding', 'pending_agreement', 'active', 'archived');
+CREATE TYPE public.client_type_enum AS ENUM ('barberia', 'distribuidor', 'especial');
 
--- --- TABLAS BASE ---
+-- 2. CREACIÓN DE TABLAS
 CREATE TABLE public.products (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     name text NOT NULL,
@@ -65,47 +72,11 @@ CREATE TABLE public.sales_conditions (
 CREATE TABLE public.agreements (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     agreement_name text NOT NULL UNIQUE,
-    client_type text NOT NULL,
-    price_list_id uuid REFERENCES public.price_lists(id),
+    client_type public.client_type_enum DEFAULT 'barberia'::public.client_type_enum NOT NULL,
+    price_list_id uuid REFERENCES public.price_lists(id) ON DELETE SET NULL,
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-CREATE TABLE public.clients (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    contact_name text,
-    email text UNIQUE,
-    cuit text UNIQUE,
-    contact_dni text,
-    address text,
-    delivery_window text,
-    instagram text,
-    status public.client_status_enum DEFAULT 'pending_onboarding' NOT NULL,
-    onboarding_token uuid,
-    agreement_id uuid REFERENCES public.agreements(id),
-    fiscal_status text,
-    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
-CREATE TABLE public.orders (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    client_id uuid REFERENCES public.clients(id) ON DELETE SET NULL,
-    agreement_id uuid REFERENCES public.agreements(id),
-    total_amount float8 NOT NULL,
-    status public.order_status_enum DEFAULT 'armado' NOT NULL,
-    client_name_cache text NOT NULL,
-    notes text,
-    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
-CREATE TABLE public.order_items (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    order_id uuid REFERENCES public.orders(id) ON DELETE CASCADE,
-    product_id uuid REFERENCES public.products(id),
-    quantity int NOT NULL,
-    price_per_unit float8 NOT NULL
-);
-
--- --- TABLAS DE RELACIÓN ---
 CREATE TABLE public.agreement_promotions (
     agreement_id uuid REFERENCES public.agreements(id) ON DELETE CASCADE,
     promotion_id uuid REFERENCES public.promotions(id) ON DELETE CASCADE,
@@ -118,18 +89,55 @@ CREATE TABLE public.agreement_sales_conditions (
     PRIMARY KEY (agreement_id, sales_condition_id)
 );
 
+CREATE TABLE public.clients (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    cuit text UNIQUE,
+    contact_name text,
+    contact_dni text,
+    address text,
+    delivery_window text,
+    email text UNIQUE,
+    instagram text,
+    status public.client_status_enum DEFAULT 'pending_onboarding'::public.client_status_enum NOT NULL,
+    onboarding_token uuid,
+    agreement_id uuid REFERENCES public.agreements(id) ON DELETE SET NULL,
+    fiscal_status text,
+    latitude float8,
+    longitude float8,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE public.orders (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    client_id uuid REFERENCES public.clients(id) ON DELETE SET NULL,
+    agreement_id uuid REFERENCES public.agreements(id) ON DELETE SET NULL,
+    total_amount float8 NOT NULL,
+    status public.order_status_enum DEFAULT 'armado'::public.order_status_enum NOT NULL,
+    client_name_cache text NOT NULL,
+    notes text,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE public.order_items (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id uuid REFERENCES public.orders(id) ON DELETE CASCADE,
+    product_id uuid REFERENCES public.products(id) ON DELETE SET NULL,
+    quantity int NOT NULL,
+    price_per_unit float8 NOT NULL
+);
+
 CREATE TABLE public.app_settings (
     key text PRIMARY KEY,
-    value text,
+    value jsonb NOT NULL,
     updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- --- VISTAS ---
+-- 3. VISTAS Y FUNCIONES
 CREATE OR REPLACE VIEW public.agreements_with_counts AS
 SELECT 
     a.*,
-    (SELECT COUNT(*) FROM public.agreement_promotions ap WHERE ap.agreement_id = a.id) as promotion_count,
-    (SELECT COUNT(*) FROM public.agreement_sales_conditions asc_rel WHERE asc_rel.agreement_id = a.id) as sales_condition_count
+    (SELECT count(*) FROM public.agreement_promotions ap WHERE ap.agreement_id = a.id) as promotion_count,
+    (SELECT count(*) FROM public.agreement_sales_conditions asc_table WHERE asc_table.agreement_id = a.id) as sales_condition_count
 FROM public.agreements a;
 
 CREATE OR REPLACE VIEW public.dashboard_stats AS
@@ -144,7 +152,6 @@ SELECT
     (SELECT COUNT(*) FROM public.sales_conditions) as total_sales_conditions
 FROM public.orders;
 
--- --- FUNCIONES ---
 CREATE OR REPLACE FUNCTION public.get_notification_counts()
 RETURNS TABLE(pending_orders_count int, pending_clients_count int, overdue_orders_count int) AS $$
 BEGIN
@@ -155,7 +162,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- --- RLS POLICIES ---
+-- 4. SEGURIDAD (RLS)
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.price_lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.price_list_items ENABLE ROW LEVEL SECURITY;
@@ -167,29 +174,26 @@ ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 
--- Admins can do everything
-CREATE POLICY "Admins full access" ON public.products FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Admins full access" ON public.price_lists FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Admins full access" ON public.price_list_items FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Admins full access" ON public.promotions FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Admins full access" ON public.sales_conditions FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Admins full access" ON public.agreements FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Admins full access" ON public.clients FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Admins full access" ON public.orders FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Admins full access" ON public.order_items FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Admins full access" ON public.app_settings FOR ALL USING (auth.role() = 'authenticated');
+-- Políticas para administradores
+CREATE POLICY "Admins manage all" ON public.products FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admins manage lists" ON public.price_lists FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admins manage items" ON public.price_list_items FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admins manage promos" ON public.promotions FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admins manage conditions" ON public.sales_conditions FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admins manage agreements" ON public.agreements FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admins manage clients" ON public.clients FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admins manage orders" ON public.orders FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admins manage order items" ON public.order_items FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Admins manage settings" ON public.app_settings FOR ALL USING (auth.role() = 'authenticated');
 
--- Public read for catalogs and portals
-CREATE POLICY "Public read portal" ON public.agreements FOR SELECT USING (true);
-CREATE POLICY "Public read portal" ON public.price_lists FOR SELECT USING (true);
-CREATE POLICY "Public read portal" ON public.price_list_items FOR SELECT USING (true);
-CREATE POLICY "Public read portal" ON public.products FOR SELECT USING (true);
-CREATE POLICY "Public read portal" ON public.promotions FOR SELECT USING (true);
-CREATE POLICY "Public read portal" ON public.app_settings FOR SELECT USING (true);
-CREATE POLICY "Public read portal" ON public.order_items FOR SELECT USING (true);
-CREATE POLICY "Public portal access" ON public.orders FOR SELECT USING (true);
-CREATE POLICY "Public portal update" ON public.orders FOR UPDATE USING (true);
-CREATE POLICY "Public portal insert" ON public.orders FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public portal insert items" ON public.order_items FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public onboarding update" ON public.clients FOR UPDATE USING (true);
-CREATE POLICY "Public onboarding select" ON public.clients FOR SELECT USING (true);
+-- Acceso público para clientes (Onboarding y Pedidos)
+CREATE POLICY "Public order view" ON public.orders FOR SELECT USING (true);
+CREATE POLICY "Public order update" ON public.orders FOR UPDATE USING (true);
+CREATE POLICY "Public items view" ON public.order_items FOR SELECT USING (true);
+CREATE POLICY "Public clients select" ON public.clients FOR SELECT USING (true);
+CREATE POLICY "Public clients insert" ON public.clients FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public clients update" ON public.clients FOR UPDATE USING (true);
+CREATE POLICY "Public agreements view" ON public.agreements FOR SELECT USING (true);
+CREATE POLICY "Public price lists view" ON public.price_lists FOR SELECT USING (true);
+CREATE POLICY "Public list items view" ON public.price_list_items FOR SELECT USING (true);
+CREATE POLICY "Public app settings view" ON public.app_settings FOR SELECT USING (true);

@@ -140,3 +140,30 @@ export async function submitOrder(payload: {
     revalidatePath('/admin');
     return { data: { orderId: order.id }, error: null };
 }
+
+export async function getOnboardingClient(token: string) {
+    const supabase = await createServerClient();
+    const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('onboarding_token', token)
+        .maybeSingle();
+    return { data, error };
+}
+
+export async function submitOnboardingForm(payload: any) {
+    const supabase = await createServerClient();
+    const { onboarding_token, ...data } = payload;
+    
+    const { error } = await supabase
+        .from('clients')
+        .update({
+            ...data,
+            status: data.agreement_id ? 'active' : 'pending_agreement',
+        })
+        .eq('onboarding_token', onboarding_token);
+
+    if (error) return { error };
+    revalidatePath('/admin');
+    return { error: null };
+}

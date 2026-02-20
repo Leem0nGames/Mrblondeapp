@@ -21,8 +21,6 @@ export async function getOrders(filters?: { status?: string; query?: string }): 
 }
 
 export async function getOrderWithDetails(orderId: string): Promise<{ data: OrderWithItems | null; error: any }> {
-    // This helper can be called without admin auth for the public confirmation portal
-    // But internally we try to use auth if available
     let supabase;
     try {
         supabase = await getSupabaseClientWithAuth();
