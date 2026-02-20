@@ -1,4 +1,3 @@
-
 import { getOnboardingClient } from "@/app/actions/user.actions";
 import { OnboardingForm } from "./_components/onboarding-form";
 import { Logo } from "@/app/logo";
@@ -16,7 +15,7 @@ export default async function OnboardingPage({ params }: { params: { token: stri
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-background p-8 text-center">
         <div className="mb-8">
-            <Logo showText={true} logoUrl={logo_url} />
+            <Logo showText={true} logoUrl={null} />
         </div>
         <Card className="max-w-md mt-8">
           <CardHeader>

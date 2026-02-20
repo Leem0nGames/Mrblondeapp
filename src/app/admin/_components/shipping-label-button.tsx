@@ -1,8 +1,7 @@
-
 "use client";
 
-import { useState } from "react";
-import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image as PDFImage, Link as PDFLink } from "@react-pdf/renderer";
+import { useState, useEffect } from "react";
+import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image as PDFImage } from "@react-pdf/renderer";
 import { Button } from "@/components/ui/button";
 import { Printer, Loader2 } from "lucide-react";
 import { getOrderWithDetails } from "@/app/admin/actions/orders.actions";
@@ -26,26 +25,26 @@ const styles = StyleSheet.create({
   address: { fontSize: 14, marginBottom: 15, color: "#333333" },
   footer: { marginTop: "auto", fontSize: 10, color: "#666666" },
   bundleInfo: { fontSize: 16, fontWeight: "bold", marginTop: 10, color: "#E6D5A7", backgroundColor: "#000000", padding: 5, textAlign: "center" },
-  qrPlaceholder: { width: 80, height: 80, backgroundColor: "#EEEEEE", marginBottom: 5 },
   qrText: { fontSize: 8, textAlign: "center" },
 });
 
-const LabelsPDF = ({ ordersData }: { ordersData: any[] }) => (
+const LabelsPDF = ({ ordersData, origin }: { ordersData: any[], origin: string }) => (
   <Document>
     <Page size="A4" style={styles.page}>
       {ordersData.map((order, idx) => (
         <View key={`${order.id}-${idx}`} style={styles.labelContainer}>
           <View style={styles.leftColumn}>
             <Text style={styles.header}>MR. BLONDE</Text>
-            <Text style={styles.clientName}>{order.client_name_cache}</Text>
+            <Text style={styles.clientName}>{order.client_name_cache || "Cliente"}</Text>
             <Text style={styles.address}>{order.clients?.address || "Dirección no registrada"}</Text>
-            <Text style={styles.footer}>Pedido #{order.id.slice(-6).toUpperCase()} | {new Date().toLocaleDateString()}</Text>
+            <Text style={styles.footer}>Pedido #{order.id?.slice(-6).toUpperCase()} | {new Date().toLocaleDateString()}</Text>
           </View>
           <View style={styles.rightColumn}>
-            <View style={styles.qrPlaceholder}>
-                <Text style={{ fontSize: 10, padding: 10 }}>SCAN QR FOR PORTAL</Text>
-            </View>
-            <Text style={styles.qrText}>Confirmar Entrega</Text>
+            <PDFImage 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${origin}/pedido/confirmar/${order.id}`)}`}
+                style={{ width: 80, height: 80, marginBottom: 5 }}
+            />
+            <Text style={styles.qrText}>SCAN PARA CONFORMAR</Text>
             <Text style={styles.bundleInfo}>BULTO {order.bundleIdx} DE {order.totalBundles}</Text>
           </View>
         </View>
@@ -57,7 +56,12 @@ const LabelsPDF = ({ ordersData }: { ordersData: any[] }) => (
 export function ShippingLabelButton({ orders }: { orders: { id: string, bundles: number }[] }) {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[] | null>(null);
+  const [origin, setOrigin] = useState("");
   const { toast } = useToast();
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   const loadData = async () => {
     setLoading(true);
@@ -66,8 +70,8 @@ export function ShippingLabelButton({ orders }: { orders: { id: string, bundles:
         orders.map(async (o) => {
           const res = await getOrderWithDetails(o.id);
           if (res.error) throw res.error;
+          if (!res.data) throw new Error("No data returned for order " + o.id);
           
-          // Generate an entry for each bundle
           const labels = [];
           for (let i = 1; i <= o.bundles; i++) {
             labels.push({
@@ -80,9 +84,9 @@ export function ShippingLabelButton({ orders }: { orders: { id: string, bundles:
         })
       );
       setData(ordersWithDetails.flat());
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error loading label data:", err);
-      toast({ title: "Error", description: "No se pudieron cargar los datos de envío.", variant: "destructive" });
+      toast({ title: "Error", description: err.message || "No se pudieron cargar los datos de envío.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -100,7 +104,7 @@ export function ShippingLabelButton({ orders }: { orders: { id: string, bundles:
   return (
     <div className="flex items-center gap-2">
         <PDFDownloadLink
-            document={<LabelsPDF ordersData={data} />}
+            document={<LabelsPDF ordersData={data} origin={origin} />}
             fileName={`rotulos-${new Date().getTime()}.pdf`}
             className="inline-flex"
         >

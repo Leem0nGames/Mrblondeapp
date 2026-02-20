@@ -17,7 +17,7 @@ export default async function OrderConfirmationPortal({ params, searchParams }: 
             <CardTitle>Pedido no encontrado</CardTitle>
             <CardDescription>El enlace podría ser inválido o el pedido ya no existe.</CardDescription>
           </CardHeader>
-        </div>
+        </Card>
       </div>
     );
   }

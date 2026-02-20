@@ -1,4 +1,3 @@
-
 'use server';
 
 import { redirect } from 'next/navigation';
@@ -109,7 +108,8 @@ export async function submitOrder(payload: {
     notes?: string;
 }) {
     const supabase = await createServerClient();
-    const finalClientId = payload.clientId === 'generic' ? null : payload.clientId;
+    // Ensure clientId is null for generic clients to avoid foreign key issues
+    const finalClientId = payload.clientId === 'generic' || !payload.clientId ? null : payload.clientId;
 
     const { data: order, error: orderError } = await supabase
         .from('orders')
@@ -124,7 +124,10 @@ export async function submitOrder(payload: {
         .select()
         .single();
 
-    if (orderError || !order) return { error: { message: "Error al guardar pedido." } };
+    if (orderError || !order) {
+        console.error("submitOrder Error:", orderError?.message);
+        return { error: { message: "Error al guardar pedido en la base de datos." } };
+    }
 
     const orderItems = payload.cart.map(item => ({
         order_id: order.id,
