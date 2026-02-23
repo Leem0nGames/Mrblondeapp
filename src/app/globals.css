@@ -5,79 +5,35 @@
 
 @layer base {
   :root {
-    --background: 0 0% 0%; /* Negro carbón */
-    --foreground: 0 0% 100%; /* Blanco puro */
+    --background: 0 0% 0%; /* Carbon Black */
+    --foreground: 0 0% 98%; /* Off White */
 
-    --card: 0 0% 11%; /* Gris humo */
-    --card-foreground: 0 0% 100%;
+    --card: 0 0% 8%; /* Dark Smokey Gray */
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 11%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 41 47% 57%; /* Dorado cálido */
-    --primary-foreground: 0 0% 0%; /* Negro para texto en primario */
+    --primary: 41 47% 57%; /* Mr. Blonde Gold */
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 40 18% 57%; /* Beige tostado */
-    --secondary-foreground: 0 0% 0%;
+    --secondary: 0 0% 15%; 
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 0 0% 11%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 0 0% 11%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 41 47% 57%;
+    --accent-foreground: 0 0% 0%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 0 0% 15%;
     --input: 0 0% 15%;
-    --ring: 41 47% 57%; /* Dorado cálido */
+    --ring: 41 47% 57%;
     
-    --radius: 0.5rem;
-
-    /* Gráficos */
-    --chart-1: 41 47% 57%;
-    --chart-2: 40 18% 57%;
-    --chart-3: 0 0% 50%;
-    --chart-4: 0 0% 70%;
-    --chart-5: 0 0% 30%;
-  }
-
-  .dark {
-    --background: 0 0% 0%; /* Negro carbón */
-    --foreground: 0 0% 100%; /* Blanco puro */
-
-    --card: 0 0% 11%; /* Gris humo */
-    --card-foreground: 0 0% 100%;
-
-    --popover: 0 0% 11%;
-    --popover-foreground: 0 0% 100%;
-
-    --primary: 41 47% 57%; /* Dorado cálido */
-    --primary-foreground: 0 0% 0%; /* Negro para texto en primario */
-
-    --secondary: 40 18% 57%; /* Beige tostado */
-    --secondary-foreground: 0 0% 0%;
-
-    --muted: 0 0% 11%;
-    --muted-foreground: 0 0% 60%;
-
-    --accent: 0 0% 11%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 41 47% 57%; /* Dorado cálido */
-
-     /* Gráficos */
-    --chart-1: 41 47% 57%;
-    --chart-2: 40 18% 57%;
-    --chart-3: 0 0% 50%;
-    --chart-4: 0 0% 70%;
-    --chart-5: 0 0% 30%;
+    --radius: 0.75rem;
   }
 
   * {
@@ -85,14 +41,30 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased selection:bg-primary/30 selection:text-primary;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-headline tracking-tight;
+    @apply font-headline tracking-tight text-balance;
   }
 
-  a {
-    @apply text-primary hover:text-primary/80 transition-colors;
+  /* Glassmorphism Effect */
+  .glass {
+    @apply bg-card/80 backdrop-blur-md border border-white/5 shadow-2xl;
+  }
+
+  .fade-in-up {
+    animation: fadeInUp 0.5s ease-out forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

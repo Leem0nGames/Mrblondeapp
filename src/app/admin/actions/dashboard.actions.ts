@@ -12,7 +12,7 @@ export async function getDashboardData() {
     
     const [statsResult, pendingOrdersResult, pendingClientsResult] = await Promise.all([
         supabase.from("dashboard_stats").select("*").single(),
-        supabase.from("orders").select("id, client_id, agreement_id, created_at, total_amount, status, client_name_cache, notes").eq("status", "pending").order("created_at", { ascending: false }).limit(5),
+        supabase.from("orders").select("id, client_id, agreement_id, created_at, total_amount, status, client_name_cache, notes").eq("status", "armado").order("created_at", { ascending: false }).limit(10),
         supabase.from("clients").select("*").eq("status", "pending_agreement").order("created_at", { ascending: false }),
     ]);
 
@@ -33,6 +33,7 @@ export async function getDashboardData() {
             total_pricelists: 0,
             total_promotions: 0,
             total_sales_conditions: 0,
+            pending_orders_count: 0
         },
         pendingOrders: pendingOrdersResult.data ?? [],
         pendingClients: pendingClientsResult.data ?? [],
@@ -87,24 +88,12 @@ export async function completeOrder(orderId: string, orderTotal: number) {
     
     const { error: orderUpdateError } = await supabase
         .from('orders')
-        .update({ status: 'completed' })
+        .update({ status: 'entregado' })
         .eq('id', orderId);
 
     if (orderUpdateError) {
-        console.error("completeOrder (order) error:", orderUpdateError.message);
+        console.error("completeOrder error:", orderUpdateError.message);
         return { error: orderUpdateError };
-    }
-
-    // Note: The RPC function 'increment_total_revenue' is a placeholder in this schema.
-    // In a real-world scenario, you might have a more robust way to update aggregated stats.
-    const { error: rpcError } = await supabase.rpc('increment_total_revenue', {
-      amount_to_add: orderTotal
-    });
-
-    if (rpcError) {
-        console.error("completeOrder (rpc) error:", rpcError.message);
-        // We don't return the error here because the main action (completing order) was successful.
-        // Failing to update stats should not block the UX.
     }
 
     revalidatePath('/admin');

@@ -37,7 +37,7 @@ export type Promotion = {
 export type Order = {
     id: string;
     client_id: string | null;
-    agreement_id: string;
+    agreement_id: string | null;
     created_at: string;
     total_amount: number;
     status: 'armado' | 'transito' | 'entregado';
@@ -52,6 +52,7 @@ export type OrderWithItems = Order & {
         products: {
             name: string;
             category: string | null;
+            image_url: string | null;
         } | null;
     }[];
     clients?: Client | null;
@@ -67,6 +68,13 @@ export type Client = {
     onboarding_token: string | null;
     agreement_id: string | null;
     delivery_window: string | null;
+    instagram?: string | null;
+    contact_dni?: string | null;
+    fiscal_status?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    created_at?: string;
+    agreements?: { agreement_name: string } | null;
 }
 
 export type DashboardStats = {
@@ -78,6 +86,7 @@ export type DashboardStats = {
     total_pricelists: number;
     total_promotions: number;
     total_sales_conditions: number;
+    overdue_orders_count: number;
 }
 
 export type AppSettings = {
@@ -89,4 +98,67 @@ export type AppSettings = {
 export type AppSettingsRow = {
     key: string;
     value: any;
+};
+
+export type AnalyzeClientOutput = {
+    summary: string;
+    observations: string[];
+    opportunities: string[];
+    risks: string[];
+};
+
+export type Agreement = {
+    id: string;
+    agreement_name: string;
+    client_type: 'barberia' | 'distribuidor' | 'especial';
+    price_list_id: string | null;
+    created_at: string;
+};
+
+export type DetailedAgreement = Agreement & {
+    agreement_promotions: AgreementPromotion[];
+    agreement_sales_conditions: AgreementSalesCondition[];
+    price_lists: PriceList | null;
+    clients: { id: string; contact_name: string | null }[];
+};
+
+export type AgreementWithCount = Agreement & {
+    promotion_count: number;
+    sales_condition_count: number;
+    price_lists: { name: string } | null;
+};
+
+export type AgreementPromotion = {
+    promotions: Promotion;
+};
+
+export type AgreementSalesCondition = {
+    sales_conditions: SalesCondition;
+};
+
+export type SalesCondition = {
+    id: string;
+    name: string;
+    description: string | null;
+    rules: any;
+    created_at: string;
+};
+
+export type PriceList = {
+    id: string;
+    name: string;
+    prices_include_vat: boolean;
+    created_at: string;
+};
+
+export type DetailedPriceList = PriceList & {
+    price_list_items: PriceListItem[];
+};
+
+export type PriceListItem = {
+    price_list_id: string;
+    product_id: string;
+    price: number;
+    volume_price: number | null;
+    products: Product;
 };

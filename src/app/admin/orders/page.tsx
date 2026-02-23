@@ -25,7 +25,7 @@ export default async function OrdersHistoryPage({
         description="Revisa y gestiona todos los pedidos realizados en el sistema." 
       />
       
-      <Card>
+      <Card className="glass border-white/5">
         <CardHeader>
             <CardTitle>Todos los Pedidos</CardTitle>
             <CardDescription>Busca por cliente o filtra por estado.</CardDescription>
@@ -50,7 +50,7 @@ export default async function OrdersHistoryPage({
                 </TableRow>
               ) : (
                 orders.map((order) => (
-                  <TableRow key={order.id}>
+                  <TableRow key={order.id} className="hover:bg-white/5 transition-colors">
                     <TableCell>{formatDate(order.created_at)}</TableCell>
                     <TableCell className="font-medium">{order.client_name_cache}</TableCell>
                     <TableCell>${order.total_amount.toLocaleString()}</TableCell>

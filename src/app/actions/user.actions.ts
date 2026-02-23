@@ -89,9 +89,12 @@ export async function getOrderPageData(agreementId: string) {
         return acc;
     }, {});
 
+    const { data: client } = await supabase.from('clients').select('*').eq('agreement_id', agreementId).maybeSingle();
+
     return { 
         data: { 
             agreement, 
+            client,
             productsByCategory, 
             vatPercentage: settings.vat_percentage || 21,
             logoUrl: settings.logo_url 
@@ -125,8 +128,7 @@ export async function submitOrder(payload: {
         .single();
 
     if (orderError || !order) {
-        console.error("submitOrder Error:", orderError?.message);
-        return { error: { message: "Error al guardar pedido en la base de datos." } };
+        return { error: { message: "Error al guardar pedido." } };
     }
 
     const orderItems = payload.cart.map(item => ({
@@ -155,12 +157,24 @@ export async function submitOnboardingForm(payload: any) {
     const supabase = await createServerClient();
     const { onboarding_token, ...data } = payload;
     
+    let address = `${data.street_address} ${data.street_number}, ${data.locality}, ${data.province}`;
+    let delivery_window = `${data.delivery_days.join(', ')} de ${data.delivery_time_from} a ${data.delivery_time_to}hs`;
+
+    const updateData = {
+        contact_name: data.contact_name,
+        contact_dni: data.contact_dni,
+        email: data.email,
+        cuit: data.cuit,
+        fiscal_status: data.fiscal_status,
+        address: address,
+        delivery_window: delivery_window,
+        instagram: data.instagram,
+        status: 'pending_agreement'
+    };
+
     const { error } = await supabase
         .from('clients')
-        .update({
-            ...data,
-            status: data.agreement_id ? 'active' : 'pending_agreement',
-        })
+        .update(updateData)
         .eq('onboarding_token', onboarding_token);
 
     if (error) return { error };

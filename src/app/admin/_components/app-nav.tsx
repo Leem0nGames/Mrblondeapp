@@ -9,6 +9,7 @@ import {
   Users,
   FileText,
   Briefcase,
+  History,
 } from "lucide-react";
 import {
   Tooltip,
@@ -23,16 +24,17 @@ type NavItem = {
     href: string;
     icon: React.ElementType;
     label: string;
-    isComplete: (stats: DashboardStats) => boolean;
-    incompleteTooltip: string;
+    isComplete?: (stats: DashboardStats) => boolean;
+    incompleteTooltip?: string;
 };
 
 const navItems: NavItem[] = [
-  { href: "/admin", icon: Home, label: "Dashboard", isComplete: () => true, incompleteTooltip: "" },
-  { href: "/admin/products", icon: Package, label: "Productos", isComplete: () => true, incompleteTooltip: "" },
-  { href: "/admin/clients", icon: Users, label: "Clientes", isComplete: (stats) => stats.total_clients > 0, incompleteTooltip: "Crea tu primer cliente" },
-  { href: "/admin/agreements", icon: FileText, label: "Convenios", isComplete: () => true, incompleteTooltip: "" },
-  { href: "/admin/commercial-settings", icon: Briefcase, label: "Comercial", isComplete: (stats) => stats.total_pricelists > 0 && stats.total_promotions > 0 && stats.total_sales_conditions > 0, incompleteTooltip: "Define una lista, promoción y condición" },
+  { href: "/admin", icon: Home, label: "Dashboard" },
+  { href: "/admin/orders", icon: History, label: "Pedidos" },
+  { href: "/admin/products", icon: Package, label: "Productos" },
+  { href: "/admin/clients", icon: Users, label: "Clientes" },
+  { href: "/admin/agreements", icon: FileText, label: "Convenios" },
+  { href: "/admin/commercial-settings", icon: Briefcase, label: "Comercial" },
 ];
 
 export function AppNav({ isMobile, stats }: { isMobile: boolean, stats: DashboardStats }) {
@@ -40,15 +42,11 @@ export function AppNav({ isMobile, stats }: { isMobile: boolean, stats: Dashboar
 
   const renderNavItem = (item: NavItem) => {
     const isActive = pathname.startsWith(item.href) && (item.href !== '/admin' || pathname === '/admin');
-    const isStepComplete = item.isComplete(stats);
 
     const linkContent = (
         <>
             <item.icon className="h-5 w-5" />
             {isMobile ? item.label : <span className="sr-only">{item.label}</span>}
-            {!isStepComplete && (
-                <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-primary animate-pulse" />
-            )}
         </>
     );
 
@@ -80,7 +78,7 @@ export function AppNav({ isMobile, stats }: { isMobile: boolean, stats: Dashboar
                   {linkContent}
                 </Link>
               </TooltipTrigger>
-              <TooltipContent side="right">{isStepComplete ? item.label : item.incompleteTooltip}</TooltipContent>
+              <TooltipContent side="right">{item.label}</TooltipContent>
         </Tooltip>
     );
   }

@@ -1,5 +1,4 @@
 
-
 import Link from "next/link";
 import {
   LogOut,
@@ -63,8 +62,6 @@ const createNotifications = (
   return notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 };
 
-
-
 export default async function AdminLayout({
   children,
 }: {
@@ -79,7 +76,6 @@ export default async function AdminLayout({
     pending_clients_count,
     overdue_orders_count
   );
-
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">

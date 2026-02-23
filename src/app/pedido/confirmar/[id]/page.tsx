@@ -62,7 +62,9 @@ export default async function OrderConfirmationPortal({
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-muted/20">
-      <Logo showText={true} className="mb-8" />
+      <div className="mb-8 flex justify-center">
+        <Logo showText={true} />
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Conformidad de Entrega</CardTitle>
